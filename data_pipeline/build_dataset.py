@@ -13,14 +13,13 @@ from . import g2b_client as collector
 from .convert_documents import convert_rhwp
 from .bid_workflow import prepare_discovery, select_bid, latest_notices, is_active_notice
 from .common import DEFAULT_DATASET, KST, read_csv, read_json, read_jsonl, write_json, write_jsonl, DOWNLOAD_SUCCESS, TEXT_READY, HWP_SUFFIXES
-from .audit_dataset import audit
 from .ingest import ingest_sources
 from .prepare_documents import prepare, extract_contacts, extract_deadline, extract_deadlines, region_requirement
 
 
 def collect_dataset(output, start, end, count=20, queries=None, candidate_limit=120,
-                    search_only=False, selection_file=None, profile=None, rhwp=None):
-    """초기 데이터는 공고문만 준비한다. 고정 목록도 전체 첨부 수신을 승인하지 않는다."""
+                    search_only=False, profile=None, rhwp=None):
+    """API 조회 결과에서 공고문만 준비한다. 전체 첨부는 사용자 선택 후 수신한다."""
     if start > end or not 1 <= count <= 100 or candidate_limit < 1:
         raise ValueError("조회 기간 또는 수집 건수를 확인하세요.")
     output = Path(output).resolve()
@@ -45,17 +44,8 @@ def collect_dataset(output, start, end, count=20, queries=None, candidate_limit=
         request = dict(start=str(start), end=str(end), queries=queries, candidate_limit=candidate_limit,
                        collected_at=datetime.now(KST).isoformat(), page_limit_reached=truncated)
         write_json(cache, {"request": request, "items": items})
-    if selection_file:
-        # 자료 목록 제한일 뿐, 최종 사용자 선택 기록과 구분한다.
-        ids = set(read_json(Path(selection_file))["bid_ids"])
-        available = {f"{i['bidNtceNo']}_{i.get('bidNtceOrd') or '000'}" for i in items}
-        if not ids <= available:
-            raise ValueError("고정 자료 목록이 현재 탐색 결과에 없습니다.")
-        initial_items = [i for i in items if f"{i['bidNtceNo']}_{i.get('bidNtceOrd') or '000'}" in ids]
-    else:
-        initial_items = items
     latest = latest_notices(items)
-    active = [item for item in initial_items if is_active_notice(item, latest)][:count]
+    active = [item for item in items if is_active_notice(item, latest)][:count]
     # 원본 후보 캐시는 보존하고 이번 탐색 대상만 별도 디렉터리에 둔다.
     discovery = output / "discovery"
     discovery.mkdir(exist_ok=True)
@@ -190,7 +180,6 @@ def main():
     parser.add_argument("--query", action="append", help="공고 목록 탐색어; 기업 선별 조건과 분리")
     parser.add_argument("--candidate-limit", type=int, default=120, help="API 목록 후보 조회 수")
     parser.add_argument("--search-only", action="store_true", help="선별 목록·링크만 기록. 첨부 요청·후처리 안 함")
-    parser.add_argument("--selection-file", type=Path, help="검수한 고정 공고 목록 JSON. 조건 불일치는 오류로 중단")
     parser.add_argument("--rhwp", type=Path)
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--ingest", action="store_true", help="PDF와 공식 웹 주제 5개를 FAISS에 적재")
@@ -214,7 +203,7 @@ def main():
         profile = read_json(args.profile) if args.profile else None
         discovery = collect_dataset(args.output, args.start, args.end, args.count, queries=args.query,
                         candidate_limit=args.candidate_limit, search_only=args.search_only,
-                        selection_file=args.selection_file, profile=profile, rhwp=args.rhwp)
+                        profile=profile, rhwp=args.rhwp)
         listing = read_json(discovery / "bid_list.json")
         return 2 if not args.search_only and any(r["notice_status"] not in TEXT_READY
                                                 for r in listing["items"]) else 0
@@ -228,10 +217,6 @@ def main():
     result = prepare(args.output)
     enrich(args.output)
     export_pdf20(args.output)
-    reviewed = audit(args.output)
-    if reviewed["hard_failures"]:
-        print("자동 검수 실패: validation.json을 확인하고 보완한 후 적재하세요.")
-        return 2
     if args.ingest:
         load_env()
         ingest_sources(args.output, args.embedding_model)

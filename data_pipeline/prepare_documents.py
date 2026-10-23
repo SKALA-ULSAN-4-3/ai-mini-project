@@ -3,6 +3,7 @@
 원본과 연락처를 보존한다. 변환 기록이 있으면 PDF를 사용한다. OCR·임베딩은 수행하지 않는다.
 """
 import argparse
+from collections import defaultdict
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -303,7 +304,35 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
     return _save_prepared(run_dir, documents, pages, chunks, chunk_size, overlap)
 
 
+def clean_chunks(pages, chunks):
+    """같은 공고 안의 충분히 긴 동일 페이지만 병합. 모든 대체 출처는 보존."""
+    groups = defaultdict(list)
+    for page in pages:
+        text = re.sub(r"\s+", "", page["text"])
+        key = (page["bid_no"], page["bid_order"], text) if len(text) >= 150 else (page["document_id"], page["page"])
+        groups[key].append(page)
+    canonical, aliases, duplicates = set(), {}, []
+    for group in groups.values():
+        group.sort(key=lambda p: (p.get("requires_layout_review", False), p["file_name"], p["page"]))
+        chosen = group[0]
+        key = (chosen["document_id"], chosen["page"])
+        canonical.add(key)
+        sources = [{k: p.get(k, "") for k in ("file_name", "page", "source_url", "document_id")} for p in group]
+        aliases[key] = sources
+        if len(group)>1:
+            duplicates.append({"kept": sources[0], "equivalent_sources": sources[1:], "bid_no": chosen["bid_no"]})
+    result = []
+    for chunk in chunks:
+        key = (chunk["document_id"], chunk["page"])
+        if key in canonical:
+            result.append({**chunk, "equivalent_sources": aliases[key]})
+    return result, duplicates
+
+
+
 def _save_prepared(run_dir, documents, pages, chunks, chunk_size, overlap):
+    raw_chunk_count = len(chunks)
+    chunks, duplicate_pages = clean_chunks(pages, chunks)
     output = run_dir / "processed"
     output.mkdir(exist_ok=True)
     for name, records in (("pages", pages), ("chunks", chunks), ("documents", documents)):
@@ -316,6 +345,7 @@ def _save_prepared(run_dir, documents, pages, chunks, chunk_size, overlap):
         counts[status] = counts.get(status, 0) + 1
     summary = {"prepared_at": datetime.now(timezone.utc).isoformat(), "run_dir": str(run_dir),
                "documents": len(documents), "pages": len(pages), "chunks": len(chunks),
+               "raw_chunks": raw_chunk_count, "duplicate_page_groups": len(duplicate_pages),
                "statuses": counts, "chunk_size": chunk_size, "overlap": overlap,
                "layout_review_documents": sum(d["requires_layout_review"] for d in documents),
                "contacts_preserved": True, "personal_names_masked": True,

@@ -14,8 +14,8 @@
 | 사용자 선택 후 해당 공고 전체 첨부 | `select_bid`, CLI `--select-bid` 또는 선택 API |
 | 이름 마스킹·공개 연락처·출처·원문 메타데이터 보존 | `prepare_documents.py` |
 | JSON/JSONL/CSV·해시·잠금·상태 계약 | `common.py` |
-| 기존 오프라인 자료 검수·데이터 적재 | `audit_dataset.py`, `knowledge.py`, `ingest.py` |
+| 전처리 자료·데이터 적재 | `prepare_documents.py`, `knowledge.py`, `ingest.py` |
 
-파일별 책임과 호출 방향, 기존 CLI 호환성은 [코드 구조 문서](REFACTORING.md)를 참고하세요. `build_dataset.py`는 탐색·사용자 선택을 `bid_workflow.py`에 위임하며, 기존 오프라인 자료의 메타데이터·출처표·대표 PDF·검수만 별도로 조립합니다. PDF·웹 적재 실행은 `ingest.ingest_sources()`를 공유하고 FAISS 세대 저장은 `knowledge.py`가 담당합니다.
+`build_dataset.py`는 탐색·사용자 선택을 `bid_workflow.py`에 위임하며, 기존 오프라인 자료의 메타데이터·출처표·대표 PDF만 별도로 조립합니다. PDF·웹 적재 실행은 `ingest.ingest_sources()`를 공유하고 FAISS 세대 저장은 `knowledge.py`가 담당합니다.
 
 평가 결과가 저장되거나 점수가 높다는 이유로 전체 첨부를 자동 다운로드하지 않습니다. 초기 공고문을 식별할 수 없으면 제안요청서·서식으로 대체하지 않습니다. 평가 산식·최종 자격 판정·사용자 인증·프로필 DB·화면은 다른 담당 영역입니다.

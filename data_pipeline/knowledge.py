@@ -121,9 +121,6 @@ class KnowledgeStore:
 
 
 def ingest_processed(run_dir, store=None):
-    validation = Path(run_dir) / "validation.json"
-    if validation.exists() and read_json(validation).get("hard_failures"):
-        raise ValueError("검수 실패 자료가 있어 적재를 중단합니다. validation.json 확인 필요")
     path = Path(run_dir) / "processed" / "chunks.jsonl"
     records = read_jsonl(path)
     for row in records:

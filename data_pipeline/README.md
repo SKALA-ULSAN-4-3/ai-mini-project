@@ -2,7 +2,7 @@
 
 ## 코드 구조와 변경 내역
 
-[구조·호출 흐름·리팩터링 검증 기록](REFACTORING.md)에 파일 통합 내역과 기존 진입점을 정리했습니다. 개인정보·원문 메타데이터·PDF 페이지 처리는 `prepare_documents.py`, 공통 파일 처리는 `common.py`, 공공 API 통신은 `g2b_client.py`에서 확인할 수 있습니다. 수집 단계 제어는 `bid_workflow.py`가 맡습니다. CLI 명령과 HTTP API 계약은 유지합니다.
+개인정보·원문 메타데이터·PDF 페이지 처리는 `prepare_documents.py`, 공통 파일 처리는 `common.py`, 공공 API 통신은 `g2b_client.py`에서 확인할 수 있습니다. 수집 단계 제어는 `bid_workflow.py`가 맡습니다. CLI 명령과 HTTP API 계약은 유지합니다.
 
 ## 현재 연결 흐름: 공고문 → bid-logic 추천 → 사용자 선택 → 원본 첨부 전달
 
@@ -76,7 +76,7 @@ data_pipeline/.venv/bin/python -m data_pipeline.collect_bids --resume data/colle
 data_pipeline/.venv/bin/python -m data_pipeline.build_dataset --query 개발 --profile data_pipeline/company_profile.example.json --count 20 --output data/my_run
 ```
 
-이 명령도 초기에는 공고문만 준비하며 `data/my_run/discovery/`에 결과를 둡니다. `--selection-file`의 고정 자료 목록도 전체 첨부 다운로드를 승인하는 사용자 선택으로 취급하지 않습니다.
+이 명령도 초기에는 공고문만 준비하며 `data/my_run/discovery/`에 결과를 둡니다.
 
 ```bash
 data_pipeline/.venv/bin/python -m data_pipeline.build_dataset --output data/my_run --select-bid R26BK00000000_000
@@ -113,7 +113,6 @@ data_pipeline/.venv/bin/python data_pipeline/prepare_documents.py --run-dir data
 | `processed/pages.jsonl` | 페이지 텍스트와 출처 |
 | `processed/chunks.jsonl` | 임베딩용 청크와 출처 |
 | `processed/documents.jsonl`, `needs_attention.jsonl` | 첨부별 추출 상태와 검토 대상 |
-| `validation.json`, `VALIDATION.md`, `page_reviews.json` | 데이터 품질 검수와 페이지 확인 기록 |
 
 `bids.csv`의 조건은 원문 발췌·기록입니다. 미명시나 상충 문구를 확정된 참가 조건으로 바꾸지 않습니다. `deadline_schedule`도 문서에 기록된 제출 일시이며 D-day나 준비 일정을 계산하지 않습니다. `metadata_needs_review`는 추출 데이터 확인 표시입니다.
 
@@ -129,13 +128,4 @@ data_pipeline/.venv/bin/python -m uvicorn data_pipeline.api:app --port 8001
 - `GET /data-status`: PDF·웹 적재 건수를 확인합니다.
 - 탐색·외부 평가 연결·사용자 선택 API는 [연계 규약](EVALUATION_HANDOFF.md)을 참고하세요.
 
-FAISS는 `data/indexes/pdf`·`data/indexes/web`에 JSON 출처와 함께 저장합니다. 기본 임베딩은 `text-embedding-3-small`이며 오프라인 테스트는 `local-char-ngram-v1`을 사용합니다. 동일 그룹 재업로드는 교체하고 전체 PDF 갱신은 현재 데이터셋으로 동기화합니다. 검수 실패 자료는 적재를 중단합니다. LLM 답변 생성과 점수 계산은 제공하지 않습니다. 초기 탐색은 자동 임베딩·웹 자료 적재를 실행하지 않습니다.
-
-## 점검
-
-```bash
-data_pipeline/.venv/bin/python -m data_pipeline.audit_dataset --run-dir data/corpus
-data_pipeline/.venv/bin/python -m unittest discover -s data_pipeline/tests -v
-```
-
-현재 20공고·74첨부·1,998페이지·2,849청크입니다. 공고문 및 제안요청서/과업지시서 확보는 20/20건입니다. 원본 레이아웃 전체 대조와 영향평가 이미지 부록 3페이지는 검토 대상으로 기록하며 OCR 완료로 표시하지 않습니다. 임시 테스트 입력·인덱스는 종료 시 삭제하고 기존 원본 수집 자료는 보존합니다.
+FAISS는 `data/indexes/pdf`·`data/indexes/web`에 JSON 출처와 함께 저장합니다. 기본 임베딩은 `text-embedding-3-small`이며 오프라인 테스트는 `local-char-ngram-v1`을 사용합니다. 동일 그룹 재업로드는 교체하고 전체 PDF 갱신은 현재 데이터셋으로 동기화합니다. LLM 답변 생성과 점수 계산은 제공하지 않습니다. 초기 탐색은 자동 임베딩·웹 자료 적재를 실행하지 않습니다.

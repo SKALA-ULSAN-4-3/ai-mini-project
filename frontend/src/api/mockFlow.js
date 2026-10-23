@@ -63,6 +63,16 @@ export function handleBidData({ config, url, method, body, profile, ok, fail }) 
     return ok(config, { bids: list.map(pub), excluded: [], candidate_count: list.length, needs_review: true })
   }
 
+  // ③' 공고문 적재 후 재확인: 모두 confirmed, 첫 공고만 일부 조건 미확인으로 흉내
+  if (url === '/bids/recheck' && method === 'post') {
+    const rows = (body.bids || []).map((r) => {
+      const b = find(r.bid_no)
+      if (!b) return { ...r, recheck: { status: 'not_evaluated', reasons: ['적재된 공고 목록에 없습니다.'] }, needs_review: true }
+      return { ...pub(b), recheck: { status: 'confirmed', reasons: [], unknown: b.unknown || [] }, needs_review: true }
+    })
+    return ok(config, { bids: rows, needs_review: true, stage: 'after_notice', disqualified: [], not_evaluated: rows.filter((r) => r.recheck.status === 'not_evaluated').map((r) => r.bid_no) })
+  }
+
   // ④ 요약 여러 건. 실패한 건은 { status: 'error', code, detail }
   if (url === '/bids/summaries' && method === 'post') {
     const results = (body.bids || []).map((r) => {

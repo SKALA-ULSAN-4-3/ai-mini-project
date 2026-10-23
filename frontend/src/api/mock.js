@@ -26,6 +26,7 @@ function fail(config, status, detail) {
 const PIPELINE = [/^\/search-bids$/, /^\/fetch-notices$/, /^\/fetch-documents$/, /^\/jobs\//, /^\/me\//]
 const ME_ONLY = [/^\/me\//]
 const AUTH_REAL = [/^\/signup$/, /^\/login$/, /^\/profile$/] // auth 모드에서 진짜 서버로 보내는 주소
+const isSummarySave = (url, method) => method === 'put' && /^\/bids\/[^/]+\/summary$/.test(url) // 요약 저장(4번 Java)
 
 // auth 모드에서 "가입·로그인·프로필 서버"로 요청을 보내는 통로. 맨 처음 만든 창구(/api)가 등록합니다.
 let authReal = null
@@ -52,6 +53,7 @@ export function installMock(client, mode = 'true') {
     // partial · me 모드: 서버에 이미 있는 API는 진짜 서버로 보냅니다.
     if ((mode === 'partial' || mode === 'me') && !isPipeline) return real(config)
 
+    config.mocked = true // 콘솔 로그에 "가짜"로 표시하기 위한 꼬리표
     await delay(300) // 실제 서버처럼 약간 기다리기 (로딩 표시 확인용)
     const body = config.data ? JSON.parse(config.data) : {}
 
@@ -106,6 +108,9 @@ export function installMock(client, mode = 'true') {
       if (!profiles[owner]) throw fail(config, 404, '프로필 없음')
       return ok(config, profiles[owner])
     }
+
+    // 요약 저장: auth 모드의 요약은 가짜 데이터라 진짜 DB에 넣지 않고 저장한 척만 합니다.
+    if (isSummarySave(url, method)) return ok(config, { saved: true })
 
     const extra = handleBidData({ config, url, method, body, profile: profiles[owner], ok, fail })
     if (extra) return extra

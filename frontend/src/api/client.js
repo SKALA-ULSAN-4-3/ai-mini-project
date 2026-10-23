@@ -17,13 +17,13 @@ function makeClient(baseURL) {
   // [응답 직후] 401이면 토큰을 지우고 로그인 화면으로 (로그인 요청 자체는 제외)
   c.interceptors.response.use(
     (res) => {
-      console.log(`[API 성공] ${res.status} ${res.config.baseURL}${res.config.url}`)
+      console.log(`[API 성공${res.config.mocked ? '·가짜 데이터' : '·실제 서버'}] ${res.status} ${res.config.baseURL}${res.config.url}`)
       return res
     },
     (error) => {
       const st = error.response?.status
       console.warn(
-        `[API 실패] ${st ?? '응답 없음'} ${error.config?.baseURL}${error.config?.url}`,
+        `[API 실패${error.config?.mocked ? '·가짜 데이터' : '·실제 서버'}] ${st ?? '응답 없음'} ${error.config?.baseURL}${error.config?.url}`,
         st ? error.response.data : '→ 서버가 꺼져 있거나 주소가 틀렸거나 CORS 허용이 안 된 경우입니다.'
       )
       const isLogin = error.config?.url === '/login'

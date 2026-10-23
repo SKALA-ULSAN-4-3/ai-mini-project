@@ -77,6 +77,7 @@ button.small:hover { border-color: var(--accent); color: var(--accent); }
 /* 배지·칩 */
 .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; background: var(--accent-weak); color: var(--accent); }
 .badge.warn { background: var(--danger-weak); color: var(--danger); }
+.badge.danger { background: var(--danger); color: #fff; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .chip { padding: 4px 11px; border-radius: 999px; font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: #fff; color: var(--ink); }
 button.chip { cursor: pointer; }

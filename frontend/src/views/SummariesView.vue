@@ -1,9 +1,10 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useFlowStore } from '../stores/flow'
-import { fetchSummaries, saveSelections, fetchDocuments, SUMMARY_LABELS, isFailed, isOk } from '../api/flow'
+import { fetchSummaries, saveSummaries, fetchDocuments, SUMMARY_LABELS, isFailed, isOk } from '../api/flow'
 import { errorMessage } from '../api/client'
 import { keyOf } from '../utils'
+import RecheckBadge from '../components/RecheckBadge.vue'
 import SourceList from '../components/SourceList.vue'
 import JobProgress from '../components/JobProgress.vue'
 import PdfLinks from '../components/PdfLinks.vue'
@@ -15,6 +16,7 @@ const checked = ref(flow.selected.map(keyOf))
 const jobId = ref('')
 const opened = reactive({}) // 펼친 카드만 원문 PDF 목록을 불러옵니다.
 const docsJob = ref(null)
+const saveNotice = ref('') // 요약을 내 계정(DB)에 저장한 결과 안내
 const changedRevisions = ref([]) // 정정공고로 차수가 바뀐 공고번호
 
 const meta = (r) => flow.candidates.find((b) => keyOf(b) === keyOf(r)) || {}
@@ -27,6 +29,9 @@ onMounted(async () => {
   try {
     const bids = flow.candidates.filter((b) => flow.readyKeys.includes(keyOf(b)))
     flow.summaries = await fetchSummaries(bids)
+    // 요약 결과를 내 계정(DB)에 저장. 실패해도 화면 사용은 계속할 수 있습니다.
+    const r = await saveSummaries(flow.summaries)
+    if (r.total) saveNotice.value = r.failed ? `요약 ${r.total}건 중 ${r.failed}건은 저장하지 못했습니다. (화면에서는 계속 볼 수 있어요)` : `요약 ${r.total}건을 내 계정에 저장했습니다.`
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -56,7 +61,6 @@ async function prepare() {
   const picked = flow.summaries.filter((r) => checked.value.includes(keyOf(r)))
   if (!picked.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; return }
   try {
-    await saveSelections(flow.searchId, picked)
     flow.selected = picked.map((r) => ({
       bid_no: r.bid_no, revision: r.revision, title: meta(r).title || r.summary?.title?.value || r.bid_no,
     }))
@@ -77,6 +81,7 @@ async function prepare() {
       준비된 공고문이 없습니다. <router-link to="/search">공고 검색</router-link>에서 먼저 공고문을 준비해 주세요.
     </p>
     <p v-if="loading" class="sub">요약을 만드는 중… (수십 초 걸릴 수 있어요)</p>
+    <p v-if="saveNotice" :class="saveNotice.includes('못했') ? 'notice' : 'ok'">{{ saveNotice }}</p>
     <p v-if="error" class="error">{{ error }}</p>
 
     <div v-for="r in flow.summaries" :key="keyOf(r)" class="item">
@@ -84,6 +89,7 @@ async function prepare() {
         <input v-model="checked" type="checkbox" :value="keyOf(r)" :disabled="failed(r)" style="width: auto; margin-top: 6px" />
         <span>
           <strong>{{ meta(r).title || r.summary?.title?.value || r.bid_no }}</strong>
+          <RecheckBadge :recheck="meta(r).recheck" />
           <span class="meta" style="display: block; font-weight: 400">{{ r.bid_no }}-{{ r.revision }} · {{ meta(r).agency }}</span>
         </span>
       </label>

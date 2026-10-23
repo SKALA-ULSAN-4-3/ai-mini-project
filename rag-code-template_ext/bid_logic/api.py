@@ -44,8 +44,11 @@ class ChecklistResponse(BaseModel):
 
 def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
                       scoring_provider: Callable, checklist_provider: Callable,
-                      search: Callable, clock=None):
+                      search: Callable, clock=None, search_bids_provider: Callable | None = None):
     """공급자는 동기 함수. profile_dependency는 sync/async FastAPI Depends 함수.
+
+    search_bids_provider(search_id) -> (공고 목록, search 함수): 1번 실시간 검색 결과로 추릴 때 사용(선택).
+    없는 search_id면 공급자가 HTTPException(404)을 발생시킨다. search_id 없이 부르면 기존 bids_provider를 쓴다.
 
     인증 의존성이 서명·만료 검증 후 프로필 dict를 반환해야 한다.
     JWT 미검증/만료 401, 프로필 없음 404는 해당 의존성이 발생시킨다.
@@ -78,9 +81,18 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
 
     @router.get("/bids", response_model=BidListResponse)
     def bids(start: date = Query(..., alias="from"), end: date = Query(..., alias="to"),
-             limit: int = Query(5, ge=1, le=20), profile: dict = Depends(profile_dependency)):
-        return invoke(lambda: recommend_bids(bids_provider(), profile, start, end,
-                                             now=clock(), search=search, limit=limit))
+             limit: int = Query(5, ge=1, le=20), profile: dict = Depends(profile_dependency),
+             search_id: str | None = Query(None, pattern=r"^[a-f0-9]{32}$")):
+        if search_id is None:
+            return invoke(lambda: recommend_bids(bids_provider(), profile, start, end,
+                                                 now=clock(), search=search, limit=limit))
+        if search_bids_provider is None:
+            raise HTTPException(status_code=422, detail="이 서버는 search_id 추천이 연결되지 않았습니다.")
+
+        def from_search():
+            rows, search_fn = search_bids_provider(search_id)
+            return recommend_bids(rows, profile, start, end, now=clock(), search=search_fn, limit=limit)
+        return invoke(from_search)
 
     # revision 필수: 어느 차수인지 모르는 요청을 최신이라고 추정하지 않는다.
     @router.get("/bids/{bid_no}/score", response_model=ScoreResponse)

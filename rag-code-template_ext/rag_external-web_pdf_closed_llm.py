@@ -49,7 +49,7 @@ from dotenv import load_dotenv
 
 # 프로젝트 루트 .env(1·3번과 공통)를 먼저 읽고, 옮기는 동안만 이 폴더의 .env도 보조로 읽는다 (이미 있는 값은 덮지 않음)
 from knowledge_bridge import (StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
-                              classify_attachment)
+                              classify_attachment, search_bid_rows, title_search)
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -124,7 +124,7 @@ app.include_router(data_pipeline_router, tags=["데이터 적재 (1번)"])
 
 # ✅ 공고 추리기·예상 점수·체크리스트 API 연결
 def register_bid_routes(*, profile_dependency, scoring_provider, checklist_provider,
-                        bids_provider=None, search=None, clock=None):
+                        bids_provider=None, search=None, clock=None, search_bids_provider=None):
     """팀원의 인증/추출 결과를 연결한 뒤 호출하면 기존 app에 C2·C4·C5를 등록합니다.
 
     profile_dependency: JWT 검증 후 현재 회사 프로필을 반환하는 FastAPI 의존성.
@@ -142,6 +142,7 @@ def register_bid_routes(*, profile_dependency, scoring_provider, checklist_provi
         search=(search if search is not None else
                 lambda query, keys: faiss_hits(VECTORSTORE_PDF, query, keys)),
         clock=clock,
+        search_bids_provider=search_bids_provider,
     )
     # include_router의 내부 표현이 달라지는 FastAPI 버전에서도 공개 스키마로 확인합니다.
     existing_paths = set(app.openapi().get("paths", {}))
@@ -960,7 +961,18 @@ def connect_bid_routes(profile_dependency):
     bids.csv는 1번 산출물을 변환한 data/bids.csv(3번 기본 경로), 검색은 1번 저장소를 쓴다."""
     return register_bid_routes(profile_dependency=profile_dependency,
                                scoring_provider=get_extracted_scoring_table,
-                               checklist_provider=get_extracted_checklist)
+                               checklist_provider=get_extracted_checklist,
+                               search_bids_provider=bids_from_search)
+
+def bids_from_search(search_id: str):
+    """GET /bids?search_id=…: 1번 /search-bids 결과에서 추린다 (흐름 ③). 공고문을 받기 전이라 공고명 유사도로 정렬."""
+    try:
+        rows = search_bid_rows(search_id)
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    # 저장소와 같은 임베딩 모델 (저장소가 아직 비어 있으면 1번 기본값)
+    model = STORE_STATE["embedding_model"] or os.getenv("BID_EMBEDDING_MODEL", "text-embedding-3-small")
+    return rows, title_search(search_id, rows, model)
 
 # 4번 백엔드 주소가 있으면 토큰을 백엔드 /api/profile로 확인하는 의존성으로 바로 연결한다 (backend_auth.py)
 from backend_auth import backend_url, get_authenticated_profile

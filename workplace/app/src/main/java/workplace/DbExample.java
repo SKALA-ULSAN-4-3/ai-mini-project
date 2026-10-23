@@ -4,9 +4,17 @@ import java.sql.*;
 
 public class DbExample {
     public static void main(String[] args) {
-        String url = "jdbc:mariadb://localhost:53301/sql_db";
-        String user = "root";
-        String pw = System.getenv("DB_PASSWORD"); // SimpleAuthServer와 같은 환경변수 사용
+        // 예제 코드에도 비밀번호를 직접 작성하지 않고 실행 환경에서 받습니다.
+        String url = System.getenv().getOrDefault(
+                "DB_URL",
+                "jdbc:postgresql://localhost:54321/workplace_db"
+        );
+        String user = System.getenv().getOrDefault("DB_USER", "root");
+        String pw = System.getenv("DB_PASSWORD");
+
+        if (pw == null || pw.isBlank()) {
+            throw new IllegalStateException("DB_PASSWORD 환경 변수가 필요합니다.");
+        }
 
         String sql = "SHOW TABLES";
 

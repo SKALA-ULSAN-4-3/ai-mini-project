@@ -16,17 +16,28 @@ repositories {
 }
 
 dependencies {
-    // MariaDB JDBC 드라이버
-    implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.6'
+    // PostgreSQL 및 Aiven PostgreSQL 연결에 사용하는 공식 JDBC 드라이버
+    implementation 'org.postgresql:postgresql:42.7.7'
     // JWT 라이브러리 추가
     implementation 'com.auth0:java-jwt:4.4.0'
     // 비밀번호 해시용 jBCrypt
     implementation 'org.mindrot:jbcrypt:0.4'
+    // JSON 요청·응답과 Java 시간 타입 직렬화
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3'
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 application {
     // main() 이 들어 있는 클래스 경로
-    mainClass = 'workplace.SimpleAuthServer'
+    mainClass = 'workplace.WorkplaceApplication'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 // DbExample.java 예제 개별 실행을 위한 추가 설정

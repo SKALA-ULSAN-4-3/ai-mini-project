@@ -164,6 +164,39 @@ def drop_speculation(text: str) -> str:
     sentences = re.split(r"(?<=[.!?])\s+", text.strip())
     return " ".join(s for s in sentences if not SPECULATION_RE.search(s))
 
+# ✅ 키워드 보강: 의미 검색은 질문 단어가 원문에 그대로 있어도 조각에 다른 정보가 섞여 있으면 놓친다
+#    (평가셋 Q02 "용역 기간" ↔ 원문 "용역기간", Q03 "계약방법"). 띄어쓰기를 무시하고 질문 단어가 든 조각을 함께 넘긴다.
+PARTICLES = ("에서", "으로", "에게", "까지", "부터", "이나", "은", "는", "이", "가", "을", "를", "의", "에", "로", "와", "과", "도", "야")
+STOPWORDS = {"얼마", "어떻게", "언제", "무엇", "뭐", "뭐야", "알려줘", "있어", "있나", "있는지", "되나", "돼", "해", "하나",
+             "이번", "해당", "어디", "몇"}
+
+def query_terms(question: str) -> list[str]:
+    words = []
+    for w in re.findall(r"[가-힣A-Za-z0-9]+", question):
+        for p in PARTICLES:
+            if len(w) > 2 and w.endswith(p):
+                w = w[: -len(p)]
+                break
+        if len(w) >= 2 and w not in STOPWORDS:
+            words.append(w)
+    # 질문은 띄어 쓰고 원문은 붙여 쓴 경우("용역 기간" → "용역기간")를 잡도록 이웃한 두 단어를 이은 것도 넣는다
+    return list(dict.fromkeys(words + [a + b for a, b in zip(words, words[1:])]))
+
+def keyword_chunks(store, question: str, bid_no: str | None, exclude: set, n: int = 3) -> list[Document]:
+    terms = query_terms(question)
+    scored = []
+    for d in store.docstore._dict.values():
+        if bid_no and d.metadata.get("bid_no") != bid_no:
+            continue
+        if (d.metadata.get("source"), d.metadata.get("page"), d.page_content) in exclude:
+            continue
+        text = _squash(d.page_content)
+        score = sum(len(t) for t in terms if t in text)  # 길고 구체적인 단어가 맞을수록 높게
+        if score:
+            scored.append((score, d))
+    scored.sort(key=lambda x: -x[0])
+    return [d for _, d in scored[:n]]
+
 def elapsed_ms(t0: float) -> int:
     return round((time.perf_counter() - t0) * 1000)
 
@@ -466,6 +499,12 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             print(f"[PDF 검색] 질문={rag_request.prompt!r}, 검색 문서 수={len(docs_scores)}")
             for i, (doc, score) in enumerate(docs_scores, start=1):
                 print(f"[PDF 검색 {i}] 거리={score:.5f}, 출처={source_label(doc.metadata)}, 내용={doc.page_content[:300]!r}")
+
+            # 의미 검색이 놓친, 질문 단어가 그대로 든 조각을 최대 3개 덧붙인다 (LLM 호출 수는 그대로)
+            seen = {(d.metadata.get("source"), d.metadata.get("page"), d.page_content) for d, _ in docs_scores}
+            for d in keyword_chunks(vectorstore, rag_request.prompt, rag_request.bid_no, seen):
+                docs_scores.append((d, float("nan")))
+                print(f"[키워드 보강] 출처={source_label(d.metadata)}, 내용={d.page_content[:120]!r}")
 
             if not docs_scores:
                 return not_found("PDF 지식베이스에서 검색 결과를 찾을 수 없습니다.")

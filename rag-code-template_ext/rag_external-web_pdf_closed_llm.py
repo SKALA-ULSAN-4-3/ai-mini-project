@@ -13,6 +13,11 @@ from langchain_core.documents import Document
 from pypdf import PdfReader
 from langchain_core.messages import HumanMessage
 
+# 담당 기능의 구현은 bid_logic의 기능별 파일에서 관리합니다.
+from bid_logic import load_bids_csv, faiss_hits
+from bid_logic.api import create_bid_router
+
+
 # 패키지는 저자 업데이트에 맞춰 해당 버전으로 맞추는 것을 권장
 # 직접 저자의 site-packages/패키지명/을 직접 수정하는 것은 추천하지 않음
 # 추후 pip install -U 시 원상 복구되며 버전 충돌 가능성 있음angchain.text_splitter 
@@ -102,6 +107,43 @@ if os.path.exists(f"{pdf_path}/index.faiss") and os.path.exists(f"{pdf_path}/ind
     print("✅ VECTORSTORE_PDF 로드 완료")
 else:
     print("❌ VECTORSTORE_PDF 벡터화된 파일이 없습니다.")
+
+# ✅ 공고 추리기·예상 점수·체크리스트 API 연결
+def register_bid_routes(*, profile_dependency, scoring_provider, checklist_provider,
+                        bids_provider=None, search=None, clock=None):
+    """팀원의 인증/추출 결과를 연결한 뒤 호출하면 기존 app에 C2·C4·C5를 등록합니다.
+
+    profile_dependency: JWT 검증 후 현재 회사 프로필을 반환하는 FastAPI 의존성.
+    scoring_provider/checklist_provider: (bid_no, revision) -> 구조화 결과 또는 None.
+    기본 공고 CSV: 이 파일 기준 data/bids.csv (합성 fixture를 사용하지 않습니다).
+    인증 공급자 없이 자동 등록하지 않으며, 기존 업로드/질의 API는 그대로 둡니다.
+    """
+    router = create_bid_router(
+        profile_dependency=profile_dependency,
+        bids_provider=(bids_provider if bids_provider is not None else
+                       lambda: load_bids_csv(BASE_DIR / "data" / "bids.csv")),
+        scoring_provider=scoring_provider,
+        checklist_provider=checklist_provider,
+        # 호출할 때의 전역 저장소를 사용해 업로드 이후 교체된 인덱스도 반영합니다.
+        search=(search if search is not None else
+                lambda query, keys: faiss_hits(VECTORSTORE_PDF, query, keys)),
+        clock=clock,
+    )
+    # include_router의 내부 표현이 달라지는 FastAPI 버전에서도 공개 스키마로 확인합니다.
+    existing_paths = set(app.openapi().get("paths", {}))
+    if any(route.path in existing_paths for route in router.routes):
+        raise RuntimeError("공고 API가 이미 등록되어 있습니다. 중복 연결을 확인해 주세요.")
+    app.include_router(router)
+    app.openapi_schema = None  # 연결 전 생성된 Swagger 캐시를 갱신합니다.
+    return router
+
+
+# 백엔드 담당자의 실제 함수가 준비되면 서버 시작 전에 한 번 호출합니다.
+# register_bid_routes(
+#     profile_dependency=get_authenticated_profile,
+#     scoring_provider=get_extracted_scoring_table,
+#     checklist_provider=get_extracted_checklist,
+# )
 
 # ✅ PDF 텍스트 추출
 def load_paper(file_path: str) -> str:

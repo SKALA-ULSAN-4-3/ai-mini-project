@@ -1,0 +1,217 @@
+{
+  "dataset_kind": "synthetic",
+  "model_kind": "scripted_fake",
+  "actual_llm_called": false,
+  "human_verified": false,
+  "x2_comparison": null,
+  "result": {
+    "bid_no": "SYN-01",
+    "revision": "00",
+    "items": [
+      {
+        "id": "performance",
+        "item": "수행 실적",
+        "max": 10,
+        "expected": 10.0,
+        "status": "calculated",
+        "needs_review": true,
+        "sources": [
+          {
+            "bid_no": "SYN-01",
+            "revision": "00",
+            "filename": "SYNTHETIC-RFP.txt",
+            "page": 1,
+            "collected_at": "2026-10-23",
+            "dataset_kind": "synthetic"
+          }
+        ],
+        "basis": "[가상 기준 A] 0건 0점 / 1건 이상 2건 미만 5점 / 2건 이상 10점. AA 10점, BBB 6점, B 2점",
+        "rule": {
+          "type": "bands",
+          "bands": [
+            {
+              "min": 0,
+              "max": 1,
+              "score": 0
+            },
+            {
+              "min": 1,
+              "max": 2,
+              "score": 5
+            },
+            {
+              "min": 2,
+              "score": 10
+            }
+          ]
+        },
+        "used_profile": {
+          "track_records": [
+            {
+              "completed_at": "2026-01-01",
+              "category": "SW",
+              "summary": "웹 구축",
+              "amount": 1,
+              "amount_unit": "억원"
+            },
+            {
+              "completed_at": "2025-01-01",
+              "category": "SW",
+              "summary": "앱 구축",
+              "amount": 50,
+              "amount_unit": "백만원"
+            }
+          ],
+          "metric": "2"
+        },
+        "missing_fields": [],
+        "reason": "원문 기준에 따라 코드로 계산한 예상 점수",
+        "questions": []
+      },
+      {
+        "id": "credit",
+        "item": "신용등급",
+        "max": 10,
+        "expected": 10.0,
+        "status": "calculated",
+        "needs_review": true,
+        "sources": [
+          {
+            "bid_no": "SYN-01",
+            "revision": "00",
+            "filename": "SYNTHETIC-RFP.txt",
+            "page": 1,
+            "collected_at": "2026-10-23",
+            "dataset_kind": "synthetic"
+          }
+        ],
+        "basis": "[가상 기준 A] 0건 0점 / 1건 이상 2건 미만 5점 / 2건 이상 10점. AA 10점, BBB 6점, B 2점",
+        "rule": {
+          "type": "category",
+          "values": {
+            "AA": 10,
+            "BBB": 6,
+            "B": 2
+          }
+        },
+        "used_profile": {
+          "credit_rating": "AA"
+        },
+        "missing_fields": [],
+        "reason": "원문 기준에 따라 코드로 계산한 예상 점수",
+        "questions": []
+      },
+      {
+        "id": "technical",
+        "item": "기술 제안",
+        "max": 70,
+        "expected": "담당자 판단",
+        "status": "manual",
+        "needs_review": true,
+        "sources": [
+          {
+            "bid_no": "SYN-01",
+            "revision": "00",
+            "filename": "SYNTHETIC-RFP.txt",
+            "page": 1,
+            "collected_at": "2026-10-23",
+            "dataset_kind": "synthetic"
+          }
+        ],
+        "basis": null,
+        "rule": null,
+        "used_profile": {},
+        "missing_fields": [],
+        "reason": "정성·가격 항목",
+        "questions": []
+      },
+      {
+        "id": "price",
+        "item": "가격",
+        "max": 10,
+        "expected": "담당자 판단",
+        "status": "manual",
+        "needs_review": true,
+        "sources": [
+          {
+            "bid_no": "SYN-01",
+            "revision": "00",
+            "filename": "SYNTHETIC-RFP.txt",
+            "page": 1,
+            "collected_at": "2026-10-23",
+            "dataset_kind": "synthetic"
+          }
+        ],
+        "basis": null,
+        "rule": null,
+        "used_profile": {},
+        "missing_fields": [],
+        "reason": "정성·가격 항목",
+        "questions": []
+      }
+    ],
+    "needs_review": true,
+    "missing_fields": [],
+    "questions": [],
+    "status": "complete",
+    "unresolved_items": [],
+    "tool_calls": [
+      {
+        "id": "table",
+        "tool": "get_scoring_table",
+        "arguments": {},
+        "status": "ok",
+        "result_status": null
+      },
+      {
+        "id": "profile",
+        "tool": "get_profile",
+        "arguments": {},
+        "status": "ok",
+        "result_status": null
+      },
+      {
+        "id": "performance",
+        "tool": "calc_score",
+        "arguments": {
+          "item_id": "performance"
+        },
+        "status": "ok",
+        "result_status": "calculated"
+      },
+      {
+        "id": "credit",
+        "tool": "calc_score",
+        "arguments": {
+          "item_id": "credit"
+        },
+        "status": "ok",
+        "result_status": "calculated"
+      },
+      {
+        "id": "technical",
+        "tool": "mark_manual",
+        "arguments": {
+          "item_id": "technical",
+          "reason": "정성·가격 항목"
+        },
+        "status": "ok",
+        "result_status": "manual"
+      },
+      {
+        "id": "price",
+        "tool": "mark_manual",
+        "arguments": {
+          "item_id": "price",
+          "reason": "정성·가격 항목"
+        },
+        "status": "ok",
+        "result_status": "manual"
+      }
+    ],
+    "model_calls": 3,
+    "latency_ms": 0.6247090004762867,
+    "token_usage": null,
+    "cost": null
+  }
+}

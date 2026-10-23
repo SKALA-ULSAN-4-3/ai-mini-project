@@ -313,6 +313,9 @@ async def upload_pdf(file: UploadFile = File(...),
         # [TODO Q02] 아래 ... 부분을 적절한 코드로 교체하세요.
         # 공고 20건을 차례로 올리므로 덮어쓰지 않고 누적한다
         VECTORSTORE_PDF = add_to_store(VECTORSTORE_PDF, docs)
+        # 같은 공고에 문서가 추가되면 저장해 둔 추출 결과는 낡은 것이므로 버린다
+        for key in [k for k in EXTRACT_CACHE if k[0] == bid_no]:
+            del EXTRACT_CACHE[key]
 
         # ✅ 디스크에 저장
         os.makedirs("faiss_db/pdf", exist_ok=True)
@@ -598,6 +601,206 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
         else:
             return AnswerResponse(prompt=rag_request.prompt, response="지원하지 않는 소스입니다.")
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =====================================================================
+# ✅ 공고별 구조화 추출 (채점표 · 제출서류 · 요약)
+#    3번(점수 · 체크리스트)과 5번(화면)이 쓰는 JSON을 만든다.
+#    검색 순위에 기대면 정답 조각이 빠질 수 있으므로, 해당 공고에서 키워드가 나온 쪽을
+#    통째로 모아 LLM에 넘기고 LLM은 표를 옮겨 적기만 한다(점수 계산은 3번 코드가 담당).
+# =====================================================================
+from typing import Literal
+
+EXTRACT_CACHE: dict[tuple[str, str], dict] = {}  # (bid_no, 종류) → 결과. 같은 공고 재요청 시 LLM 비용 절감
+
+def bid_chunks(bid_no: str, keywords: tuple[str, ...] | None = None) -> list[Document]:
+    if bid_no not in stored_bid_nos(VECTORSTORE_PDF):
+        raise HTTPException(
+            status_code=404,
+            detail=f"적재되지 않은 공고번호입니다: {bid_no} (적재된 공고번호: {sorted(stored_bid_nos(VECTORSTORE_PDF))})",
+        )
+    docs = [(i, d) for i, d in enumerate(VECTORSTORE_PDF.docstore._dict.values()) if d.metadata.get("bid_no") == bid_no]
+    if keywords:
+        hit = {(d.metadata["source"], d.metadata["page"]) for _, d in docs if any(k in d.page_content for k in keywords)}
+        # 표가 다음 쪽으로 이어질 수 있어 키워드가 나온 쪽의 다음 쪽까지 포함
+        pages = hit | {(src, page + 1) for src, page in hit}
+        docs = [(i, d) for i, d in docs if (d.metadata["source"], d.metadata["page"]) in pages]
+    docs.sort(key=lambda x: (x[1].metadata["page"], x[1].metadata["source"], x[0]))
+    return [d for _, d in docs]
+
+def numbered_context(docs: list[Document], limit_chars: int = 24000) -> tuple[str, dict[int, str], dict[int, str]]:
+    parts, labels, texts, total = [], {}, {}, 0
+    for i, d in enumerate(docs, start=1):
+        if total + len(d.page_content) > limit_chars:
+            break
+        labels[i] = source_label(d.metadata)
+        texts[i] = d.page_content
+        parts.append(f"[문서 {i} | {labels[i]}]\n{d.page_content}")
+        total += len(d.page_content)
+    return "\n\n".join(parts), labels, texts
+
+def _squash(s: str) -> str:
+    return re.sub(r"[\s()·,]", "", s)
+
+def verified_source(name: str, doc_no: int | None, labels: dict[int, str], texts: dict[int, str],
+                    siblings: list[str] | None = None) -> tuple[str, bool]:
+    # LLM이 고른 [문서 n]을 그대로 믿지 않는다: 이름이 실제로 들어 있는 조각만 후보로 두고
+    # (줄바꿈 · 띄어쓰기 · 괄호 차이는 무시), "제안서"처럼 짧은 이름이 일정표 등에도 나오는 경우를 막기 위해
+    # 함께 추출된 이름(siblings)을 가장 많이 담은 조각, 즉 목록 표가 있는 조각을 우선한다
+    key = _squash(name)
+    candidates = [n for n, text in texts.items() if key in _squash(text)]
+    if not candidates:
+        return labels.get(doc_no or 0, "unknown"), False
+    if siblings:
+        keys = [_squash(s) for s in siblings]
+        def score(n):
+            return sum(k in _squash(texts[n]) for k in keys)
+        best = max(score(n) for n in candidates)
+        candidates = [n for n in candidates if score(n) == best]
+    return labels[doc_no if doc_no in candidates else candidates[0]], True
+
+def run_extraction(schema, instruction: str, context: str):
+    llm = ChatOpenAI(model="gpt-4o", temperature=0).with_structured_output(schema, method="function_calling")
+    return llm.invoke([HumanMessage(content=f"{instruction}\n\n{context}")])
+
+def cached(bid_no: str, kind: str, refresh: bool, build) -> dict:
+    key = (bid_no, kind)
+    if refresh or key not in EXTRACT_CACHE:
+        EXTRACT_CACHE[key] = build()
+    return EXTRACT_CACHE[key]
+
+EXTRACT_RULES = (
+    "규칙: 문서에 적힌 내용만 원문 그대로 옮기고, 없는 항목을 만들거나 숫자를 계산 · 변경하지 마세요. "
+    "각 항목에는 그 내용이 적힌 [문서 n]의 번호를 doc_no로 넣으세요."
+)
+
+# ---- 채점표 ----
+class ScoringItem(BaseModel):
+    category: str = Field(description="평가 구분 (예: 기술능력평가, 입찰가격평가)")
+    section: str = Field(description="평가부문, 원문 그대로 (예: 웹툰 산업 및 서비스 이해). 부문이 없으면 category와 같게")
+    item: str = Field(description="평가 항목명, 원문 그대로")
+    max_score: float = Field(description="배점, 원문 숫자 그대로")
+    criteria: str = Field(description="평가 기준 · 산식, 없으면 빈 문자열")
+    eval_type: Literal["정량", "정성", "가격"] = Field(
+        description="정량: 실적 · 인력 · 인증 · 신용등급처럼 제출 서류로 점수를 계산할 수 있음, 정성: 평가위원이 판단, 가격: 입찰가격 산식")
+    doc_no: int = Field(description="이 항목이 적힌 [문서 n]의 번호")
+
+class ScoringExtraction(BaseModel):
+    items: List[ScoringItem]
+    declared_total: Optional[float] = Field(default=None, description="문서에 적힌 전체 배점 합계(예: 기술 90 + 가격 10 = 100). 없으면 null")
+    pass_rule: str = Field(default="", description="협상적격자 · 적격 통과 기준 원문 (예: 기술능력평가 배점한도의 85% 이상). 없으면 빈 문자열")
+    pass_rule_doc_no: Optional[int] = Field(default=None, description="통과 기준이 적힌 [문서 n]의 번호")
+
+@app.get("/bids/{bid_no}/scoring-table", summary="공고 채점표 추출 (3번 점수 계산용)", tags=["공고 추출"])
+async def scoring_table(bid_no: str, refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
+    def build():
+        t0 = time.perf_counter()
+        docs = bid_chunks(bid_no, ("배점", "평가항목", "평가 항목", "기술능력평가", "입찰가격평가", "합 계", "합계"))
+        if not docs:
+            return {"bid_no": bid_no, "items": [], "needs_review": True, "handoff": True,
+                    "message": "채점표를 찾지 못했습니다. 제안요청서가 적재되었는지 확인하세요."}
+        context, labels, texts = numbered_context(docs)
+        result = run_extraction(ScoringExtraction,
+            "아래는 한 공고의 공고문 · 제안요청서 일부입니다. 제안서 평가 채점표의 평가 항목과 배점을 빠짐없이 옮기세요. "
+            "세부 항목이 있으면 세부 항목 단위로 넣고, 소계 · 합계 행은 items에 넣지 마세요. 입찰가격평가도 하나의 항목으로 넣으세요. "
+            "협상적격자 · 적격 통과 기준이 적혀 있으면 pass_rule에 원문 그대로 넣으세요. "
+            + EXTRACT_RULES, context)
+        items = []
+        for it in result.items:
+            source, ok = verified_source(it.item, it.doc_no, labels, texts)
+            items.append({**it.model_dump(exclude={"doc_no"}), "source": source, "source_verified": ok})
+        total = round(sum(it["max_score"] for it in items), 2)
+        # 옮겨 적은 배점의 합이 문서의 합계와 다르면 누락 · 중복이 있다는 뜻이므로 표시
+        consistent = result.declared_total is None or abs(total - result.declared_total) < 0.01
+        return {"bid_no": bid_no, "items": items, "total_max_score": total,
+                "declared_total": result.declared_total, "consistent": consistent,
+                "pass_rule": result.pass_rule, "pass_rule_source": labels.get(result.pass_rule_doc_no or 0, ""),
+                "needs_review": True, "handoff": False, "latency_ms": elapsed_ms(t0)}
+    try:
+        return cached(bid_no, "scoring", refresh, build)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---- 제출서류 ----
+class RequiredDoc(BaseModel):
+    doc_name: str = Field(description="서류명, 원문 그대로")
+    note: str = Field(description="비고 · 형식 · 서식 번호, 없으면 빈 문자열")
+    mandatory: bool = Field(description="필수 제출이면 true, '해당 시' 등 조건부면 false")
+    doc_no: int = Field(description="이 서류가 적힌 [문서 n]의 번호")
+
+class RequiredDocsExtraction(BaseModel):
+    docs: List[RequiredDoc]
+    due: str = Field(description="제출 기한, 원문 그대로. 없으면 빈 문자열")
+    method: str = Field(description="제출 방법, 원문 그대로. 없으면 빈 문자열")
+    due_doc_no: Optional[int] = Field(default=None, description="제출 기한이 적힌 [문서 n]의 번호")
+
+@app.get("/bids/{bid_no}/required-docs", summary="공고 제출서류 추출 (3번 체크리스트용)", tags=["공고 추출"])
+async def required_docs(bid_no: str, refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
+    def build():
+        t0 = time.perf_counter()
+        docs = bid_chunks(bid_no, ("제출 서류", "제출서류", "서류명", "제출 기한", "제출기한", "제출 방법"))
+        if not docs:
+            return {"bid_no": bid_no, "docs": [], "needs_review": True, "handoff": True,
+                    "message": "제출서류 목록을 찾지 못했습니다."}
+        context, labels, texts = numbered_context(docs)
+        result = run_extraction(RequiredDocsExtraction,
+            "아래는 한 공고의 공고문 · 제안요청서 일부입니다. 입찰 시 제출해야 하는 서류 목록과 제출 기한 · 방법을 옮기세요. "
+            "공고문과 제안요청서에 같은 서류가 중복으로 나오면 한 번만 넣되, 두 문서의 비고를 빠짐없이 합쳐 note에 적고 "
+            "doc_no는 서류 목록 표가 더 자세한 쪽의 번호로 하세요. " + EXTRACT_RULES, context)
+        out_docs = []
+        names = [d.doc_name for d in result.docs]
+        for d in result.docs:
+            source, ok = verified_source(d.doc_name, d.doc_no, labels, texts, siblings=names)
+            out_docs.append({**d.model_dump(exclude={"doc_no"}), "source": source, "source_verified": ok})
+        due_source, _ = verified_source(result.due, result.due_doc_no, labels, texts) if result.due else ("", False)
+        return {"bid_no": bid_no, "docs": out_docs,
+                "due": result.due, "method": result.method,
+                "due_source": due_source,
+                "needs_review": False, "handoff": False, "latency_ms": elapsed_ms(t0)}
+    try:
+        return cached(bid_no, "required_docs", refresh, build)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---- 공고 요약 ----
+class SummaryField(BaseModel):
+    value: str = Field(description="원문 근거 값. 문서에 없으면 빈 문자열")
+    doc_no: Optional[int] = Field(default=None, description="근거가 적힌 [문서 n]의 번호, 없으면 null")
+
+class BidSummary(BaseModel):
+    title: SummaryField = Field(description="사업명")
+    agency: SummaryField = Field(description="발주기관")
+    period: SummaryField = Field(description="사업(용역) 기간")
+    budget: SummaryField = Field(description="사업예산 · 추정가격 (부가세 포함 여부 포함)")
+    contract_method: SummaryField = Field(description="계약방법")
+    evaluation_ratio: SummaryField = Field(description="평가 비율 (기술 : 가격)")
+    eligibility: SummaryField = Field(description="입찰 참가자격 요약")
+    joint_and_subcontract: SummaryField = Field(description="공동수급 · 하도급 허용 여부")
+    schedule: SummaryField = Field(description="주요 일정 (제출 기간, 개찰, 평가, 협상)")
+    main_tasks: SummaryField = Field(description="주요 과업")
+
+@app.get("/bids/{bid_no}/summary", summary="공고 요약 (항목별 출처 포함)", tags=["공고 추출"])
+async def bid_summary(bid_no: str, refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
+    def build():
+        t0 = time.perf_counter()
+        context, labels, _ = numbered_context(bid_chunks(bid_no))  # 앞쪽부터 담아 공고 개요가 먼저 들어가게 한다
+        result = run_extraction(BidSummary,
+            "아래는 한 공고의 공고문 · 제안요청서입니다. 각 항목을 1~3문장으로 요약하세요. " + EXTRACT_RULES, context)
+        fields = {name: {"value": f.value, "source": labels.get(f.doc_no or 0, "")}
+                  for name, f in result}
+        missing = [name for name, f in fields.items() if not f["value"]]
+        return {"bid_no": bid_no, "summary": fields, "missing": missing,
+                "needs_review": False, "handoff": bool(missing), "latency_ms": elapsed_ms(t0)}
+    try:
+        return cached(bid_no, "summary", refresh, build)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

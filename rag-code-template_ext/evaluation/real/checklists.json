@@ -9,9 +9,7 @@
         "revision": "000",
         "doc": "정량제안서",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -40,7 +38,7 @@
         "doc": "정성제안서",
         "due": "2026-08-21T10:00:00+09:00",
         "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
+          "업체정보(회사명·인명·로고 등) 삭제, 익명 작성. 각 1개 파일로 분리 제출"
         ],
         "sources": [
           {
@@ -70,7 +68,7 @@
         "doc": "발표자료(제안요약서)",
         "due": "2026-08-21T10:00:00+09:00",
         "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
+          "업체정보(회사명·인명·로고 등) 삭제, 익명 작성. 각 1개 파일로 분리 제출"
         ],
         "sources": [
           {
@@ -99,9 +97,7 @@
         "revision": "000",
         "doc": "경쟁입찰참가자격등록증",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -129,9 +125,7 @@
         "revision": "000",
         "doc": "사업자등록증(원본대조필)",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -160,7 +154,7 @@
         "doc": "법인 등기부등본",
         "due": "2026-08-21T10:00:00+09:00",
         "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
+          "해당 법인에 한함. 원본대조필. 공동수급 시 구성원 모두 제출"
         ],
         "sources": [
           {
@@ -189,9 +183,7 @@
         "revision": "000",
         "doc": "인감증명서",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -219,9 +211,7 @@
         "revision": "000",
         "doc": "사용인감신고서",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -249,9 +239,7 @@
         "revision": "000",
         "doc": "소프트웨어사업자신고확인서",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -279,9 +267,7 @@
         "revision": "000",
         "doc": "중소기업·소상공인 확인서",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -309,9 +295,7 @@
         "revision": "000",
         "doc": "직접생산확인증명서",
         "due": "2026-08-21T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01667722",
@@ -458,6 +442,45 @@
         "notes": [
           "낙찰자 계약 체결 시 별도 제출; 입찰 시 제출 간주"
         ]
+      },
+      {
+        "id": "doc18",
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "doc": "신용평가등급 확인서",
+        "due": "2026-08-21T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-9675",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          },
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+            "page": 5,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          },
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "경영상태 평가 증빙. 등급평가일·유효기간 명시 필요"
+        ]
       }
     ],
     "schedule": [
@@ -521,6 +544,69 @@
         "notes": [
           "공동수급 시에만 해당"
         ]
+      },
+      {
+        "id": "submission_start",
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "event": "전자입찰서 제출 시작",
+        "due": "2026-08-06T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "제출 기간 시작이며 마감이 아님"
+        ]
+      },
+      {
+        "id": "price_submission",
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "event": "가격입찰서 제출 마감",
+        "due": "2026-08-21T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "제안서 제출 마감과 각각 확인"
+        ]
+      },
+      {
+        "id": "evaluation",
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "event": "제안발표회",
+        "due": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-5106",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ],
+        "notes": [
+          "제안서 제출 마감 후 별도 통보. 확정 일시 없음"
+        ]
       }
     ],
     "scope": "AI 정답 초안. 조건부 및 RFP 부속 증빙은 추가 검토 필요"
@@ -574,9 +660,7 @@
         "revision": "001",
         "doc": "경쟁입찰참가자격등록증",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -604,9 +688,7 @@
         "revision": "001",
         "doc": "법인 등기사항증명서(개인사업자인 경우 사업자등록증)",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -634,9 +716,7 @@
         "revision": "001",
         "doc": "소프트웨어사업자 일반 현황 관리확인서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -664,9 +744,7 @@
         "revision": "001",
         "doc": "중소기업·소상공인 확인서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -694,9 +772,7 @@
         "revision": "001",
         "doc": "직접생산확인증명서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -724,9 +800,7 @@
         "revision": "001",
         "doc": "4대사회보험사업장가입자명부",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -754,9 +828,7 @@
         "revision": "001",
         "doc": "국세·지방세 완납증명서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -784,9 +856,7 @@
         "revision": "001",
         "doc": "인감증명서 또는 사용인감계",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -814,9 +884,7 @@
         "revision": "001",
         "doc": "제안업체 현황 및 연혁",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -844,9 +912,7 @@
         "revision": "001",
         "doc": "참여인력 편성표",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -874,9 +940,7 @@
         "revision": "001",
         "doc": "참여인력 개인 이력서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -904,9 +968,7 @@
         "revision": "001",
         "doc": "참여업체 유사용역 수행실적",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -934,9 +996,7 @@
         "revision": "001",
         "doc": "청렴계약이행 서약서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -964,9 +1024,7 @@
         "revision": "001",
         "doc": "보안 서약서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -994,9 +1052,7 @@
         "revision": "001",
         "doc": "개인정보 수집·이용동의서",
         "due": "2026-09-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706837",
@@ -1233,6 +1289,45 @@
         "notes": [
           "정량평가 제안서의 구비서류"
         ]
+      },
+      {
+        "id": "doc25",
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "doc": "신용평가등급 확인서",
+        "due": "2026-09-14T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-6300",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+            "page": 7,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "정량평가 제안서에 포함되는 증빙을 개별 항목으로 표시"
+        ]
       }
     ],
     "schedule": [
@@ -1317,6 +1412,78 @@
         "notes": [
           "2026-09-14 개별 통보. 시각은 원문에 없어 임의 생성하지 않음"
         ]
+      },
+      {
+        "id": "submission_start",
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "event": "전자입찰서 제출 시작",
+        "due": "2026-09-01T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "제출 기간 시작이며 마감이 아님"
+        ]
+      },
+      {
+        "id": "price_submission",
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "event": "가격입찰서 제출 마감",
+        "due": "2026-09-14T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "제안서 제출 마감과 각각 확인"
+        ]
+      },
+      {
+        "id": "registration",
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "event": "입찰참가자격 등록 기한",
+        "due": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+            "page": 6,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "입찰서 제출 마감일 전일(2026-09-13)까지. 원문 시각 미기재로 임의 시각을 넣지 않음"
+        ]
       }
     ],
     "scope": "AI 정답 초안. 조건부 및 RFP 부속 증빙은 추가 검토 필요"
@@ -1331,9 +1498,7 @@
         "revision": "000",
         "doc": "정성적 제안서(증빙서류 포함)",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1361,9 +1526,7 @@
         "revision": "000",
         "doc": "발표자료",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1391,9 +1554,7 @@
         "revision": "000",
         "doc": "경쟁입찰참가자격등록증",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1421,9 +1582,7 @@
         "revision": "000",
         "doc": "법인 등기사항증명서(개인사업자인 경우 사업자등록증)",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1451,9 +1610,7 @@
         "revision": "000",
         "doc": "법인인감증명서",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1481,9 +1638,7 @@
         "revision": "000",
         "doc": "소프트웨어사업자 일반 현황 관리확인서",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1511,9 +1666,7 @@
         "revision": "000",
         "doc": "직접생산확인증명서",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1601,9 +1754,7 @@
         "revision": "000",
         "doc": "입찰업체 서약서",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1631,9 +1782,7 @@
         "revision": "000",
         "doc": "공동책임 확인서",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1661,9 +1810,7 @@
         "revision": "000",
         "doc": "퇴직자 영입현황 확인서 및 서약서",
         "due": "2026-10-14T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01751013",
@@ -1807,6 +1954,69 @@
         "notes": [
           "공동수급 시에만 해당"
         ]
+      },
+      {
+        "id": "submission_start",
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "event": "전자입찰서 제출 시작",
+        "due": "2026-10-06T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+            "page": 3,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "제출 기간 시작이며 마감이 아님"
+        ]
+      },
+      {
+        "id": "price_submission",
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "event": "가격입찰서 제출 마감",
+        "due": "2026-10-14T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+            "page": 3,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "제안서 제출 마감과 각각 확인"
+        ]
+      },
+      {
+        "id": "evaluation",
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "event": "제안서 평가",
+        "due": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-15322",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ],
+        "notes": [
+          "일정 별도 공지. 설명회 개최 시 PM 발표 원칙"
+        ]
       }
     ],
     "scope": "AI 정답 초안. 조건부 및 RFP 부속 증빙은 추가 검토 필요"
@@ -1851,9 +2061,7 @@
         "revision": "000",
         "doc": "인감증명서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -1881,9 +2089,7 @@
         "revision": "000",
         "doc": "사용인감계",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -1911,9 +2117,7 @@
         "revision": "000",
         "doc": "위임장",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -1941,9 +2145,7 @@
         "revision": "000",
         "doc": "재직증명서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -1971,9 +2173,7 @@
         "revision": "000",
         "doc": "이행(입찰)보증보험증권",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -2001,9 +2201,7 @@
         "revision": "000",
         "doc": "지방세 완납증명서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -2031,9 +2229,7 @@
         "revision": "000",
         "doc": "국세 완납증명서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -2061,9 +2257,7 @@
         "revision": "000",
         "doc": "소프트웨어사업자 일반 현황 관리 확인서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -2091,9 +2285,7 @@
         "revision": "000",
         "doc": "중소기업확인서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -2121,9 +2313,7 @@
         "revision": "000",
         "doc": "직접생산확인증명서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -2241,9 +2431,7 @@
         "revision": "000",
         "doc": "청렴계약이행서약서",
         "due": "2026-09-11T11:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01706954",
@@ -2456,9 +2644,7 @@
         "revision": "000",
         "doc": "정성적평가 제안서(증빙자료 포함)",
         "due": "2026-10-19T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01760198",
@@ -2477,9 +2663,7 @@
         "revision": "000",
         "doc": "정량적평가 제안서(증빙서류 포함)",
         "due": "2026-10-19T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01760198",
@@ -2519,9 +2703,7 @@
         "revision": "000",
         "doc": "입찰참가자격 확인서류",
         "due": "2026-10-19T10:00:00+09:00",
-        "notes": [
-          "법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요"
-        ],
+        "notes": [],
         "sources": [
           {
             "bid_no": "R26BK01760198",
@@ -2553,6 +2735,87 @@
         ],
         "notes": [
           "전자입찰서로 제출"
+        ]
+      },
+      {
+        "id": "doc06",
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "doc": "제안서 비교평가 조견표",
+        "due": "2026-10-19T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 38,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "정성제안서 제일 앞 페이지에 작성"
+        ]
+      },
+      {
+        "id": "doc07",
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "doc": "납품실적증명원 또는 계약서 사본",
+        "due": "2026-10-19T10:00:00+09:00",
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 47,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+            "page": 4,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "사업실적 증빙으로 둘 중 하나 첨부. 증명원은 발주처·담당관 확인, 사본은 사실과 상위없음 및 사용인감 날인"
+        ]
+      },
+      {
+        "id": "doc08",
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "doc": "개인정보 수집 및 활용 동의서",
+        "due": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 66,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "해당 사업 참여자 각 1부. 대표자·입찰신청자·수임자·상주인력 등 해당 단계별 확인. 서식에 제출 시각 미기재"
         ]
       }
     ],
@@ -2614,6 +2877,27 @@
         ],
         "notes": [
           "제안서 평가 후. 확정 시각 없음"
+        ]
+      },
+      {
+        "id": "evaluation",
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "event": "제안서 평가",
+        "due": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 38,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ],
+        "notes": [
+          "일정 별도 통지. 확정 일시 없음"
         ]
       }
     ],

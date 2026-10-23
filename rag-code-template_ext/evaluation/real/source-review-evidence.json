@@ -1,6 +1,42 @@
 [
   {
     "source": {
+      "bid_no": "R26BK01667722",
+      "revision": "000",
+      "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+      "page": null,
+      "locator": "Contents/section7.xml#element-9675",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+      "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+    },
+    "text": "   2.  신용평가등급, 등급평가일, 등급유효기간 등이 명시된 ‘신용평가 등급 확인서’를 제출한다."
+  },
+  {
+    "source": {
+      "bid_no": "R26BK01667722",
+      "revision": "000",
+      "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+      "page": null,
+      "locator": "Contents/section7.xml#element-5106",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+      "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+    },
+    "text": "  제안발표회 일시, 장소는 제안서 제출 마감 후 제안업체에 별도 통보한다."
+  },
+  {
+    "source": {
+      "bid_no": "R26BK01706837",
+      "revision": "001",
+      "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+      "page": null,
+      "locator": "Contents/section0.xml#element-6300",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+      "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+    },
+    "text": "    - 관련 서류: 실적증명원, 투입인력 자격증 사본 및  신용평가 등급 확인서"
+  },
+  {
+    "source": {
       "bid_no": "R26BK01706837",
       "revision": "001",
       "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
@@ -22,5 +58,17 @@
       "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
     },
     "text": "    - 관련 서류: 실적증명원, 투입인력 자격증 사본 및  신용평가 등급 확인서"
+  },
+  {
+    "source": {
+      "bid_no": "R26BK01751013",
+      "revision": "000",
+      "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+      "page": null,
+      "locator": "Contents/section0.xml#element-15322",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+      "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+    },
+    "text": " 사. 제안 설명회(제안서평가) 개최 : 일정 별도 공지"
   }
 ]

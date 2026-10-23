@@ -1,0 +1,739 @@
+{
+  "reviewer": "Codex (AI)",
+  "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
+  "human_verified": false,
+  "status": "ai_source_review_complete",
+  "fresh_pdf_files": 24,
+  "fresh_pdf_pages": 253,
+  "cached_numeric_pages_matched": 253,
+  "source_files_hash_checked": 74,
+  "reference_locations_checked": 36,
+  "score_bids": 5,
+  "score_items": 88,
+  "quantitative_checks": [
+    {
+      "bid_no": "R26BK01667722",
+      "profile_id": "seoul_web",
+      "item": "경영상태",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "profile_id": "ulsan_data",
+      "item": "경영상태",
+      "expected": 4.75,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "profile_id": "jeju_campus",
+      "item": "경영상태",
+      "expected": 4.5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "profile_id": "seoul_web",
+      "item": "경영상태",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "profile_id": "ulsan_data",
+      "item": "경영상태",
+      "expected": 4.5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "profile_id": "jeju_campus",
+      "item": "경영상태",
+      "expected": 4,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "seoul_web",
+      "item": "경영상태",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "seoul_web",
+      "item": "용역사업 수행실적",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "ulsan_data",
+      "item": "경영상태",
+      "expected": 4.75,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "ulsan_data",
+      "item": "용역사업 수행실적",
+      "expected": 4,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "jeju_campus",
+      "item": "경영상태",
+      "expected": 4.5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "jeju_campus",
+      "item": "용역사업 수행실적",
+      "expected": 3.5,
+      "matches_previous": true
+    }
+  ],
+  "documents": 85,
+  "schedule": 26,
+  "changes": [
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "제안서와 제출서류 일체 원본 출력물"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "제안서 내용이 수록된 CD/USB 또는 인쇄물"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "실적증명원(원본대조필) 사본"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "투입인력 자격증 사본"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "document_added",
+      "doc": "공동수급협정서"
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "change": "document_added",
+      "doc": "경영상태 관련 증빙서류"
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "change": "document_added",
+      "doc": "주요사업실적 관련 증빙서류"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "price_source_corrected"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "price_source_corrected"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "document_added",
+      "doc": "신용평가등급 확인서"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "제안발표회"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "신용평가등급 확인서"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "입찰참가자격 등록 기한"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "제안서 평가"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "제안서 비교평가 조견표"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "납품실적증명원 또는 계약서 사본"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "개인정보 수집 및 활용 동의서"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "schedule_added",
+      "event": "제안서 평가"
+    }
+  ],
+  "checks": [
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+        "page": null,
+        "locator": "Contents/section7.xml#element-2477",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "3f1b2c02b978ead0b88897fcae9676d7705bd83575920c6af3c7fc412f767efd"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+        "page": null,
+        "locator": "Contents/section7.xml#element-4190",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "875196ccb775e8c49ccf390ab48af17382c17e587b90c134421de9dc492afe25"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+        "page": 1,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "d43e3b25e8d2ae19733fef5c34b7a4153010b5fc7cdb76dc78fe64dec53a56df"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+        "page": null,
+        "locator": "Contents/section0.xml#element-4471",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "b3a8b73c9f8e5bbeb1786ad0a6ff07269c31493b759878334e7462d94a2d0f3b"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+        "page": null,
+        "locator": "Contents/section0.xml#element-5745",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "2e7836972b0bf4f1101d1cb2d4744890aa11f16bc324b3f57ac1df9433963232"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+        "page": null,
+        "locator": "Contents/section0.xml#element-14315",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "5c4d60a70473b92cfee8e69590873da4e357629167e09ccf0d23c3a31965cfe8"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+        "page": 10,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "26b67da38e79f95ceabcaebffd0d6d762ee19fe2276c80263a6de076354df62f"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "filename": "가. 제안요청서.pdf",
+        "page": 25,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "15e308f6234d9fe48cba6f78bb9510b0ceabf8201ac6836147caeaf7ce962946"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "filename": "가. 제안요청서.pdf",
+        "page": 26,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "9e8bcd63392a0dd279421f1c90c6842a6fc14e2a822745280f839ecd7af3633d"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+        "page": 35,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "9d73245a2d97a86c1d7b21ec6a20209688621f89ea68a6a7c6f259ab0a5f8340"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+        "page": 37,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "f5c543b2833253630d02cd64f803a3fbd4de8350d86ef0ce102b34cfeb594cfe"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+        "page": 36,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "a2a14547553345bfa4b68a9bb83f2e43e7a0007e19450d08a9316285f12b72c7"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+        "page": 5,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "f0b26e95e2d4d3f6b754592d31c302dec0ea1fb0aa2bfb16fd56bb2225a581a8"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+        "page": 4,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "2eb2daaa6b5729a0a90673bf46f2f78bbaa95bee71dc7b502c10f21802e9a300"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+        "page": 3,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "de54521e9ca1a2aee50ef22851c78bdb7b207cbc2befb8d1ab394c5bd448e46b"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+        "page": null,
+        "locator": "Contents/section7.xml#element-9675",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "9543bad52c4c1dc90f28a59feefe9fdee14feadedef7f52914f6bf1fb0466eea"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+        "page": null,
+        "locator": "Contents/section7.xml#element-5106",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "9c066ee3bd8fa8c2a08ca9d1b9c5a0e509397f9b830c3773930379111b434b09"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+        "page": 8,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "69f0e761074f4326edd2e41c50b17d74c2c9ab63120828b7c9799a9abf3345c1"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+        "page": 4,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "d98911ff5d6d6ddc40038204130569540a7fc041cc6288227a563f362f7f6ee6"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+        "page": 9,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "b9c19713e3f3d220111cc19a87134ff1494700c5135f472b49981369ea2b7e44"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+        "page": 7,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "1ff74630c4c1f115cdd0b12aa06d04952a3fbff2ab2d65e7a53a24fbc1b193ce"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+        "page": 10,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "257191089560c1c8824946527b968a33910da831c38843679a5aedf80745a0ef"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+        "page": null,
+        "locator": "Contents/section0.xml#element-6313",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "2cc924d383093335d3cd0915e0b01f52071edc7c461a8f8c23f0c582f9fa9d2a"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+        "page": null,
+        "locator": "Contents/section0.xml#element-6300",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "2eb493a0c95f8391f1bc82639dc9dade8454765f048d6485737370695ca36b0f"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+        "page": 6,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "2c1eca3277da787433bb2a6274134e7ba57bedbf149b700588fbb8888dbdc677"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+        "page": 8,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "fd9d34de0678ca7b5a79d56185c118f54261e51564ff0188462e59e6b1d352de"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+        "page": 3,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "e715f3084f52220be3ec6117e56326406ef57df4858b1a5b581c32483e6b2235"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+        "page": 7,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "394466e64e3c506623bedb6d78dc109ad3461ef33d9e77738fea986b3d99049e"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+        "page": 6,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "dc136b3116a2dfd205e219dea0c967e2d1db0a073d6c754399bd8ecb4644c6c4"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+        "page": null,
+        "locator": "Contents/section0.xml#element-15322",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+      },
+      "kind": "hwpx_xml_node",
+      "location_exists": true,
+      "source_text_sha256": "2c01518a0eefaf554e1007563261fa9e88ba3d7ed11456256f0defa2b7e696d2"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "filename": "0. 입찰공고문(2026-0108).pdf",
+        "page": 2,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+        "sha256": "dd828c3f494b8d4e7fe9bece321bbaee5e881c18b923aa24b4057f5aaf4fb9eb",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "e1f92a2650da9e79f4b46c0104fe6d356a10e1f056554ea746dd9b1c4c29db73"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "filename": "0. 입찰공고문(2026-0108).pdf",
+        "page": 1,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+        "sha256": "dd828c3f494b8d4e7fe9bece321bbaee5e881c18b923aa24b4057f5aaf4fb9eb",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "edec88665cc3df3869dcc54572a8f8f7dc92dde60628e0fea6876ed2f3a39159"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+        "page": 4,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "3b5ce84abc6e832e19a559354b65a75e3a28a3e5c27d096a51908f0a6874f744"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+        "page": 38,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "101087e1beb0411290311311daf524236df0a92f745b53638c0114f770a6a72a"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+        "page": 47,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "98afc37829443d7d73e96b0eb0782f5e6274c7a2b53caca9f44df18a89e21840"
+    },
+    {
+      "source": {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+        "page": 66,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+        "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+        "collected_at": "2026-10-23T16:36:01.914892+09:00"
+      },
+      "kind": "pdf_page",
+      "location_exists": true,
+      "source_text_sha256": "f995b6881b6d0b22db7e61432fb02bac3aceb288adcdad1e6a332d0bcc39033c"
+    }
+  ],
+  "limitations": [
+    "HWPX 출처는 실제 XML 위치로 확인했으며 PDF 쪽수로 변환하지 않음",
+    "조건부 서류 해당 여부·실적/신용평가 증빙의 실제 인정 여부는 가상 프로필만으로 확정하지 않음",
+    "사업 수행 중 보안·완료 산출물 전체를 입찰 제출 체크리스트와 동일 범위로 검수했다는 뜻은 아님",
+    "원문 대조는 AI 검토이며 gold.review의 사람 승인 상태는 변경하지 않음"
+  ],
+  "artifact_sha256": {
+    "gold.json": "c6043ae19fcdd42f76698a70d05827bca945e71bb8d42f4de0a43d7fcf127240",
+    "scoring_tables.json": "9b9b9522a158cb7aca5d6e5448819e3e7deff6b4a4887b16b074626a44ce0526",
+    "checklists.json": "d82a0ea4911491251d398e157eb4b0ccbe0b2997d629ecdbf631debab7eddb8e",
+    "recommendation-review.json": "ce28e7aa9679b3eaf91475d2eff9fc3d507eb28dbf73da773f279b7ce098f3a2"
+  }
+}

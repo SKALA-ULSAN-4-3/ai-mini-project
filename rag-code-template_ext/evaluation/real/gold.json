@@ -6,9 +6,13 @@
         {
           "bid_no": "R26BK01753530",
           "revision": "000"
+        },
+        {
+          "bid_no": "R26BK01757019",
+          "revision": "000"
         }
       ],
-      "rationale": "20건 원문 사업명·과업과 가상 회사 관심분야를 독립 대조한 초안. 2026-10-07 시점 마감·금액 고려. 미확인 자격은 확정하지 않음.",
+      "rationale": "관심 분야 또는 업무가 직접 연결되는 기존 실적 기준으로 고정 20건을 전수 대조. 명백한 마감·금액·지역 불일치는 별도 제외. 세부 근거는 recommendation-review.json의 60개 판정 참조.",
       "review": {
         "status": "pending",
         "reviewer": null,
@@ -16,12 +20,13 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "needs_relevance_rubric",
+        "status": "rubric_applied",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.059545+09:00",
         "human_verified": false,
-        "note": "주력 키워드와 세 프로필 공통 Axis 실적의 반영 기준이 미확정. 관련성 라벨을 객관적 정답으로 단정하지 않음."
-      }
+        "rubric_id": "keyword-or-transferable-track-record-v1"
+      },
+      "rubric_id": "keyword-or-transferable-track-record-v1"
     },
     {
       "profile_id": "ulsan_data",
@@ -35,11 +40,19 @@
           "revision": "000"
         },
         {
+          "bid_no": "R26BK01753530",
+          "revision": "000"
+        },
+        {
           "bid_no": "R26BK01754897",
+          "revision": "000"
+        },
+        {
+          "bid_no": "R26BK01757019",
           "revision": "000"
         }
       ],
-      "rationale": "20건 원문 사업명·과업과 가상 회사 관심분야를 독립 대조한 초안. 2026-10-07 시점 마감·금액 고려. 미확인 자격은 확정하지 않음.",
+      "rationale": "관심 분야 또는 업무가 직접 연결되는 기존 실적 기준으로 고정 20건을 전수 대조. 명백한 마감·금액·지역 불일치는 별도 제외. 세부 근거는 recommendation-review.json의 60개 판정 참조.",
       "review": {
         "status": "pending",
         "reviewer": null,
@@ -47,12 +60,13 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "needs_relevance_rubric",
+        "status": "rubric_applied",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.059545+09:00",
         "human_verified": false,
-        "note": "주력 키워드와 세 프로필 공통 Axis 실적의 반영 기준이 미확정. 관련성 라벨을 객관적 정답으로 단정하지 않음."
-      }
+        "rubric_id": "keyword-or-transferable-track-record-v1"
+      },
+      "rubric_id": "keyword-or-transferable-track-record-v1"
     },
     {
       "profile_id": "jeju_campus",
@@ -70,7 +84,7 @@
           "revision": "000"
         }
       ],
-      "rationale": "20건 원문 사업명·과업과 가상 회사 관심분야를 독립 대조한 초안. 2026-10-07 시점 마감·금액 고려. 미확인 자격은 확정하지 않음.",
+      "rationale": "관심 분야 또는 업무가 직접 연결되는 기존 실적 기준으로 고정 20건을 전수 대조. 명백한 마감·금액·지역 불일치는 별도 제외. 세부 근거는 recommendation-review.json의 60개 판정 참조.",
       "review": {
         "status": "pending",
         "reviewer": null,
@@ -78,12 +92,13 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "needs_relevance_rubric",
+        "status": "rubric_applied",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.059545+09:00",
         "human_verified": false,
-        "note": "주력 키워드와 세 프로필 공통 Axis 실적의 반영 기준이 미확정. 관련성 라벨을 객관적 정답으로 단정하지 않음."
-      }
+        "rubric_id": "keyword-or-transferable-track-record-v1"
+      },
+      "rubric_id": "keyword-or-transferable-track-record-v1"
     }
   ],
   "scores": [
@@ -517,11 +532,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -954,11 +970,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -1391,11 +1408,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -1573,11 +1591,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -1755,11 +1774,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -1937,11 +1957,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -2314,11 +2335,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -2691,11 +2713,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -3068,11 +3091,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -3309,11 +3333,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -3550,11 +3575,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -3791,11 +3817,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -4186,11 +4213,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -4581,11 +4609,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -4976,11 +5005,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     }
   ],
@@ -5360,6 +5390,40 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "신용평가등급 확인서",
+          "owned": true,
+          "due": "2026-08-21T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+              "page": null,
+              "locator": "Contents/section7.xml#element-9675",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+            },
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 5,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -5407,6 +5471,51 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-08-06T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-08-21T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "제안발표회",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+              "page": null,
+              "locator": "Contents/section7.xml#element-5106",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+            }
+          ]
         }
       ],
       "review": {
@@ -5416,11 +5525,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -5798,6 +5908,40 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "신용평가등급 확인서",
+          "owned": false,
+          "due": "2026-08-21T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+              "page": null,
+              "locator": "Contents/section7.xml#element-9675",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+            },
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 5,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -5845,6 +5989,51 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-08-06T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-08-21T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "제안발표회",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+              "page": null,
+              "locator": "Contents/section7.xml#element-5106",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+            }
+          ]
         }
       ],
       "review": {
@@ -5854,11 +6043,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -6236,6 +6426,40 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "신용평가등급 확인서",
+          "owned": false,
+          "due": "2026-08-21T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+              "page": null,
+              "locator": "Contents/section7.xml#element-9675",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+            },
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 5,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -6283,6 +6507,51 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-08-06T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-08-21T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "제안발표회",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01667722",
+              "revision": "000",
+              "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+              "page": null,
+              "locator": "Contents/section7.xml#element-5106",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+            }
+          ]
         }
       ],
       "review": {
@@ -6292,11 +6561,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -6894,6 +7164,40 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "신용평가등급 확인서",
+          "owned": true,
+          "due": "2026-09-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+              "page": null,
+              "locator": "Contents/section0.xml#element-6300",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 7,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -6956,6 +7260,60 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-09-01T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-09-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "입찰참가자격 등록 기한",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 6,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "review": {
@@ -6965,11 +7323,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -7567,6 +7926,40 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "신용평가등급 확인서",
+          "owned": false,
+          "due": "2026-09-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+              "page": null,
+              "locator": "Contents/section0.xml#element-6300",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 7,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -7629,6 +8022,60 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-09-01T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-09-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "입찰참가자격 등록 기한",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 6,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "review": {
@@ -7638,11 +8085,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -8240,6 +8688,40 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "신용평가등급 확인서",
+          "owned": false,
+          "due": "2026-09-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+              "page": null,
+              "locator": "Contents/section0.xml#element-6300",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 7,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -8302,6 +8784,60 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-09-01T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-09-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "입찰참가자격 등록 기한",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 6,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01706837",
+              "revision": "001",
+              "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "review": {
@@ -8311,11 +8847,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -8719,6 +9256,51 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-10-06T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+              "page": 3,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-10-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+              "page": 3,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "제안서 평가",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+              "page": null,
+              "locator": "Contents/section0.xml#element-15322",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+            }
+          ]
         }
       ],
       "review": {
@@ -8728,11 +9310,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -9136,6 +9719,51 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-10-06T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+              "page": 3,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-10-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+              "page": 3,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "제안서 평가",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+              "page": null,
+              "locator": "Contents/section0.xml#element-15322",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+            }
+          ]
         }
       ],
       "review": {
@@ -9145,11 +9773,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -9553,6 +10182,51 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "전자입찰서 제출 시작",
+          "due": "2026-10-06T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+              "page": 3,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "가격입찰서 제출 마감",
+          "due": "2026-10-14T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+              "page": 3,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "event": "제안서 평가",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01751013",
+              "revision": "000",
+              "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+              "page": null,
+              "locator": "Contents/section0.xml#element-15322",
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+            }
+          ]
         }
       ],
       "review": {
@@ -9562,11 +10236,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -10102,11 +10777,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -10642,11 +11318,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -11182,11 +11859,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -11273,6 +11951,72 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "제안서 비교평가 조견표",
+          "owned": false,
+          "due": "2026-10-19T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 38,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "doc": "납품실적증명원 또는 계약서 사본",
+          "owned": false,
+          "due": "2026-10-19T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 47,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "doc": "개인정보 수집 및 활용 동의서",
+          "owned": false,
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 66,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -11320,6 +12064,21 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "제안서 평가",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 38,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "review": {
@@ -11329,11 +12088,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -11420,6 +12180,72 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "제안서 비교평가 조견표",
+          "owned": false,
+          "due": "2026-10-19T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 38,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "doc": "납품실적증명원 또는 계약서 사본",
+          "owned": false,
+          "due": "2026-10-19T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 47,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "doc": "개인정보 수집 및 활용 동의서",
+          "owned": false,
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 66,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -11467,6 +12293,21 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "제안서 평가",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 38,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "review": {
@@ -11476,11 +12317,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     },
     {
@@ -11567,6 +12409,72 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "doc": "제안서 비교평가 조견표",
+          "owned": false,
+          "due": "2026-10-19T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 38,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "doc": "납품실적증명원 또는 계약서 사본",
+          "owned": false,
+          "due": "2026-10-19T10:00:00+09:00",
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 47,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            },
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+              "page": 4,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+              "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
+        },
+        {
+          "doc": "개인정보 수집 및 활용 동의서",
+          "owned": false,
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 66,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "schedule": [
@@ -11614,6 +12522,21 @@
               "collected_at": "2026-10-23T16:36:01.914892+09:00"
             }
           ]
+        },
+        {
+          "event": "제안서 평가",
+          "due": null,
+          "sources": [
+            {
+              "bid_no": "R26BK01760198",
+              "revision": "000",
+              "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+              "page": 38,
+              "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+              "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+              "collected_at": "2026-10-23T16:36:01.914892+09:00"
+            }
+          ]
         }
       ],
       "review": {
@@ -11623,11 +12546,12 @@
         "author": "AI source-reading draft"
       },
       "ai_review": {
-        "status": "source_checked",
+        "status": "final_source_checked",
         "reviewer": "Codex (AI)",
-        "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+        "reviewed_at": "2026-10-23T17:42:28.298090+09:00",
         "human_verified": false,
-        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님."
+        "note": "원문 내용과 대조함. 사람의 최종 승인은 아님.",
+        "scope": "원문 배점·정량 계산·제출물·일정 및 인용 위치 대조. 실제 증빙 인정 여부와 사람 승인은 제외"
       }
     }
   ]

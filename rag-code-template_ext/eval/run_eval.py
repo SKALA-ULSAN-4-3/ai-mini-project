@@ -66,11 +66,12 @@ def keyword_baseline(question: str, chunks: list[str]) -> str:
 
 def load_chunks(bid_no: str) -> list[str]:
     try:
-        from langchain_community.vectorstores import FAISS
-        from langchain_openai import OpenAIEmbeddings
-        from dotenv import load_dotenv
-        load_dotenv(BASE_DIR / ".env")
-        store = FAISS.load_local(str(BASE_DIR / "faiss_db/pdf"), OpenAIEmbeddings(), allow_dangerous_deserialization=True)
+        # 서버와 같은 1번 저장소(data/indexes/pdf)의 조각을 읽는다
+        sys.path.insert(0, str(BASE_DIR))
+        from knowledge_bridge import StoreCache
+        store, _, _ = StoreCache().get("pdf")
+        if store is None:
+            return []
         return [d.page_content for d in store.docstore._dict.values() if d.metadata.get("bid_no") == bid_no]
     except Exception as e:  # 베이스라인은 보조 지표이므로 실패해도 평가는 진행
         print(f"[경고] 베이스라인용 조각을 읽지 못했습니다: {e}", file=sys.stderr)

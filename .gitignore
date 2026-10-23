@@ -29,3 +29,6 @@ AI서비스개발_Mini-project_교재_*.pdf
 # 데이터 파이프라인 로컬 산출물 · 도구
 /data/
 !.env.example
+
+# 3번 형식으로 변환한 bids.csv (1번 산출물에서 자동 생성)
+rag-code-template_ext/data/

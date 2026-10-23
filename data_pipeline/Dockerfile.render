@@ -15,16 +15,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && useradd --create-home --uid 10001 app
 
 WORKDIR /app
-COPY data_pipeline/requirements*.txt /tmp/dependencies/
-RUN python -m pip install --no-cache-dir -r /tmp/dependencies/requirements-render.txt
+COPY data_pipeline/requirements*.txt /tmp/dependencies/data_pipeline/
+COPY rag-code-template_ext/requirements-e.txt /tmp/dependencies/rag-code-template_ext/requirements-e.txt
+RUN python -m pip install --no-cache-dir -r /tmp/dependencies/data_pipeline/requirements-render.txt
 
 COPY --chown=app:app project_env.py /app/project_env.py
 COPY --chown=app:app data_pipeline /app/data_pipeline
-COPY --chown=app:app rag-code-template_ext/knowledge_bridge.py /app/rag-code-template_ext/knowledge_bridge.py
+COPY --chown=app:app rag-code-template_ext /app/rag-code-template_ext
 RUN mkdir -p /app/data && chown -R app:app /app
 
 USER app
 RUN python -B data_pipeline/convert_documents.py --setup --soffice /usr/bin/soffice
 
 EXPOSE 10000
-CMD ["sh", "-c", "exec python -m uvicorn data_pipeline.render_app:app --host 0.0.0.0 --port ${PORT:-10000} --workers 1"]
+CMD ["sh", "-c", "exec python -m uvicorn data_pipeline.render_rag_app:app --host 0.0.0.0 --port ${PORT:-10000} --workers 1"]

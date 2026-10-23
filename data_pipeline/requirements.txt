@@ -1,28 +1,9 @@
-# Python 3.10+ / macOS 또는 Linux (fcntl 사용)
-# 설치: python -m pip install -r data_pipeline/requirements.txt
-#
-# 아래 시스템 도구는 pip 설치 대상이 아니다.
-# HWP/HWPX 공고문을 내부 PDF로 변환할 때 별도로 준비한다.
-# - Java 지원 LibreOffice + soffice/unopkg (프로젝트 검증: 25.8.7.3)
-# - JDK 21 (프로젝트 검증 환경)
-# - H2Orestart 0.8.0 (convert_documents.py --setup으로 설치·SHA-256 검증)
-# 설치 순서·경로: data_pipeline/README.md의 "설정" 참고.
-# 원본 첨부 다운로드·전달만 할 때는 이 변환 도구가 필요하지 않다.
-
-# PDF 텍스트 추출
 pypdf>=6.10,<7
-
-# 벡터 인덱스
 faiss-cpu>=1.7,<2
 numpy>=1.26,<3
-
-# HTTP API·파일 업로드
 fastapi>=0.110,<1
-pydantic>=2.0,<3
 uvicorn>=0.29,<1
 python-multipart>=0.0.9
-
-# 공식 웹 원문·임베딩
 httpx>=0.27,<1
 openai>=1.109,<4
 beautifulsoup4>=4.12,<5

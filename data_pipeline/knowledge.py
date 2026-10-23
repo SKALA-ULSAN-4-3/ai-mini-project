@@ -1,17 +1,18 @@
 """중복 없는 누적 FAISS 저장소. JSON 메타데이터와 원자적 세대 교체."""
+from contextlib import contextmanager
 from datetime import datetime, timezone
+import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import uuid
-from .common import read_json, ROOT, directory_lock, read_jsonl, write_jsonl
 
 import faiss
 import numpy as np
 
-
+ROOT = Path(__file__).resolve().parents[1]
 INDEX_ROOT = Path(os.environ.get("BID_INDEX_ROOT", str(ROOT / "data" / "indexes")))
 
 
@@ -49,19 +50,26 @@ class KnowledgeStore:
         self.path = Path(root or INDEX_ROOT) / kind
         self.model = model or os.environ.get("BID_EMBEDDING_MODEL", "text-embedding-3-small")
 
+    @contextmanager
     def locked(self):
-        return directory_lock(self.path, ".lock")
+        self.path.mkdir(parents=True, exist_ok=True)
+        with (self.path / ".lock").open("a") as handle:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle, fcntl.LOCK_UN)
 
     def load(self):
         pointer = self.path / "current.json"
         if not pointer.exists():
             return None, [], None
-        generation = read_json(pointer)["generation"]
+        generation = json.loads(pointer.read_text())["generation"]
         if not re.fullmatch(r"[0-9a-f]{32}", generation):
             raise ValueError("잘못된 인덱스 세대")
         path = self.path / "generations" / generation
-        manifest = read_json(path / "manifest.json")
-        records = read_jsonl(path / "documents.jsonl")
+        manifest = json.loads((path / "manifest.json").read_text())
+        records = [json.loads(line) for line in (path / "documents.jsonl").read_text().splitlines()]
         index = faiss.read_index(str(path / "index.faiss"))
         if index.ntotal != len(records):
             raise ValueError("FAISS와 출처 레코드 개수 불일치")
@@ -80,7 +88,7 @@ class KnowledgeStore:
                 raise ValueError("기존 임베딩 모델과 다릅니다. 별도 인덱스 경로를 사용하세요.")
             groups = {r["group_id"] for r in incoming.values()}
             old_map = {r["chunk_id"]: r for r in old}
-            if set(incoming) <= old_map.keys() and all(old_map[k] == r for k, r in incoming.items()) and (not replace_all or set(incoming) == set(old_map)):
+            if set(incoming) <= old_map.keys() and all(old_map[k] == r for k, r in incoming.items()) and (not replace_all or set(incoming)==set(old_map)):
                 return {**manifest, "added_chunks": 0}
             kept = [] if replace_all else [(i, r) for i, r in enumerate(old) if r["group_id"] not in groups]
             by_id = {r["chunk_id"]: i for i, r in enumerate(old)}
@@ -92,28 +100,24 @@ class KnowledgeStore:
             vectors = [index.reconstruct(i) for i, _ in kept]
             vectors.extend(index.reconstruct(by_id[k]) if k in reusable else vector_map[k] for k in incoming)
             matrix = np.asarray(vectors, dtype="float32")
-            return self._save_generation(final_records, matrix, len(pending))
-
-    def _save_generation(self, final_records, matrix, added_chunks):
-        """완성된 파일 묶음을 쓴 뒤 current 포인터만 원자적으로 교체한다."""
-        new_index = faiss.IndexFlatIP(matrix.shape[1])
-        new_index.add(matrix)
-        generation = uuid.uuid4().hex
-        target = self.path / "generations" / generation
-        target.mkdir(parents=True)
-        faiss.write_index(new_index, str(target / "index.faiss"))
-        write_jsonl(target / "documents.jsonl", final_records)
-        manifest = dict(embedding_model=self.model, dimensions=matrix.shape[1], chunks=len(final_records),
-                        documents=len({r["group_id"] for r in final_records}),
-                        bids=len({(r.get("bid_no"), r.get("bid_order")) for r in final_records if r.get("bid_no")}),
-                        topics=sorted({r["topic"] for r in final_records if r.get("topic")}),
-                        updated_at=datetime.now(timezone.utc).isoformat(), generation=generation,
-                        contacts_preserved=True, personal_names_masked=True)
-        (target / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
-        temporary = self.path / "current.tmp"
-        temporary.write_text(json.dumps({"generation": generation}))
-        temporary.replace(self.path / "current.json")
-        return {**manifest, "added_chunks": added_chunks}
+            new_index = faiss.IndexFlatIP(matrix.shape[1])
+            new_index.add(matrix)
+            generation = uuid.uuid4().hex
+            target = self.path / "generations" / generation
+            target.mkdir(parents=True)
+            faiss.write_index(new_index, str(target / "index.faiss"))
+            (target / "documents.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False)+"\n" for r in final_records))
+            manifest = dict(embedding_model=self.model, dimensions=matrix.shape[1], chunks=len(final_records),
+                            documents=len({r["group_id"] for r in final_records}),
+                            bids=len({(r.get("bid_no"), r.get("bid_order")) for r in final_records if r.get("bid_no")}),
+                            topics=sorted({r["topic"] for r in final_records if r.get("topic")}),
+                            updated_at=datetime.now(timezone.utc).isoformat(), generation=generation,
+                            contacts_preserved=True, personal_names_masked=True)
+            (target / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
+            temporary = self.path / "current.tmp"
+            temporary.write_text(json.dumps({"generation": generation}))
+            temporary.replace(self.path / "current.json")
+            return {**manifest, "added_chunks": len(pending)}
 
     def status(self):
         _, _, manifest = self.load()
@@ -121,8 +125,11 @@ class KnowledgeStore:
 
 
 def ingest_processed(run_dir, store=None):
+    validation=Path(run_dir)/"validation.json"
+    if validation.exists() and json.loads(validation.read_text()).get("hard_failures"):
+        raise ValueError("검수 실패 자료가 있어 적재를 중단합니다. validation.json 확인 필요")
     path = Path(run_dir) / "processed" / "chunks.jsonl"
-    records = read_jsonl(path)
+    records = [json.loads(line) for line in path.read_text().splitlines()]
     for row in records:
         row["group_id"] = f"{row['bid_no']}_{row['bid_order']}:{row['source_url']}"
         # 개인정보 정책 변경 시에도 과거 벡터를 잘못 재사용하지 않는다.

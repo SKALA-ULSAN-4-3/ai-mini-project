@@ -1,0 +1,48 @@
+{
+  "dataset_kind": "synthetic",
+  "human_verified": false,
+  "notes": "실제 나라장터 공고가 아닌 독립 검산용 예시. 사람 검토 및 원문 평가 대기.",
+  "now": "2026-10-23T10:00:00+09:00",
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "profiles": [
+    {"id": "seoul_web", "industry": "SW", "licenses": ["SW"], "region": "서울", "company_size": "중소기업", "certs": ["벤처"], "credit_rating": "AA", "track_records": [{"completed_at": "2026-01-01", "category": "SW", "summary": "웹 구축", "amount": 1, "amount_unit": "억원"}, {"completed_at": "2025-01-01", "category": "SW", "summary": "앱 구축", "amount": 50, "amount_unit": "백만원"}], "owned_docs": ["사업자등록증"], "budget_min": 100000000, "budget_max": 500000000, "keywords": ["웹", "앱"]},
+    {"id": "ulsan_ai", "industry": "SW", "licenses": ["SW"], "region": "울산", "company_size": "중소기업", "certs": [], "credit_rating": "BBB", "track_records": [{"completed_at": "2026-05-01", "category": "SW", "summary": "AI 챗봇", "amount": 100000, "amount_unit": "천원"}], "owned_docs": [], "budget_min": 0, "budget_max": 300000000, "keywords": ["AI"]},
+    {"id": "busan_new", "industry": "SW", "licenses": ["SW"], "region": "부산", "company_size": "중소기업", "certs": [], "credit_rating": "B", "track_records": [], "owned_docs": null, "budget_min": 0, "budget_max": 200000000, "keywords": ["운영"]}
+  ],
+  "scoring_templates": [
+    {"bid_no": "SYN-01", "revision": "00", "basis": "[가상 기준 A] 0건 0점 / 1건 이상 2건 미만 5점 / 2건 이상 10점. AA 10점, BBB 6점, B 2점", "metric": "count", "bands": [{"min": 0, "max": 1, "score": 0}, {"min": 1, "max": 2, "score": 5}, {"min": 2, "score": 10}], "ratings": {"AA": 10, "BBB": 6, "B": 2}},
+    {"bid_no": "SYN-02", "revision": "00", "basis": "[가상 기준 B] 실적 합산액 0~1억원 미만 0점 / 1억원 이상 1.5억원 미만 6점 / 1.5억원 이상 10점. AA 9점, BBB 5점, B 1점", "metric": "sum", "bands": [{"min": 0, "max": 100000000, "score": 0}, {"min": 100000000, "max": 150000000, "score": 6}, {"min": 150000000, "score": 10}], "ratings": {"AA": 9, "BBB": 5, "B": 1}},
+    {"bid_no": "SYN-03", "revision": "00", "basis": "[가상 기준 C] 0건 0점 / 1건 이상 7점. AA 8점, BBB 4점, B 0점", "metric": "count", "bands": [{"min": 0, "max": 1, "score": 0}, {"min": 1, "score": 7}], "ratings": {"AA": 8, "BBB": 4, "B": 0}},
+    {"bid_no": "SYN-04", "revision": "00", "basis": "[가상 기준 D] 실적 합산액 0~1억원 미만 1점 / 1억원 이상 8점. AA 10점, BBB 7점, B 3점", "metric": "sum", "bands": [{"min": 0, "max": 100000000, "score": 1}, {"min": 100000000, "score": 8}], "ratings": {"AA": 10, "BBB": 7, "B": 3}},
+    {"bid_no": "SYN-05", "revision": "00", "basis": "[가상 기준 E] 0건 0점 / 1건 이상 2건 미만 3점 / 2건 이상 9점. AA 6점, BBB 3점, B 1점", "metric": "count", "bands": [{"min": 0, "max": 1, "score": 0}, {"min": 1, "max": 2, "score": 3}, {"min": 2, "score": 9}], "ratings": {"AA": 6, "BBB": 3, "B": 1}}
+  ],
+  "score_gold_draft": [
+    {"bid_no": "SYN-01", "profile_id": "seoul_web", "expected": [10, 10], "rationale": "기간 내 SW 2건 -> 10, AA -> 10"},
+    {"bid_no": "SYN-01", "profile_id": "ulsan_ai", "expected": [5, 6], "rationale": "기간 내 SW 1건 -> 5, BBB -> 6"},
+    {"bid_no": "SYN-01", "profile_id": "busan_new", "expected": [0, 2], "rationale": "실적 0건 -> 0, B -> 2"},
+    {"bid_no": "SYN-02", "profile_id": "seoul_web", "expected": [10, 9], "rationale": "1억원 + 50백만원 = 1.5억원 -> 10, AA -> 9"},
+    {"bid_no": "SYN-02", "profile_id": "ulsan_ai", "expected": [6, 5], "rationale": "100000천원 = 1억원 -> 6, BBB -> 5"},
+    {"bid_no": "SYN-02", "profile_id": "busan_new", "expected": [0, 1], "rationale": "실적합 0 -> 0, B -> 1"},
+    {"bid_no": "SYN-03", "profile_id": "seoul_web", "expected": [7, 8], "rationale": "2건 >= 1건 -> 7, AA -> 8"},
+    {"bid_no": "SYN-03", "profile_id": "ulsan_ai", "expected": [7, 4], "rationale": "1건 -> 7, BBB -> 4"},
+    {"bid_no": "SYN-03", "profile_id": "busan_new", "expected": [0, 0], "rationale": "0건 -> 0, B -> 0"},
+    {"bid_no": "SYN-04", "profile_id": "seoul_web", "expected": [8, 10], "rationale": "1.5억원 >= 1억원 -> 8, AA -> 10"},
+    {"bid_no": "SYN-04", "profile_id": "ulsan_ai", "expected": [8, 7], "rationale": "1억원 경계 포함 -> 8, BBB -> 7"},
+    {"bid_no": "SYN-04", "profile_id": "busan_new", "expected": [1, 3], "rationale": "합산액 0 기준 기본점수 1, B -> 3"},
+    {"bid_no": "SYN-05", "profile_id": "seoul_web", "expected": [9, 6], "rationale": "2건 경계 포함 -> 9, AA -> 6"},
+    {"bid_no": "SYN-05", "profile_id": "ulsan_ai", "expected": [3, 3], "rationale": "1건 -> 3, BBB -> 3"},
+    {"bid_no": "SYN-05", "profile_id": "busan_new", "expected": [0, 1], "rationale": "0건 -> 0, B -> 1"}
+  ],
+  "recommendation_gold_draft": {
+    "seoul_web": ["SYN-01", "SYN-03", "SYN-05"],
+    "ulsan_ai": ["SYN-02", "SYN-03", "SYN-05"],
+    "busan_new": ["SYN-04", "SYN-03"]
+  },
+  "distances": {
+    "seoul_web": {"SYN-01": 0.1, "SYN-02": 0.8, "SYN-03": 0.2, "SYN-04": 0.7, "SYN-05": 0.3},
+    "ulsan_ai": {"SYN-01": 0.8, "SYN-02": 0.1, "SYN-03": 0.2, "SYN-04": 0.7, "SYN-05": 0.3},
+    "busan_new": {"SYN-01": 0.8, "SYN-02": 0.7, "SYN-03": 0.2, "SYN-04": 0.1, "SYN-05": 0.6}
+  },
+  "checklist_gold_draft": {"documents": ["사업자등록증", "실적증명서"], "schedule": ["질의 마감"]}
+}

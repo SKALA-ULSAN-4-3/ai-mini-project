@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useFlowStore } from '../stores/flow'
-import { searchBids, fetchCandidates, fetchNotices, isOk } from '../api/flow'
+import { searchBids, fetchCandidates, fetchNotices, recheckBids, isOk } from '../api/flow'
 import { errorMessage } from '../api/client'
 import { addDays, iso, won, dday, keyOf, ymd, unknownLabel } from '../utils'
 import JobProgress from '../components/JobProgress.vue'
 import ProfileSummary from '../components/ProfileSummary.vue'
+import RecheckBadge from '../components/RecheckBadge.vue'
 
 const flow = useFlowStore()
 
@@ -74,10 +75,22 @@ async function prepare() {
     error.value = errorMessage(e)
   }
 }
-function onDone(job) {
+const recheckError = ref('')
+async function onDone(job) {
   noticeJob.value = job
   flow.readyKeys = job.bids.filter((b) => isOk(b.status)).map(keyOf)
   flow.resetFrom(4)
+  // ③' 공고문이 적재됐으니 본문까지 보고 다시 확인 (부적격은 지우지 않고 표시만)
+  recheckError.value = ''
+  const done = flow.candidates.filter((b) => flow.readyKeys.includes(keyOf(b)))
+  if (!done.length) return
+  try {
+    const rows = await recheckBids(flow.period.from, flow.period.to, flow.searchId, done)
+    const byKey = Object.fromEntries(rows.map((r) => [keyOf(r), r.recheck]))
+    flow.candidates = flow.candidates.map((b) => (byKey[keyOf(b)] ? { ...b, recheck: byKey[keyOf(b)] } : b))
+  } catch (e) {
+    recheckError.value = '재확인에 실패해 ②에서 추린 결과 그대로 표시합니다. (' + errorMessage(e) + ')'
+  }
 }
 </script>
 
@@ -113,6 +126,7 @@ function onDone(job) {
           <span v-for="u in b.unknown" :key="u" class="badge warn">미확인: {{ unknownLabel(u) }}</span>
         </p>
         <p v-if="b.reason" class="meta">추천 이유: {{ b.reason }}</p>
+        <RecheckBadge :recheck="b.recheck" />
       </label>
 
       <details v-if="flow.excluded.length" style="margin-top: 14px">
@@ -128,6 +142,10 @@ function onDone(job) {
     <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="공고문을 받는 중" @done="onDone" />
     <div v-if="noticeJob">
       <p v-if="flow.readyKeys.length" class="ok">공고문 {{ flow.readyKeys.length }}건 준비 완료.</p>
+      <p v-if="recheckError" class="notice">{{ recheckError }}</p>
+      <p v-if="flow.candidates.some((b) => b.recheck?.status === 'disqualified')" class="notice">
+        공고문을 보니 부적격일 수 있는 공고가 있습니다. 위 목록의 이유를 확인해 주세요. (자동으로 지우지 않았습니다)
+      </p>
       <router-link v-if="flow.readyKeys.length" to="/summaries" class="back">요약 보러 가기 →</router-link>
       <p v-else class="error">준비된 공고가 없습니다. 다른 공고를 선택해 다시 시도해 주세요.</p>
     </div>

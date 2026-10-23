@@ -149,19 +149,20 @@ REVIEW_KEYWORDS = ("자격", "참가", "제한", "면허", "업종", "지역", "
 def needs_review_for(question: str) -> bool:
     return any(k in question for k in REVIEW_KEYWORDS)
 
-UNSTATED_MARK = "[명시 없음]"
+# ✅ PDF 질의 응답 형식: 답을 찾았는지(found)와 인용 문서(cited)를 답변 문장과 따로 받는다.
+#    문장 속 표시("[명시 없음]", "근거: 1, 3")에 기대면 표현이 조금만 달라져도 handoff · 출처가 틀어졌다.
+class RagAnswer(BaseModel):
+    found: bool = Field(description="질문이 묻는 내용의 답이 PDF에 직접 적혀 있으면 true. 관련 내용만 있고 질문의 답 자체가 없으면 false")
+    answer: str = Field(description="한국어 답변. found가 false면 '문서에 명시되어 있지 않습니다.'로 시작하고 PDF에 적힌 관련 사실만 덧붙이며, "
+                                    "그 사실로부터 '따라서 ~일 것입니다' 같은 결론이나 추정을 만들지 않는다")
+    cited: List[int] = Field(description="답변의 근거로 사용한 [문서 n]의 번호 목록")
 
-# ✅ LLM 답변 끝의 "근거: 1, 3"을 떼어 내고, 실제로 인용한 문서의 출처만 남긴다
-def split_cited(raw: str, doc_labels: dict[int, str]) -> tuple[str, list[str]]:
-    m = re.search(r"\n?\s*근거\s*[:：]\s*([\d,\s]*)$", raw.strip())
-    if not m:
-        return raw.strip(), []
-    cited = []
-    for n in re.findall(r"\d+", m.group(1)):
-        label = doc_labels.get(int(n))
-        if label and label not in cited:
-            cited.append(label)
-    return raw.strip()[:m.start()].strip(), cited
+# 답을 찾지 못한 답변에서 LLM이 관련 사실로부터 덧붙인 추정 문장을 지운다 (프롬프트로는 2번 중 1번꼴로 남았음)
+SPECULATION_RE = re.compile(r"따라서|그러므로|일 것|것으로 보|로 추정|해석될 수|예상됩니다")
+
+def drop_speculation(text: str) -> str:
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    return " ".join(s for s in sentences if not SPECULATION_RE.search(s))
 
 def elapsed_ms(t0: float) -> int:
     return round((time.perf_counter() - t0) * 1000)
@@ -339,7 +340,8 @@ async def upload_pdf(file: UploadFile = File(...),
 class RAGRequest(BaseModel):
     prompt: str = Field(default=..., description="질문 프롬프트")
     source: str = Field(default=..., description="web | pdf")
-    top_k: int = Field(default=5, ge=1, description="검색할 결과 수 (기본값 5)")
+    # 평가셋 26문항 기준 top_k 5 → 10에서 정확 16/22 → 20/22, 응답 시간 변화 0.1초 (eval/results)
+    top_k: int = Field(default=10, ge=1, description="검색할 결과 수 (기본값 10)")
     bid_no: Optional[str] = Field(default=None, description="공고번호 (지정하면 그 공고 PDF에서만 검색)")
 
     class Config:
@@ -494,31 +496,35 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             full_prompt = (
                 "아래는 업로드된 PDF에서 검색한 내용입니다. PDF 내용에 근거해 한국어로 답변하세요. "
                 "질문이 한 단어 또는 주제명이라면 그 주제를 PDF에 근거해 설명하세요. "
-                "PDF에 없는 사실을 만들어 내지 마세요. 근거가 정말 없다면 'N/A'라고 답하세요.\n"
+                "PDF에 없는 사실을 만들어 내지 마세요.\n"
                 "날짜 · 시각 · 금액 · 배점은 PDF에 적힌 그대로 옮기고 계산하거나 바꾸지 마세요.\n"
-                "PDF에 직접 적혀 있지 않은 내용을 일반 상식이나 법령 해석으로 추론하지 마세요. "
-                f"질문에 대한 직접 근거가 없으면 답변을 '{UNSTATED_MARK}'으로 시작하고, PDF에서 확인되는 관련 내용만 덧붙이세요.\n"
-                "답변의 마지막 줄에는 근거로 사용한 문서 번호를 '근거: 1, 3' 형식으로 적으세요.\n\n"
+                "PDF에 직접 적혀 있지 않은 내용을 일반 상식이나 법령 해석으로 추론하지 말고, "
+                "'~일 것입니다', '~로 해석될 수 있습니다' 같은 추측을 덧붙이지 마세요.\n\n"
                 f"PDF 검색 내용:\n{context}\n\n"
-                f"질문: {rag_request.prompt}\n\n"
-                "답변:"
+                f"질문: {rag_request.prompt}"
             )
             # [Q05] 검색 근거를 LLM 답변으로 연결
             # [설계 판단] 검색한 PDF 내용이 포함된 full_prompt를 LLM에 전달하여 응답을 받아오세요.
             # [TODO Q05] 아래 ... 부분을 적절한 코드로 교체하세요.
-            raw = llm.invoke([HumanMessage(content=full_prompt)]).content
-            raw = raw.strip() if isinstance(raw, str) else str(raw).strip()
-            print(f"[PDF LLM 원본 응답] {raw[:1500]}")
-            # 마커가 없어도 LLM 원문을 답변으로 사용합니다.
-            final, cited = split_cited(extract_by_marker(raw) or raw, doc_labels)
-            if not final or final.upper() == "N/A":
+            # 답 · 근거 유무 · 인용 번호를 정해진 칸으로 받는다 (문장 속 표시를 해석하지 않음)
+            result = llm.with_structured_output(RagAnswer, method="function_calling").invoke(
+                [HumanMessage(content=full_prompt)])
+            print(f"[PDF LLM 응답] found={result.found} cited={result.cited} answer={result.answer[:1500]}")
+            final = (result.answer or "").strip()
+            if not result.found:
+                final = drop_speculation(final)
+            if not final:
                 return not_found("PDF 지식베이스에서 답을 찾을 수 없습니다. 공고 담당 기관에 문의하거나 질문을 구체적으로 작성해 보세요.")
-            # 직접 근거가 없다고 표시한 답은 관련 내용만 보여 주고 담당자에게 넘긴다
-            unstated = final.startswith(UNSTATED_MARK)
-            if unstated:
-                final = "문서에 명시되어 있지 않습니다. " + final.removeprefix(UNSTATED_MARK).strip()
-            return AnswerResponse(prompt=rag_request.prompt, response=final, sources=cited or sources,
-                                  needs_review=review or unstated, handoff=unstated,
+            cited = []
+            for n in result.cited:
+                if (label := doc_labels.get(n)) and label not in cited:
+                    cited.append(label)
+            # 답을 찾지 못했으면 관련 사실만 보여 주고 담당자에게 넘긴다.
+            # 이때 인용이 없으면 출처도 비운다 (검색된 조각 전체를 출처로 붙이면 근거가 있는 것처럼 보임)
+            if not cited and result.found:
+                cited = sources
+            return AnswerResponse(prompt=rag_request.prompt, response=final, sources=cited,
+                                  needs_review=review or not result.found, handoff=not result.found,
                                   latency_ms=elapsed_ms(t0))
 
         # -------------------- WEB 검색 --------------------

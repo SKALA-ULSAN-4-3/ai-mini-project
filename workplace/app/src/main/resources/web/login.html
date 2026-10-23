@@ -1,71 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>로그인</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div class="container">
-  <h1>Login</h1>
+  <h1>로그인</h1>
 
-  <!-- ✅ Keep the form, but JS intercepts submit and processes via fetch -->
-  <form id="loginForm" method="POST" action="/api/login">
-    <label>Username
-      <input type="text" name="username" required autocomplete="username">
+  <form id="loginForm">
+    <label>사업자등록번호
+      <input type="text" name="business_registration_number" required inputmode="numeric" autocomplete="username" placeholder="123-45-67890">
     </label>
-    <label>Password
-      <input type="password" name="password" required autocomplete="current-password">
+    <label>비밀번호
+      <input type="password" name="password" required minlength="8" maxlength="100" autocomplete="current-password">
     </label>
-
-    <button type="submit">Login</button>
+    <button type="submit">로그인</button>
   </form>
 
-  <p id="msg" style="color:#c00; margin-top:10px;"></p>
-
-  <p>Don't have an account yet? <a href="/signup">Sign Up</a></p>
+  <p id="msg" class="error-message" aria-live="polite"></p>
+  <p>아직 회원이 아니신가요? <a href="/signup">회원가입</a></p>
 </div>
 
 <script>
-(function () {
   const form = document.getElementById("loginForm");
-  const msg = document.getElementById("msg");
+  const message = document.getElementById("msg");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    msg.textContent = "";
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    message.textContent = "";
 
-    const fd = new FormData(form);
-    const body = new URLSearchParams();
-    for (const [k, v] of fd.entries()) body.append(k, v);
+    const values = new FormData(form);
+    const request = {
+      business_registration_number: values.get("business_registration_number"),
+      password: values.get("password")
+    };
 
     try {
-      const res = await fetch("/api/login", {
+      const response = await fetch("/api/login", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-        credentials: "include",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(request)
       });
+      const data = await response.json();
 
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        msg.textContent = (data && data.error) ? data.error : ("Login error (HTTP " + res.status + ")");
+      if (!response.ok) {
+        message.textContent = data.message || "로그인에 실패했습니다.";
         return;
       }
 
-      // ✅ On success, navigate (use redirect provided by server)
-      const target = (data && data.redirect) ? data.redirect : "http://localhost:8008/index.html";
-      window.location.href = target;
-    } catch (err) {
-      console.error(err);
-      msg.textContent = "Login failed due to a network error.";
+      // 개발 확인용 화면이므로 탭을 닫으면 사라지는 저장소를 사용합니다.
+      // 실제 프론트엔드는 팀에서 정한 토큰 보관 정책을 따라야 합니다.
+      sessionStorage.setItem("access_token", data.access_token);
+      sessionStorage.setItem("token_type", data.token_type);
+      window.location.href = "http://localhost:8008/index.html";
+    } catch (error) {
+      console.error(error);
+      message.textContent = "서버에 연결할 수 없습니다.";
     }
   });
-})();
 </script>
-
-<!-- Recommended to remove app.js as it may interfere with redirect -->
-<!-- <script src="/static/app.js"></script> -->
 </body>
 </html>

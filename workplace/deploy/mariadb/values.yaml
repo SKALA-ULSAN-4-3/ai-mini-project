@@ -1,0 +1,87 @@
+# AI Service Mini Project용 MariaDB Helm 설정입니다.
+#
+# 비밀번호는 이 파일에 작성하지 않습니다. install.sh가 Kubernetes Secret을
+# 먼저 생성하고, auth.existingSecret을 통해 MariaDB Chart에 전달합니다.
+
+global:
+  # 빈 문자열이면 Kubernetes 클러스터의 기본 StorageClass를 사용합니다.
+  # 특정 환경에서 기본값이 없다면 kubectl get storageclass로 확인한 이름을
+  # 이곳과 primary.persistence.storageClass에 지정해야 합니다.
+  storageClass: ""
+  security:
+    # 실습 환경에서 사용하는 bitnamilegacy 이미지를 허용합니다.
+    allowInsecureImages: true
+
+image:
+  registry: docker.io
+  repository: bitnamilegacy/mariadb
+  tag: "11.4.6-debian-12-r0"
+  pullPolicy: IfNotPresent
+
+# 미니 프로젝트에서는 복제본 없이 단일 DB 인스턴스를 사용합니다.
+architecture: standalone
+
+auth:
+  database: sql_db
+  username: workplace_app
+  existingSecret: ai-mini-mariadb-auth
+  forcePassword: true
+
+# install.sh가 기존 database/schema.sql로 생성하는 ConfigMap입니다.
+# 초기화 스크립트는 비어 있는 PVC에서 최초 기동할 때 한 번만 실행됩니다.
+initdbScriptsConfigMap: ai-mini-mariadb-init
+
+primary:
+  # 한글과 확장 유니코드를 안전하게 저장하도록 문자셋을 명시합니다.
+  extraFlags: >-
+    --character-set-server=utf8mb4
+    --collation-server=utf8mb4_unicode_ci
+
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+
+  # DB는 클러스터 내부에서만 접근할 수 있도록 외부 LoadBalancer를 만들지 않습니다.
+  service:
+    type: ClusterIP
+    ports:
+      mysql: 3306
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+secondary:
+  replicaCount: 0
+
+# 모니터링 스택이 없는 환경에서도 설치되도록 기본값은 비활성화합니다.
+metrics:
+  enabled: false
+
+# ClusterIP가 외부 인터넷 노출을 막습니다. NetworkPolicy는 활성화하되,
+# 우선 같은 클러스터의 Java/FastAPI Pod가 접근할 수 있게 둡니다.
+networkPolicy:
+  enabled: true
+  allowExternal: true
+
+volumePermissions:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/os-shell
+    tag: "12-debian-12-r43"
+    pullPolicy: IfNotPresent

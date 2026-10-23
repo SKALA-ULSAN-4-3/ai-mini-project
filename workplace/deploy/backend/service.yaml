@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: workplace-backend
+  labels:
+    app.kubernetes.io/name: workplace-backend
+    app.kubernetes.io/part-of: ai-mini-project
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: workplace-backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

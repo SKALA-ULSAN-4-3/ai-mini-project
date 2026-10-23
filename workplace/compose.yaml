@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-mini-workplace-backend:local
+    container_name: ai-mini-workplace-backend
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env
+    environment:
+      # 컨테이너 내부에서 localhost는 백엔드 자신이므로 Compose 서비스명을 사용합니다.
+      DB_URL: jdbc:mariadb://mariadb:3306/sql_db
+
+  mariadb:
+    image: mariadb:11.4
+    container_name: ai-mini-mariadb
+    restart: unless-stopped
+
+    # 호스트의 모든 네트워크가 아니라 로컬 루프백에만 공개합니다.
+    # Java 백엔드는 localhost:53301로 접속하고, 외부 컴퓨터에서는 접근할 수 없습니다.
+    ports:
+      - "127.0.0.1:53301:3306"
+
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      TZ: Asia/Seoul
+
+    # 데이터와 초기 스키마를 분리합니다. schema.sql은 비어 있는 DB 볼륨이
+    # 최초로 생성될 때 한 번 실행되며 이후 컨테이너 재시작에는 재실행되지 않습니다.
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+    healthcheck:
+      test:
+        - CMD
+        - healthcheck.sh
+        - --connect
+        - --innodb_initialized
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  mariadb-data:
+    name: ai-mini-mariadb-data

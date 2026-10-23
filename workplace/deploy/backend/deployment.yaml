@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workplace-backend
+  labels:
+    app.kubernetes.io/name: workplace-backend
+    app.kubernetes.io/part-of: ai-mini-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: workplace-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: workplace-backend
+        app.kubernetes.io/part-of: ai-mini-project
+    spec:
+      # 애플리케이션은 Kubernetes API를 호출하지 않으므로 서비스 계정 토큰을
+      # Pod에 자동 마운트하지 않습니다.
+      automountServiceAccountToken: false
+      containers:
+        - name: backend
+          # install.sh가 실제 Registry 이미지 주소로 교체합니다.
+          image: workplace-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: workplace-backend-config
+
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-mini-mariadb-auth
+                  key: mariadb-password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: workplace-backend-auth
+                  key: jwt-secret
+
+          startupProbe:
+            httpGet:
+              path: /api/health/live
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          readinessProbe:
+            # 신규 요청은 DB 연결까지 준비된 Pod에만 전달합니다.
+            httpGet:
+              path: /api/health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: temporary-files
+              mountPath: /tmp
+
+      volumes:
+        - name: temporary-files
+          emptyDir: {}

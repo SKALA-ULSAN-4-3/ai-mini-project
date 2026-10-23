@@ -102,6 +102,40 @@ class ApiTest(unittest.TestCase):
         response = TestClient(app).get("/bids?from=2026-10-01&to=2026-10-31", headers=self.headers)
         self.assertEqual(response.status_code, 503)
 
+    def get_with(self, path, **overrides):
+        app = FastAPI()
+        app.include_router(create_bid_router(**{**self.arguments, **overrides}))
+        return TestClient(app).get(path, headers=self.headers)
+
+    def test_data_errors_503_without_detail(self):
+        from types import SimpleNamespace
+        def broken_csv():
+            raise ValueError("regions: /secret/path/bids.csv")
+        legacy = SimpleNamespace(index=SimpleNamespace(ntotal=1),
+                                 similarity_search_with_score=lambda *a, **k: [
+                                     (SimpleNamespace(metadata={"source": "old.pdf"}), 0.1)])
+        wrong_revision = copy.deepcopy(self.table)
+        wrong_revision["items"][0]["revision"] = "01"
+        for path, overrides in (
+                ("/bids?from=2026-10-01&to=2026-10-31", {"bids_provider": broken_csv}),
+                ("/bids?from=2026-10-01&to=2026-10-31",
+                 {"search": lambda q, k: faiss_hits(legacy, q, k)}),
+                ("/bids/SYN-01/score?revision=00", {"scoring_provider": lambda *a: wrong_revision})):
+            with self.subTest(path=path, overrides=list(overrides)):
+                response = self.get_with(path, **overrides)
+                self.assertEqual(response.status_code, 503)
+                self.assertNotIn("secret", response.text)
+
+    def test_profile_errors_422(self):
+        for change in ({"budget_min": 500000000, "budget_max": 100000000},
+                       {"region": "서울 강남구"}, {"owned_docs": "사업자등록증"}):
+            profile = {**load_cases()["profiles"][0], **change}
+            self.app.dependency_overrides[self.arguments["profile_dependency"]] = lambda p=profile: p
+            path = ("/bids/SYN-01/checklist?revision=00" if "owned_docs" in change
+                    else "/bids?from=2026-10-01&to=2026-10-31")
+            with self.subTest(change=change):
+                self.assertEqual(self.client.get(path, headers=self.headers).status_code, 422)
+
     def test_factory_requires_dependencies_and_import_adds_no_route(self):
         self.assertFalse(any(r.path == "/bids" for r in FastAPI().routes))
         with self.assertRaises(ValueError):

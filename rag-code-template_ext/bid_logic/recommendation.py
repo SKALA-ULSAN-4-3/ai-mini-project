@@ -4,7 +4,7 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
-from .common import SEOUL, calendar_date, identity, number, seoul_time
+from .common import SEOUL, RequestError, calendar_date, identity, number, region, seoul_time
 
 # []는 명시적으로 제한 없음, None은 미확인. 배열 원소는 OR, 필드 사이는 AND.
 RESTRICTIONS = {
@@ -17,18 +17,33 @@ RESTRICTIONS = {
 
 
 def load_bids_csv(path):
-    """CSV의 제한 필드는 JSON 배열 또는 null. 모호한 자연어 조건은 null로 전달."""
+    """CSV의 제한 필드는 JSON 배열 또는 null. 모호한 자연어 조건은 null로 전달.
+
+    날짜는 빈 칸(미확인)이거나 정해진 형식이어야 한다. 형식이 다르면 공고가 조용히
+    빠지지 않도록 적재 단계에서 실패시킨다.
+    """
     import json
     with Path(path).open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
     for row in rows:
-        identity(row)
+        label = "/".join(identity(row))
+        for field, parse, expected in (("published_at", calendar_date, "YYYY-MM-DD"),
+                                       ("deadline", seoul_time, "YYYY-MM-DDTHH:MM(+09:00)")):
+            raw = (row.get(field) or "").strip()
+            if raw:
+                try:
+                    parse(raw)
+                except ValueError:
+                    raise ValueError(f"{label} {field}: {expected} 형식이 필요합니다: {raw!r}") from None
+            row[field] = raw or None
         for field in RESTRICTIONS:
             raw = row.get(field)
             value = json.loads(raw) if raw and raw.strip() else None
             if value is not None and (not isinstance(value, list) or
                                       any(not isinstance(v, str) or not v.strip() for v in value)):
                 raise ValueError(f"{field}: JSON 문자열 배열 또는 null이 필요합니다.")
+            if value is not None and field == "regions":
+                value = [region(v) for v in value]
             row[field] = value
         budget = number(row["budget"]) if row.get("budget") else None
         if budget is not None and budget < 0:
@@ -61,7 +76,12 @@ def faiss_hits(vectorstore, query, allowed_keys):
         return []
     results = []
     for doc, distance in vectorstore.similarity_search_with_score(query, k=count):
-        key = identity(doc.metadata)  # 파일명뿐인 기존 인덱스는 연동 불가
+        try:
+            key = identity(doc.metadata)
+        except ValueError:
+            # 파일명뿐인 기존 인덱스. 요청 오류가 아니라 적재 데이터 문제다.
+            raise RuntimeError("벡터 인덱스 청크에 bid_no·revision 메타데이터가 없습니다. "
+                               "공고 PDF를 메타데이터와 함께 다시 적재해야 합니다.") from None
         if key in allowed_keys:
             results.append({"bid_no": key[0], "revision": key[1], "distance": float(distance)})
     return results
@@ -73,8 +93,22 @@ def _as_list(value):
     if isinstance(value, str):
         return [value.strip()]
     if not isinstance(value, list) or any(not isinstance(v, str) for v in value):
-        raise ValueError("조건 값은 문자열 또는 문자열 배열이어야 합니다.")
+        raise RequestError("프로필 조건 값은 문자열 또는 문자열 배열이어야 합니다.")
     return [v.strip() for v in value if v.strip()]
+
+
+def _profile_conditions(profile):
+    """프로필 제한 값을 한 번만 검증한다. 잘못된 값은 요청 오류(422)."""
+    conditions = {}
+    for profile_field, in RESTRICTIONS.values():
+        owned = _as_list(profile.get(profile_field))
+        if owned is not None and profile_field == "region":
+            try:
+                owned = [region(v) for v in owned]
+            except ValueError as error:
+                raise RequestError(f"프로필 region: {error}") from None
+        conditions[profile_field] = owned
+    return conditions
 
 
 def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=None, limit=5):
@@ -86,14 +120,18 @@ def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=Non
     start, end = calendar_date(start), calendar_date(end)
     now = seoul_time(now or datetime.now(SEOUL))
     if start > end or limit < 1:
-        raise ValueError("기간 또는 limit이 올바르지 않습니다.")
+        raise RequestError("기간 또는 limit이 올바르지 않습니다.")
     lower, upper = profile.get("budget_min"), profile.get("budget_max")
-    lower = number(lower) if lower is not None else None
-    upper = number(upper) if upper is not None else None
+    try:
+        lower = number(lower) if lower is not None else None
+        upper = number(upper) if upper is not None else None
+    except ValueError as error:
+        raise RequestError(f"희망 금액: {error}") from None
     if (lower is not None and lower < 0) or (upper is not None and upper < 0):
-        raise ValueError("희망 금액은 음수일 수 없습니다.")
+        raise RequestError("희망 금액은 음수일 수 없습니다.")
     if lower is not None and upper is not None and number(lower) > number(upper):
-        raise ValueError("희망 금액 범위가 뒤집혔습니다.")
+        raise RequestError("희망 금액 범위가 뒤집혔습니다.")
+    conditions = _profile_conditions(profile)
     candidates, excluded, seen = [], [], set()
     for bid in bids:
         key = identity(bid)
@@ -124,7 +162,9 @@ def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=Non
                 raise ValueError(f"{field}는 비어 있지 않은 문자열 배열 또는 null이어야 합니다.")
             if not restriction:
                 continue
-            owned = _as_list(profile.get(profile_field))
+            if field == "regions":
+                restriction = [region(v) for v in restriction]
+            owned = conditions[profile_field]
             if owned is None:
                 unknown.append(f"프로필 {profile_field} 미확인")
             elif not set(owned).intersection(restriction):

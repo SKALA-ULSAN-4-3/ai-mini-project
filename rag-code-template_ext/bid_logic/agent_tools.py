@@ -13,6 +13,14 @@ from .scoring import calculate_scores
 # 에이전트가 기준을 지어내지 못하도록 판단에 필요한 필드만 보여 준다.
 # rule/metric은 코드가 실행할 값이므로 전달하지 않는다.
 VISIBLE_ITEM_FIELDS = ("id", "item", "kind", "max", "basis", "sources")
+HIDDEN_RESULT_FIELDS = ("rule", "metric")
+
+
+def model_view(result):
+    """도구 결과 중 LLM에게 보낼 부분. 최종 결과·고정 경로 비교에는 원본을 쓴다."""
+    if not isinstance(result, dict):
+        return result
+    return {k: v for k, v in result.items() if k not in HIDDEN_RESULT_FIELDS}
 
 TOOL_SPECS = [
     {"type": "function", "function": {

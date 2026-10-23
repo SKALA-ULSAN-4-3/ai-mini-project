@@ -4,15 +4,18 @@
 """
 
 from datetime import date, datetime
+import logging
 from typing import Any, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from .checklist import build_checklist
-from .common import SEOUL
+from .common import SEOUL, RequestError
 from .recommendation import recommend_bids
 from .scoring import calculate_scores
+
+logger = logging.getLogger(__name__)
 
 
 class BidListResponse(BaseModel):
@@ -55,13 +58,16 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
     router = APIRouter(tags=["공고 추리기·점수·체크리스트"])
 
     def invoke(action):
+        # 요청·프로필 문제만 422. 공급자·CSV·인덱스 데이터 문제는 사용자가 고칠 수 없으므로
+        # 503으로 돌려주고, 내부 경로나 인증 정보가 섞일 수 있는 원문은 로그에만 남긴다.
         try:
             return action()
         except HTTPException:
             raise
-        except ValueError as error:
+        except RequestError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
-        except (OSError, KeyError, TypeError, RuntimeError) as error:
+        except (ValueError, OSError, KeyError, TypeError, RuntimeError, ArithmeticError) as error:
+            logger.exception("공고 데이터 처리 실패")
             raise HTTPException(status_code=503, detail="공고 데이터 연동 상태를 확인해 주세요.") from error
 
     def selected_payload(provider, bid_no, revision):

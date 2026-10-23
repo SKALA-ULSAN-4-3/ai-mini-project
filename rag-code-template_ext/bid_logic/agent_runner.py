@@ -11,7 +11,7 @@ import json
 import math
 from time import perf_counter
 
-from .agent_tools import ScoringTools, TOOL_SPECS
+from .agent_tools import ScoringTools, TOOL_SPECS, model_view
 
 
 async def run_scoring_agent(table, profile, bid_no, revision, *, model,
@@ -128,5 +128,5 @@ async def run_scoring_agent(table, profile, bid_no, revision, *, model,
                 event = {"id": call["id"], "tool": call["name"], "status": "error"}
             events.append(event)
             messages.append({"role": "tool", "tool_call_id": call["id"],
-                             "content": json.dumps(result, ensure_ascii=False)})
+                             "content": json.dumps(model_view(result), ensure_ascii=False)})
     return finish("max_rounds")

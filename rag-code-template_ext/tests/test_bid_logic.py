@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from bid_logic import build_checklist, calculate_scores, faiss_hits, load_bids_csv, recommend_bids
+from bid_logic.common import RequestError
 from bid_logic.evaluate import FIXTURES, extracted_checklist, load_cases, run_evaluation, scoring_table
 
 
@@ -126,7 +127,8 @@ class FixtureTest(unittest.TestCase):
         store = SimpleNamespace(index=SimpleNamespace(ntotal=1),
                                 similarity_search_with_score=lambda *a, **k: [
                                     (SimpleNamespace(metadata={"source": "old.pdf"}), 0.2)])
-        with self.assertRaises(ValueError):
+        # 적재 데이터 문제이므로 API에서 422가 아닌 503이 되도록 RuntimeError
+        with self.assertRaises(RuntimeError):
             faiss_hits(store, "웹", {("SYN-01", "00")})
 
     def test_invalid_distance(self):
@@ -141,6 +143,46 @@ class FixtureTest(unittest.TestCase):
             row = load_bids_csv(path)[0]
             self.assertEqual(row["revision"], "00")
             self.assertIsNone(row["regions"])
+            self.assertIsNone(row["published_at"])
+            self.assertIsNone(row["deadline"])
+
+    def write_csv(self, directory, row):
+        path = Path(directory) / "bids.csv"
+        path.write_text("bid_no,revision,published_at,deadline,regions\n" + row, encoding="utf-8")
+        return path
+
+    def test_csv_date_format_checked_at_load(self):
+        # 형식이 다르면 모든 공고가 '공고일 미확인'으로 조용히 빠지므로 적재 단계에서 실패
+        for row in ('X,00,2026/10/15,,\n', 'X,00,2026.10.15,,\n',
+                    'X,00,,2026-11-01,\n', 'X,00,,2026/11/01 18:00,\n'):
+            with self.subTest(row=row), tempfile.TemporaryDirectory() as directory:
+                with self.assertRaises(ValueError):
+                    load_bids_csv(self.write_csv(directory, row))
+
+    def test_csv_regions_normalized_or_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            row = 'X,00,2026-10-15,2026-11-01T18:00:00+09:00,"[""서울특별시"", ""전라북도""]"\n'
+            self.assertEqual(load_bids_csv(self.write_csv(directory, row))[0]["regions"], ["서울", "전북"])
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError):
+                load_bids_csv(self.write_csv(directory, 'X,00,,,"[""서울 강남구""]"\n'))
+
+    def test_region_full_and_short_names_match(self):
+        self.profile["region"] = "서울특별시"
+        self.assertIn("SYN-01", [b["bid_no"] for b in self.recommend()["bids"]])
+        self.profile["region"] = "서울"
+        self.bids[0]["regions"] = ["서울특별시"]
+        self.assertIn("SYN-01", [b["bid_no"] for b in self.recommend()["bids"]])
+
+    def test_unknown_region_is_request_or_data_error(self):
+        self.profile["region"] = "서울 강남구"
+        with self.assertRaises(RequestError):
+            self.recommend()
+        self.profile["region"] = "서울"
+        self.bids[0]["regions"] = ["강남"]
+        with self.assertRaises(ValueError) as context:
+            self.recommend()
+        self.assertNotIsInstance(context.exception, RequestError)
 
     def test_no_total_and_manual_items(self):
         result = self.score()
@@ -289,6 +331,11 @@ class FixtureTest(unittest.TestCase):
     def test_unknown_owned_docs(self):
         self.profile["owned_docs"] = None
         self.assertIsNone(self.checklist()["documents"][0]["owned"])
+
+    def test_owned_docs_string_rejected(self):
+        self.profile["owned_docs"] = "사업자등록증"
+        with self.assertRaises(RequestError):
+            self.checklist()
 
     def test_missing_date_date_only_expired_and_timezone(self):
         extracted = extracted_checklist()

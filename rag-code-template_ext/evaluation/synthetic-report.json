@@ -46,7 +46,7 @@
     "quantitative_items": 30,
     "matched_items": 30,
     "accuracy": 1.0,
-    "mean_logic_latency_ms": 0.013747200258270217,
+    "mean_logic_latency_ms": 0.012199866614537314,
     "details": [
       {
         "bid_no": "SYN-01",

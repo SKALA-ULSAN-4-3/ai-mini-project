@@ -4,7 +4,7 @@ import re
 import unicodedata
 from datetime import datetime
 
-from .common import SEOUL, check_scope, deadline_info, require_sources, seoul_time
+from .common import SEOUL, RequestError, check_scope, deadline_info, require_sources, seoul_time
 
 
 def document_key(name):
@@ -24,7 +24,11 @@ def build_checklist(extracted, profile, bid_no, revision, *, now=None, aliases=N
         return normalized_aliases.get(key, key)
 
     owned_docs = profile.get("owned_docs")
-    owned = {canonical(name) for name in owned_docs} if owned_docs is not None else None
+    # 문자열 하나를 그대로 두면 글자 단위로 비교되어 모든 서류가 미보유로 나온다.
+    if owned_docs is not None and (not isinstance(owned_docs, list) or
+                                   any(not isinstance(name, str) for name in owned_docs)):
+        raise RequestError("프로필 owned_docs는 문자열 배열이어야 합니다.")
+    owned ={canonical(name) for name in owned_docs} if owned_docs is not None else None
     docs, schedules, seen = [], [], set()
     for collection, destination in (("documents", docs), ("schedule", schedules)):
         for item in extracted[collection]:

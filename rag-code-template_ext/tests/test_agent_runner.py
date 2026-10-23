@@ -47,6 +47,16 @@ class AgentRunnerTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result["token_usage"])
         self.assertIsNone(result["cost"])
 
+    async def test_rule_not_sent_to_model(self):
+        model = ScriptedModel([all_items(), {}])
+        result = await self.run_agent(model)
+        tool_messages = [m for m in model.messages[-1] if m["role"] == "tool"]
+        self.assertEqual(len(tool_messages), 4)
+        for message in tool_messages:
+            self.assertNotIn('"rule"', message["content"])
+        # 최종 결과는 C4 고정 경로와 같은 키를 유지해 비교할 수 있어야 한다.
+        self.assertIn("rule", result["items"][0])
+
     async def test_missing_profile_returns_questions(self):
         del self.profile["credit_rating"]
         result = await self.run_agent(ScriptedModel([all_items(), {}]))

@@ -6,6 +6,30 @@ from zoneinfo import ZoneInfo
 
 SEOUL = ZoneInfo("Asia/Seoul")
 
+# 시·도 17개의 약칭 -> 정식·옛 명칭. 모두 약칭으로 맞춘다.
+# "광주시"(경기도)처럼 다른 지역과 겹치는 표기는 넣지 않는다.
+REGIONS = {
+    "서울": ("서울특별시",), "부산": ("부산광역시",), "대구": ("대구광역시",),
+    "인천": ("인천광역시",), "광주": ("광주광역시",), "대전": ("대전광역시",),
+    "울산": ("울산광역시",), "세종": ("세종특별자치시", "세종시"), "경기": ("경기도",),
+    "강원": ("강원특별자치도", "강원도"), "충북": ("충청북도",), "충남": ("충청남도",),
+    "전북": ("전북특별자치도", "전라북도"), "전남": ("전라남도",), "경북": ("경상북도",),
+    "경남": ("경상남도",), "제주": ("제주특별자치도", "제주도"),
+}
+REGION_NAMES = {name: short for short, names in REGIONS.items() for name in (short, *names)}
+
+
+class RequestError(ValueError):
+    """요청·프로필 값이 잘못된 경우. API는 422로, 그 밖의 ValueError는 데이터 문제로 503을 돌려준다."""
+
+
+def region(value):
+    name = value.strip() if isinstance(value, str) else None
+    if name not in REGION_NAMES:
+        raise ValueError(f"알 수 없는 지역 표기입니다: {value!r}. 시·도 이름(예: 서울, 서울특별시)을 쓰고 "
+                         "제한 없음은 [], 미확인은 null로 둡니다.")
+    return REGION_NAMES[name]
+
 
 def identity(row):
     """차수의 선행 0을 보존한다. 공고번호와 차수는 문자열로 전달한다."""

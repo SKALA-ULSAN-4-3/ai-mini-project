@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 from urllib.request import urlopen
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ROOT / "data" / "tools"
@@ -48,8 +49,94 @@ def execute(args, timeout=45):
         args.insert(1, "-env:UNO_JAVA_JFW_JREHOME=" + Path(java_home).resolve().as_uri())
     result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
     if result.returncode:
-        raise RuntimeError(f"변환 도구 실행 실패 (종료 코드 {result.returncode})")
+        detail = (result.stderr or result.stdout).strip()[-1500:]
+        raise RuntimeError(f"변환 도구 실행 실패 (종료 코드 {result.returncode}): {detail}")
     return result.stdout
+
+
+def _install_macos_extension(soffice, extension):
+    """서명을 유지한다. macOS의 UNO 자식 실행 제약에 맞게 Office 내부에서 등록한다."""
+    if (PROFILE / ".lock").exists():
+        raise RuntimeError("변환 프로필이 사용 중입니다. 변환 작업을 종료한 뒤 설치를 다시 실행하세요.")
+    basic = PROFILE / "user" / "basic"
+    index = basic / "script.xlc"
+    if not index.exists():
+        execute([soffice, "-env:UserInstallation=" + PROFILE.resolve().as_uri(),
+                 "--headless", "--norestore", "--terminate_after_init"])
+    original_index = index.read_bytes()
+    library = Path(tempfile.mkdtemp(prefix="PipelineSetup", dir=basic))
+    result_file = library / "result.txt"
+    namespace = "http://openoffice.org/2000/library"
+    script_namespace = "http://openoffice.org/2000/script"
+    try:
+        tree = ET.fromstring(original_index)
+        ET.SubElement(tree, f"{{{namespace}}}library", {
+            f"{{{namespace}}}name": library.name, f"{{{namespace}}}link": "false"})
+        index.write_bytes(ET.tostring(tree, encoding="utf-8", xml_declaration=True))
+        definition = ET.Element(f"{{{namespace}}}library", {
+            f"{{{namespace}}}name": library.name, f"{{{namespace}}}readonly": "false",
+            f"{{{namespace}}}passwordprotected": "false"})
+        ET.SubElement(definition, f"{{{namespace}}}element", {f"{{{namespace}}}name": "Setup"})
+        (library / "script.xlb").write_bytes(ET.tostring(definition, encoding="utf-8", xml_declaration=True))
+        # URI로 경로의 따옴표·개행을 인코딩한다. 입력 문서의 매크로는 실행하지 않는다.
+        module = ET.Element(f"{{{script_namespace}}}module", {
+            f"{{{script_namespace}}}name": "Setup", f"{{{script_namespace}}}language": "StarBasic"})
+        module.text = f'''Sub Install
+ On Error GoTo Failed
+ Dim manager As Object, environment As Object
+ Dim properties(0) As New com.sun.star.beans.NamedValue
+ properties(0).Name = "SUPPRESS_LICENSE"
+ properties(0).Value = "1"
+ environment = CreateUnoListener("Environment_", "com.sun.star.ucb.XCommandEnvironment")
+ manager = GetDefaultContext().getValueByName("/singletons/com.sun.star.deployment.ExtensionManager")
+ manager.addExtension("{extension.resolve().as_uri()}", properties(), "user", Nothing, environment)
+ WriteResult "OK"
+ StarDesktop.terminate()
+ Exit Sub
+Failed:
+ WriteResult "ERROR " & Err & ": " & Error$
+ StarDesktop.terminate()
+End Sub
+Sub WriteResult(message As String)
+ Dim stream As Object
+ stream = CreateUnoService("com.sun.star.ucb.SimpleFileAccess").openFileWrite("{result_file.as_uri()}")
+ Dim writer As Object
+ writer = CreateUnoService("com.sun.star.io.TextOutputStream")
+ writer.setOutputStream(stream)
+ writer.setEncoding("UTF-8")
+ writer.writeString(message)
+ writer.closeOutput()
+End Sub
+Function Environment_getInteractionHandler() As Object
+ Environment_getInteractionHandler = CreateUnoListener("Interaction_", "com.sun.star.task.XInteractionHandler")
+End Function
+Function Environment_getProgressHandler() As Object
+ Environment_getProgressHandler = Nothing
+End Function
+Sub Interaction_handle(request As Object)
+ Dim continuation As Object, approve As Boolean, requestType As String
+ requestType = CreateUnoService("com.sun.star.reflection.CoreReflection").getType(request.getRequest()).getName()
+ approve = requestType = "com.sun.star.deployment.InstallException" Or _
+           requestType = "com.sun.star.deployment.VersionException"
+ For Each continuation In request.getContinuations()
+  If (approve And HasUnoInterfaces(continuation, "com.sun.star.task.XInteractionApprove")) Or _
+     (Not approve And HasUnoInterfaces(continuation, "com.sun.star.task.XInteractionAbort")) Then
+   continuation.select()
+   Exit Sub
+  End If
+ Next
+End Sub
+'''
+        (library / "Setup.xba").write_bytes(ET.tostring(module, encoding="utf-8", xml_declaration=True))
+        execute([soffice, "-env:UserInstallation=" + PROFILE.resolve().as_uri(),
+                 "--headless", "--norestore", "--nodefault",
+                 f"macro:///{library.name}.Setup.Install()"], timeout=90)
+        result = result_file.read_text(encoding="utf-8") if result_file.exists() else "등록 결과 없음"
+        if result.strip() != "OK":
+            raise RuntimeError(f"H2Orestart 내부 등록 실패: {result[:1500]}")
+    finally:
+        index.write_bytes(original_index)
+        shutil.rmtree(library)
 
 
 def setup(soffice):
@@ -70,13 +157,20 @@ def setup(soffice):
         unopkg = Path(found)
     profile_arg = "-env:UserInstallation=" + PROFILE.resolve().as_uri()
     installed = execute([str(unopkg), profile_arg, "list"])
-    if "ebandal.libreoffice.H2Orestart" not in installed:
+    registered = ("ebandal.libreoffice.H2Orestart" in installed
+                  and re.findall(r"is registered: (\w+)", installed)
+                  and all(state == "yes" for state in re.findall(r"is registered: (\w+)", installed)))
+    if sys.platform == "darwin" and not registered:
+        _install_macos_extension(soffice, extension)
+    elif "ebandal.libreoffice.H2Orestart" not in installed:
         execute([str(unopkg), profile_arg, "add", "--suppress-license", str(extension)])
     installed = execute([str(unopkg), profile_arg, "list"])
     if "ebandal.libreoffice.H2Orestart" in installed and "is registered: no" in installed:
         execute([str(unopkg), profile_arg, "validate", "ebandal.libreoffice.H2Orestart"])
         installed = execute([str(unopkg), profile_arg, "list"])
-    if "ebandal.libreoffice.H2Orestart" not in installed or "is registered: no" in installed:
+    if ("ebandal.libreoffice.H2Orestart" not in installed
+            or not re.findall(r"is registered: (\w+)", installed)
+            or any(state != "yes" for state in re.findall(r"is registered: (\w+)", installed))):
         raise RuntimeError("H2Orestart 등록 실패: Java를 지원하는 정식 LibreOffice와 JDK가 필요합니다.")
     config = {"soffice": soffice, "engine_version": execute([soffice, "--version"]).strip(),
               "extension_version": EXTENSION_VERSION}

@@ -144,6 +144,26 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         events = {e["event"]: e["status"] for e in out["schedule"]}
         self.assertEqual(events, {"개찰": "upcoming", "제안서 평가": "unknown"})
 
+    def test_items_without_verified_source_are_not_passed(self):
+        # 원문 대조에 실패한 항목(source_refs 빈 목록) 하나 때문에 3번이 전체를 거부하지 않도록 빼고 넘긴다
+        extraction = {"docs": [{"doc_name": "제안서", "note": "", "source_refs": [self.REF]},
+                               {"doc_name": "출처 미확인 서류", "note": "", "source_refs": []}],
+                      "due_iso": "2026-11-03T10:00+09:00", "due_note": "",
+                      "schedule": [{"event": "개찰", "when": "2026. 11. 3.(화) 11:00", "due_iso": "2026-11-03T11:00+09:00",
+                                    "source_refs": []}]}
+        payload = kb.to_bid_logic_checklist(extraction, "R1", "000")
+        self.assertEqual([d["doc"] for d in payload["documents"]], ["제안서"])
+        self.assertEqual(payload["schedule"], [])
+        out = build_checklist(payload, {"owned_docs": None}, "R1", "000", now="2026-10-25T09:00+09:00")
+        self.assertIsNone(out["documents"][0]["owned"])      # 프로필 owned_docs null(모름)은 미확인으로 유지
+        table = kb.to_bid_logic_scoring({"items": [
+            {"item": "이해도", "section": "이해", "max_score": 8, "criteria": "", "eval_type": "정성",
+             "source_refs": [], "rule": None},
+            {"item": "수행계획", "section": "계획", "max_score": 10, "criteria": "", "eval_type": "정성",
+             "source_refs": [self.REF], "rule": None}]}, "R1", "000")
+        self.assertEqual([(i["id"], i["item"]) for i in table["items"]], [("item01", "수행계획")])
+        calculate_scores(table, {}, "R1", "000")
+
     def test_attachment_kinds_from_real_api_names(self):
         # 2026-10 실제 API 검색 결과의 파일명
         self.assertEqual(kb.classify_attachment("(공고문) 2027년 용인시보건소 PACS.pdf"), {"notice"})

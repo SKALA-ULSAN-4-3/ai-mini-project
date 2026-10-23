@@ -941,7 +941,8 @@ def get_extracted_scoring_table(bid_no: str, revision: str) -> dict | None:
         return None
     require_rfp(bid_no, revision, partial_hint=False)  # 409: 3번 라우터는 HTTPException을 그대로 전달한다 (흐름 ⑥ 전에는 점수 불가)
     data = cached(bid_no, revision, "scoring", False, lambda: build_scoring(bid_no, revision))
-    return to_bid_logic_scoring(data, bid_no, revision) if data.get("items") else None
+    table = to_bid_logic_scoring(data, bid_no, revision)
+    return table if table["items"] else None  # 출처가 확인된 항목이 하나도 없으면 404 (빈 점수표를 내지 않음)
 
 def get_extracted_checklist(bid_no: str, revision: str) -> dict | None:
     if (bid_no, revision) not in stored_bids(VECTORSTORE_PDF):
@@ -949,8 +950,9 @@ def get_extracted_checklist(bid_no: str, revision: str) -> dict | None:
     data = cached(bid_no, revision, "required_docs", False, lambda: build_required_docs(bid_no, revision))
     if not data.get("docs") and not data.get("schedule"):
         return None
-    return to_bid_logic_checklist({**data, "due_note": f"제출 기한 원문: {data['due']}" if data.get("due") else ""},
-                                  bid_no, revision)
+    payload = to_bid_logic_checklist({**data, "due_note": f"제출 기한 원문: {data['due']}" if data.get("due") else ""},
+                                     bid_no, revision)
+    return payload if payload["documents"] or payload["schedule"] else None
 
 def connect_bid_routes(profile_dependency):
     """4번(JWT 검증 + 회사 프로필 조회)이 준비되면 서버 시작 전에 한 번 호출한다.

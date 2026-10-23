@@ -208,7 +208,9 @@ KIND = {"정량": "quantitative", "정성": "qualitative", "가격": "price"}
 
 def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
     items = []
-    for i, it in enumerate(extraction["items"], start=1):
+    # 3번은 출처 없는 항목이 하나라도 있으면 표 전체를 거부한다. 원문 대조에 실패한 항목은 넘기지 않고
+    # 2번 /scoring-table 응답에 source_verified=false로만 남긴다 (번호는 넘기는 항목끼리 이어서 매김)
+    for i, it in enumerate([it for it in extraction["items"] if it.get("source_refs")], start=1):
         kind = KIND.get(it["eval_type"], "qualitative")
         rule = it.get("rule")
         items.append({
@@ -223,14 +225,17 @@ def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
 
 
 def to_bid_logic_checklist(extraction: dict, bid_no: str, revision: str) -> dict:
+    # 점수표와 같은 이유로 원문 대조에 성공한 항목만 넘긴다 (2026-10 실제 공고에서 1개 항목 때문에 체크리스트 전체가 503)
+    docs = [d for d in extraction["docs"] if d.get("source_refs")]
+    events = [s for s in extraction.get("schedule", []) if s.get("source_refs")]
     documents = [{"id": f"doc{i:02d}", "doc": d["doc_name"], "bid_no": bid_no, "revision": revision,
-                  "due": extraction.get("due_iso"), "sources": d.get("source_refs", []),
+                  "due": extraction.get("due_iso"), "sources": d["source_refs"],
                   "notes": [n for n in (d.get("note"), extraction.get("due_note")) if n]}
-                 for i, d in enumerate(extraction["docs"], start=1)]
+                 for i, d in enumerate(docs, start=1)]
     schedule = [{"id": f"evt{i:02d}", "event": s["event"], "bid_no": bid_no, "revision": revision,
-                 "due": s.get("due_iso"), "sources": s.get("source_refs", []),
+                 "due": s.get("due_iso"), "sources": s["source_refs"],
                  "notes": [s["when"]] if s.get("when") else []}
-                for i, s in enumerate(extraction.get("schedule", []), start=1)]
+                for i, s in enumerate(events, start=1)]
     return {"bid_no": bid_no, "revision": revision, "documents": documents, "schedule": schedule}
 
 

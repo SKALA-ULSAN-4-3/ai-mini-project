@@ -28,7 +28,7 @@ function makeClient(baseURL) {
 
   // VITE_USE_MOCK: 'true' = 전부 가짜 / 'partial' = 1번·4번 API만 가짜 / 'me' = 4번 API만 가짜 / 그 외 = 전부 실제 서버
   const mock = import.meta.env.VITE_USE_MOCK
-  if (['true', 'partial', 'me'].includes(mock)) installMock(c, mock)
+  if (['true', 'partial', 'me', 'auth'].includes(mock)) installMock(c, mock)
   return c
 }
 

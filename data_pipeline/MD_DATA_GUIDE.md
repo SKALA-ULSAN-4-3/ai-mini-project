@@ -111,7 +111,7 @@ FAISS는 기존 `BID_INDEX_ROOT` 설정을 따른다. 여러 검색 ID에서 같
 - 신청서 HWP/HWPX·ZIP 원본은 보존하고 내부 변환은 공고문/RFP만 수행한다. 이는 사용자의 기존 원본 전달 요구를 유지한 것이다.
 - standalone `data_pipeline.api:app`은 develop의 기존 테스트용 진입점이라 유지했다. 운영은 기존 RAG 서버 한 개에 등록된 router를 사용한다.
 - JWT·소유권·Docker·프로필·점수·요약·체크리스트·화면은 다른 담당 영역이므로 수정하지 않았다.
-- 서버 설치/기동·실제 조회·작업시간 측정은 실행하지 않았다. 변환 환경 설치 방법은 기존 convert_documents.py --setup 안내를 따른다. 설치 Bash는 develop에 없으므로 이전 로컬 파일을 되살리지 않았다.
+- 서버 설치/기동·실제 조회·작업시간 측정은 실행하지 않았다. 변환 환경 설치 방법은 기존 convert_documents.py --setup 안내를 따른다. 이후 사용자 요청으로 기존 setup_environment.sh를 복원하고 설치 방법과 requirements를 함께 반영했다. 실제 설치는 실행하지 않았다.
 
 ## 검증
 

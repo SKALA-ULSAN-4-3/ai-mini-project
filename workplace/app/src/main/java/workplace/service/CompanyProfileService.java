@@ -40,11 +40,11 @@ public final class CompanyProfileService {
         return new CompanyProfileRequest(
                 required(request.industry(), "industry", 200),
                 strings(request.licenses()),
-                required(request.region(), "region", 100),
+                region(request.region()),
                 required(request.companySize(), "company_size", 50),
                 strings(request.certs()),
                 optional(request.creditRating(), 50),
-                request.trackRecords() == null ? List.of() : List.copyOf(request.trackRecords()),
+                request.trackRecords() == null ? null : List.copyOf(request.trackRecords()),
                 strings(request.ownedDocs()),
                 request.budgetMin(),
                 request.budgetMax(),
@@ -62,6 +62,16 @@ public final class CompanyProfileService {
         return normalized;
     }
 
+    private String region(String value) {
+        String canonical = Regions.canonical(value);
+        if (canonical == null) {
+            throw new ValidationException(
+                    "region 값은 시·도 17개 중 하나여야 합니다. 예: 서울특별시, 울산광역시"
+            );
+        }
+        return canonical;
+    }
+
     private String optional(String value, int maxLength) {
         if (value == null || value.isBlank()) {
             return null;
@@ -73,9 +83,13 @@ public final class CompanyProfileService {
         return normalized;
     }
 
+    /**
+     * null(안 적음·모름)은 그대로 null로 두고, 빈 목록([])은 "없음 확인"으로 유지합니다.
+     * 공고 로직이 이 둘을 다르게 해석하므로 서로 바꾸면 안 됩니다.
+     */
     private List<String> strings(List<String> values) {
         if (values == null) {
-            return List.of();
+            return null;
         }
 
         LinkedHashSet<String> normalized = new LinkedHashSet<>();

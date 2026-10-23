@@ -76,6 +76,21 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual(result["status"], "incomplete")
         self.assertIsNone(result["metrics"])
 
+    def test_draft_metrics_never_claim_human_verified(self):
+        self.data["gold"]["scores"][0]["review"]={"status":"pending"}
+        result=evaluate_dataset(self.data,draft=True)
+        self.assertEqual(result["status"],"draft_evaluated")
+        self.assertFalse(result["human_verified"])
+        self.assertTrue(result["issues"])
+        self.assertEqual(result["metrics"]["quantitative_item_accuracy"],1)
+
+    def test_hwpx_locator_only_accepted_in_explicit_draft_mode(self):
+        for row in (self.data["scoring_tables"][0]["items"][0],self.data["gold"]["scores"][0]["items"][0]):
+            for source in row["sources"]:
+                source["page"]=None;source["locator"]="Contents/section0.xml#element-42"
+        with self.assertRaises(ValueError):evaluate_dataset(self.data)
+        self.assertEqual(evaluate_dataset(self.data,draft=True)["status"],"draft_evaluated")
+
     def test_score_mismatch_detected_by_item_id(self):
         gold = self.data["gold"]["scores"][0]["items"]
         gold.reverse()

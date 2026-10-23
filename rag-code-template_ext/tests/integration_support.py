@@ -12,7 +12,7 @@ def load_integration(*, app=None, base_dir=None):
     parsed = ast.parse(text)
     nodes = [node for node in parsed.body if (
         isinstance(node, ast.ImportFrom) and (node.module or "").startswith("bid_logic")
-    ) or (isinstance(node, ast.FunctionDef) and node.name == "register_bid_routes")]
+    ) or (isinstance(node, ast.FunctionDef) and node.name in ("register_bid_routes", "connect_bid_routes"))]
     namespace = {"app": app if app is not None else FastAPI(),
                  "BASE_DIR": base_dir or source.parent, "VECTORSTORE_PDF": None}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)

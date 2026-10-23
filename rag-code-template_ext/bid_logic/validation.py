@@ -61,17 +61,20 @@ def _reviewed(row):
     return True
 
 
-def _sources(row, bid_no, revision):
+def _sources(row, bid_no, revision, *, allow_locators=False):
     require_sources(row)
     for source in row["sources"]:
         check_scope(source, bid_no, revision)
-        if not source.get("filename") or not isinstance(source.get("page"), int) or isinstance(
-                source.get("page"), bool) or source["page"] < 1:
+        page = source.get("page")
+        valid_page = isinstance(page, int) and not isinstance(page, bool) and page >= 1
+        valid_locator = allow_locators and isinstance(source.get("locator"), str) and source["locator"].strip()
+        if not source.get("filename") or not (valid_page or valid_locator):
             raise ValueError("검산용 출처에는 파일명과 1부터 시작하는 쪽수가 필요합니다.")
-    return frozenset((s["bid_no"], s["revision"], s["filename"], s["page"]) for s in row["sources"])
+    return frozenset((s["bid_no"], s["revision"], s["filename"],
+                      str(s.get("page") or s.get("locator"))) for s in row["sources"])
 
 
-def _check_inputs(data):
+def _check_inputs(data, *, draft=False):
     """아직 채우지 못한 자료/검토 상태를 수집한다. 잘못된 계약은 ValueError."""
     m = data["manifest"]
     if m.get("schema_version") != 1 or m.get("dataset_kind") not in ("real", "synthetic"):
@@ -109,7 +112,7 @@ def _check_inputs(data):
         _index(table["items"], lambda r: r["id"], "채점 항목")
         for item in table["items"]:
             check_scope(item, *key)
-            _sources(item, *key)
+            _sources(item, *key, allow_locators=draft)
     if set(checklists) != set(tables) or len(checklists) != targets["score_bids"]:
         issues.append("평가용 5개 공고의 체크리스트 추출 결과 필요")
     for key, extracted in checklists.items():
@@ -118,7 +121,7 @@ def _check_inputs(data):
         check_scope(extracted, *key)
         for row in extracted["documents"] + extracted["schedule"]:
             check_scope(row, *key)
-            _sources(row, *key)
+            _sources(row, *key, allow_locators=draft)
     if set(hits) != set(profiles) or len(hits) != targets["profiles"]:
         issues.append("프로필별 임베딩 검색 결과 필요")
     for row in hits.values():
@@ -157,7 +160,7 @@ def _check_inputs(data):
         if not expected or set(expected) != {r["id"] for r in tables[key]["items"]}:
             raise ValueError("정답에는 정량·정성·가격 항목 모두가 있어야 합니다.")
         for item in expected.values():
-            _sources(item, *key)
+            _sources(item, *key, allow_locators=draft)
             if not item.get("basis") or item.get("status") not in ("calculated", "manual", "missing_profile"):
                 raise ValueError("정답 항목의 검산 근거와 상태가 필요합니다.")
             if item["status"] == "calculated":
@@ -171,7 +174,7 @@ def _check_inputs(data):
         if key not in checklists or row["profile_id"] not in profiles:
             raise ValueError("서류 정답의 공고·차수 또는 프로필이 입력에 없습니다.")
         for item in row["documents"] + row["schedule"]:
-            _sources(item, *key)
+            _sources(item, *key, allow_locators=draft)
             if "due" not in item:
                 raise ValueError("서류·일정 정답에 due를 명시하세요. 미확인은 null입니다.")
         for item in row["documents"]:
@@ -191,13 +194,13 @@ def _due(value):
         return value  # 날짜만 있는 기한도 그대로 비교하고 미확인 상태를 보존한다.
 
 
-def evaluate_dataset(data):
-    issues, indexed = _check_inputs(data)
+def evaluate_dataset(data, *, draft=False):
+    issues, indexed = _check_inputs(data, draft=draft)
     manifest = data["manifest"]
     report = {"dataset_kind": manifest["dataset_kind"], "human_verified": False,
               "status": "incomplete", "issues": issues, "metrics": None,
               "x2_comparison": None, "cost": None}
-    if issues:
+    if any(not draft or "사람 검토 필요" not in issue for issue in issues):
         return report
     bids, profiles, tables, checklists, hits, rec_gold, score_gold, list_gold = indexed
     recommendations, scores, lists = [], [], []
@@ -223,14 +226,15 @@ def evaluate_dataset(data):
                            "item_id": row["id"], "expected": expected["expected"], "actual": row["expected"],
                            "kind": kinds[row["id"]],
                            "matched": row["status"] == expected["status"] and score_match and
-                           _sources(row, bid_no, revision) == _sources(expected, bid_no, revision)})
+                           _sources(row, bid_no, revision, allow_locators=draft) ==
+                           _sources(expected, bid_no, revision, allow_locators=draft)})
     for (bid_no, revision, profile_id), gold in list_gold.items():
         result = build_checklist(checklists[(bid_no, revision)], profiles[profile_id], bid_no, revision,
                                  now=manifest["now"])
         def signatures(rows, collection):
             return Counter((document_key(r["doc"]) if collection == "documents" else r["event"],
                             r.get("owned") if collection == "documents" else None,
-                            _due(r.get("due")), _sources(r, bid_no, revision)) for r in rows)
+                            _due(r.get("due")), _sources(r, bid_no, revision, allow_locators=draft)) for r in rows)
         details = {"bid_no": bid_no, "revision": revision, "profile_id": profile_id}
         for collection in ("documents", "schedule"):
             actual, expected = signatures(result[collection], collection), signatures(gold[collection], collection)
@@ -238,7 +242,9 @@ def evaluate_dataset(data):
                                    "extra": sum((actual - expected).values())}
         lists.append(details)
     quantitative = [row for row in scores if row["kind"] == "quantitative"]
-    report.update(status="evaluated", human_verified=manifest["dataset_kind"] == "real", metrics={
+    report.update(status="draft_evaluated" if draft else "evaluated",
+                  reference_status="ai_draft_pending_human_review" if draft else "reviewed",
+                  human_verified=not draft and manifest["dataset_kind"] == "real", metrics={
         "recommendations": recommendations, "scores": scores,
         "score_item_accuracy": sum(r["matched"] for r in scores) / len(scores),
         "quantitative_item_accuracy": (sum(r["matched"] for r in quantitative) / len(quantitative)
@@ -251,6 +257,7 @@ def main():
     parser.add_argument("--init", type=Path, help="새 디렉터리에 빈 평가 틀 생성")
     parser.add_argument("--dataset", type=Path, help="평가 파일 디렉터리")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--draft", action="store_true", help="AI 정답 초안과 잠정 비교. 사람 검토 완료로 표시하지 않음")
     args = parser.parse_args()
     if bool(args.init) == bool(args.dataset):
         parser.error("--init 또는 --dataset 중 하나만 지정하세요.")
@@ -259,7 +266,7 @@ def main():
             initialize_dataset(args.init)
             print(f"빈 평가 틀 생성: {args.init} (실제 자료/정답 입력 대기)")
             return 0
-        report = evaluate_dataset(load_dataset(args.dataset))
+        report = evaluate_dataset(load_dataset(args.dataset), draft=args.draft)
         rendered = json.dumps(report, ensure_ascii=False, indent=2)
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -272,7 +279,12 @@ def main():
             row[part][field] for row in metrics["checklists"]
             for part in ("documents", "schedule") for field in ("missing", "extra")))
     except (ValueError, KeyError, TypeError, OSError) as error:
-        print(json.dumps({"status": "invalid_input", "error": str(error)}, ensure_ascii=False))
+        report={"status":"invalid_input","error":str(error),"human_verified":False,"metrics":None}
+        rendered=json.dumps(report,ensure_ascii=False,indent=2)
+        if args.output:
+            args.output.parent.mkdir(parents=True,exist_ok=True)
+            args.output.write_text(rendered+"\n",encoding="utf-8")
+        print(rendered)
         return 2
 
 

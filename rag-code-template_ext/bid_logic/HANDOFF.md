@@ -1,4 +1,4 @@
-# 실제 자료를 받기 전 준비한 연결 규격
+# 공고 로직·실제 평가 연결 규격
 
 현재 작업 폴더는 `/Users/jeonghayun/Desktop/AI-Service-Mini-Project/rag-code-template_ext`다.
 기능 구현은 `bid_logic`에서 관리하고 기존 RAG 파일에는 연결 함수만 둔다.
@@ -107,6 +107,26 @@ python3 -B -m bid_logic.validation --dataset evaluation/real --output evaluation
 기존 RAG 파일의 `register_bid_routes()`를 실제 공급자 함수로 한 번 호출한다.
 이번 작업에서는 운영 API를 활성화하지 않았다.
 
+### 확정 흐름 ②·③' 추가 연결 (2026-10-23)
+
+`connect_bid_routes(profile_dependency, *, bids_provider=None, search_results_provider=None,
+title_similarity=None)`로 연결한다. `register_bid_routes`도 같은 선택 공급자를 전달받는다.
+
+- `search_results_provider(search_id, profile)`: ①에서 저장한 검색 결과 조회. 사용자별 접근을 검증하고
+  공고 배열 또는 `{bids/items/results: 공고 배열}`을 반환한다. 없는 검색은 None/404, 접근 거절은 403.
+  새 API 검색이나 다운로드는 하지 않는다. 프런트는 ①의 search_id를 ②에 전달한다.
+- `bids_provider()`: ③'에서 쓸 정규화 공고 메타데이터. 차수·원문에서 확인된 제한 조건을 유지한다.
+  복잡하거나 아직 추출하지 못한 자격 조건은 null로 두고 미확인 표시를 유지한다.
+- ② `GET /bids?from=&to=&search_id=`: 기본 20건. 본문 없이 목록 필터 + 공고명 임베딩.
+- ③' `POST /bids/recheck`: JSON의 `from`, `to`, `bids:[{bid_no,revision}]`(1~20건).
+  ③의 job 완료 후 호출한다. 응답의 각 공고에 `recheck.status/reasons`가 붙는다.
+  부적격도 결과에 남겨 ④ 요약 카드에 표시한다. 동일 공고라도 다른 차수는 미적재로 취급한다.
+- ⑦ 409 전달, ⑨ 승인된 여러 공고의 건별 호출 계약은 유지한다.
+
+선택·승인 상태 검증과 저장은 4번 API가 담당한다. 이 라우터는 상태 저장을 수행하지 않는다.
+실수집 원문은 `data/evaluation-source-20261023`, 입력·정답 초안·실측은 `evaluation/real`에 있다.
+정답은 AI 초안으로 사람 검토 대기이며, HWPX의 PDF 쪽수도 미확정이다.
+
 ## 하윤님이 실제 자료를 받은 후 채울 평가 입력
 
 | 파일 | 작성 내용 |
@@ -171,8 +191,9 @@ python3 -B -m bid_logic.validation --dataset evaluation/real --output evaluation
 
 `arguments`는 dict 또는 JSON 문자열이다. usage는 선택 사항이고 어댑터가 제공한 실측값만 합산한다.
 usage 없는 호출이 있으면 complete=false, 전혀 없으면 token_usage=null.
-비용은 아직 단가·모델 연결이 없으므로 항상 null이다. 위 숫자는 응답 형식 예시이며 측정 결과가 아니다.
-기존 TOOL_SPECS를 사용하며 특정 LLM SDK는 연결하지 않았다.
+기본 실행기의 cost는 단가를 가정하지 않아 null이다. `agent_model.py`가 실제 OpenAI SDK에 연결하며,
+평가 실행기는 API 실측 토큰과 명시된 GPT-4o 단가로 비용을 따로 기록한다.
+위 숫자는 응답 형식 예시이며 측정 결과가 아니다. 실제 결과는 `evaluation/real/x2-measurements.json`에 있다.
 
 기본 제한: 모델 최대 8회, 도구 최대 20회, 전체 10초. model은 비동기 취소와 요청 타임아웃을 준수해야 한다.
 동기 네트워크 호출을 이 어댑터 안에 넣으면 안 된다. 외부 데이터 읽기는 실행 전에 끝내야 한다.
@@ -180,6 +201,14 @@ usage 없는 호출이 있으면 complete=false, 전혀 없으면 token_usage=nu
 한계 상태(timeout/max_rounds/max_tool_calls/incomplete/model_error 등)는 완료 상태와 구분된다.
 필수 프로필이 부족하면 needs_input과 추가 질문을 반환한다.
 
-핵심 E2E 이후에 할 일: 실제 모델 어댑터, JWT가 적용된 `/agent/score`, 모델·단가·토큰 로그,
-같은 검토 완료 정답에 대한 C4와 X2의 정확도·요청 전체 시간·원가 비교.
-현재 가짜 모델 데모와 그 실행 시간은 실제 에이전트 성능/비용 비교 결과가 아니다.
+실제 모델 어댑터와 선택 등록 `/agent/score`는 구현했다. `connect_bid_routes(..., agent_model=adapter)`로
+연결하며 인증된 프로필을 사용한다. 모델 미주입 시 경로는 노출하지 않는다.
+핵심 E2E 이후에는 실제 JWT·운영 로그와 함께 확인하고, 사람이 검토 완료한 정답으로 다시 측정한다.
+이번 15조합 실측은 정형 입력 캐시 이후 계산·모델 도구 실행 범위이며, 공통 추출·인증·화면을 제외했다.
+가짜 모델 데모와 실제 측정 결과는 별도 파일이다.
+# 3번 연결 보완 (2026-10-23)
+
+① 담당자가 제공한 `search_results_provider(search_id, profile)`를 연결한 경우,
+`POST /bids/recheck`에도 ②와 같은 `search_id`를 전달한다. ① 검색 API 구현은 3번 범위에 포함하지 않는다.
+⑨ 공급 함수는 원문 기반 누락·기한·인용 보정 후 체크리스트로 변환한다. 원문에서 확정할 수 없는 항목은 검토 필요로 표시한다.
+최신 검증: 단위/연결 테스트 162개 통과(의존성 제외 9개), 실제 입력 API 37/37, 원문 보정 재생 5/5.

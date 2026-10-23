@@ -220,14 +220,18 @@ def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
 
 def to_bid_logic_checklist(extraction: dict, bid_no: str, revision: str) -> dict:
     documents = [{"id": f"doc{i:02d}", "doc": d["doc_name"], "bid_no": bid_no, "revision": revision,
-                  "due": extraction.get("due_iso"), "sources": d.get("source_refs", []),
+                  "due": d.get("due_iso"), "sources": d.get("source_refs", []),
+                  "needs_review": d.get("needs_review", False),
                   "notes": [n for n in (d.get("note"), extraction.get("due_note")) if n]}
                  for i, d in enumerate(extraction["docs"], start=1)]
     schedule = [{"id": f"evt{i:02d}", "event": s["event"], "bid_no": bid_no, "revision": revision,
                  "due": s.get("due_iso"), "sources": s.get("source_refs", []),
+                 "needs_review": s.get("needs_review", False),
                  "notes": [s["when"]] if s.get("when") else []}
                 for i, s in enumerate(extraction.get("schedule", []), start=1)]
-    return {"bid_no": bid_no, "revision": revision, "documents": documents, "schedule": schedule}
+    return {"bid_no": bid_no, "revision": revision, "documents": documents, "schedule": schedule,
+            "needs_review": extraction.get("needs_review", False),
+            "quality_warnings": extraction.get("quality_warnings", [])}
 
 
 _DATETIME = re.compile(r"(?:(\d{4})\s*[.\-/년]\s*)?(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*[.일]?\s*(?:\([^)]*\))?\s*"

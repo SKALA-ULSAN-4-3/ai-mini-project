@@ -1,0 +1,11 @@
+{
+  "model": "text-embedding-3-small",
+  "tokens": 190284,
+  "chunks": 289,
+  "bids": 20,
+  "profiles": 3,
+  "fingerprint": "c915e702febcad2945445835a90dc8b4888759c21c35c1fd82d54f675936597c",
+  "distance": "squared L2 of real model embeddings; exhaustive search; no FAISS required",
+  "cache_reused": true,
+  "scope": "20 notice PDFs + 3 profile queries + 20 titles"
+}

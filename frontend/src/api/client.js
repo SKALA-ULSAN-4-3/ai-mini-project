@@ -9,13 +9,23 @@ function makeClient(baseURL) {
   c.interceptors.request.use((config) => {
     const token = sessionStorage.getItem('token')
     if (token) config.headers.Authorization = `Bearer ${token}`
+    // 연결 확인용 로그 (비밀번호·토큰 내용은 찍지 않습니다)
+    console.log(`[API 요청] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, token ? '(토큰 있음)' : '(토큰 없음)')
     return config
   })
 
   // [응답 직후] 401이면 토큰을 지우고 로그인 화면으로 (로그인 요청 자체는 제외)
   c.interceptors.response.use(
-    (res) => res,
+    (res) => {
+      console.log(`[API 성공] ${res.status} ${res.config.baseURL}${res.config.url}`)
+      return res
+    },
     (error) => {
+      const st = error.response?.status
+      console.warn(
+        `[API 실패] ${st ?? '응답 없음'} ${error.config?.baseURL}${error.config?.url}`,
+        st ? error.response.data : '→ 서버가 꺼져 있거나 주소가 틀렸거나 CORS 허용이 안 된 경우입니다.'
+      )
       const isLogin = error.config?.url === '/login'
       if (error.response?.status === 401 && !isLogin) {
         sessionStorage.removeItem('token')
@@ -36,6 +46,11 @@ function makeClient(baseURL) {
 // 배포: .env.production 에 실제 서버 주소를 적으면 그 주소로 직접 요청
 const AUTH_URL = import.meta.env.VITE_AUTH_URL || '/api'
 const RAG_URL = import.meta.env.VITE_RAG_URL || '/rag'
+console.log('[API 설정]', {
+  모드: import.meta.env.VITE_USE_MOCK || '(없음=전부 진짜 서버)',
+  로그인서버: AUTH_URL,
+  RAG서버: RAG_URL,
+})
 const client = makeClient(AUTH_URL) // 가입·로그인·프로필
 export const rag = makeClient(RAG_URL) // RAG 서버(:8001): 공고·요약·채점표·Q&A
 

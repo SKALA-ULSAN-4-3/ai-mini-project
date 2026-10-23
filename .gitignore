@@ -1,0 +1,27 @@
+# 비밀 정보 (API 키 · JWT 비밀키): 각자 로컬 .env에만 둔다
+.env
+*.env
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 벡터 DB: 각자 /upload-paper · /upload-topic으로 생성
+faiss_db/
+
+# macOS
+.DS_Store
+
+# Java 빌드 결과물
+workplace/.gradle/
+workplace/build/
+workplace/app/bin/
+workplace/app/build/
+
+# 음성 서비스 테스트 업로드 · 합성 파일
+voice-ai_code/app/routers/uploads/
+
+# 강의 교재 (저작물)
+AI서비스개발_Mini-project_교재_*.pdf

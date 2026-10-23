@@ -176,6 +176,38 @@ def search_candidates(key, start_date, end_date, queries, limit):
     return list(found.values()), truncated
 
 
+def lookup_notice(key, bid_no):
+    """선택한 용역 공고번호 하나만 재조회한다. 목록 키워드 검색은 수행하지 않는다."""
+    if not key:
+        raise CollectionError("공고 차수 재확인에 필요한 API 키가 없습니다.")
+    url = API_URL.replace("getBidPblancListInfoServcPPSSrch", "getBidPblancListInfoServc")
+    found = []
+    for page in range(1, 21):
+        params = {"serviceKey": unquote(key), "type": "json", "inqryDiv": "2",
+                  "bidNtceNo": bid_no, "pageNo": page, "numOfRows": 100}
+        request = Request(url + "?" + urlencode(params), headers={"User-Agent": "BidCollector/1.0"})
+        try:
+            with build_opener().open(request, timeout=30) as response:
+                items, total = parse_response(response.read(10 * 1024 * 1024))
+        except HTTPError as exc:
+            raise CollectionError(f"공고 차수 확인 HTTP {exc.code}") from None
+        except (URLError, TimeoutError, OSError):
+            raise CollectionError("공고 차수 확인 연결 실패") from None
+        found.extend(item for item in items if str(item.get("bidNtceNo")) == bid_no)
+        if not items or page * 100 >= total:
+            break
+    else:
+        raise CollectionError("공고 차수 조회 한도를 넘어 최신 차수를 확인하지 못했습니다.")
+    if not found:
+        raise CollectionError("선택 공고의 현재 차수를 확인하지 못했습니다.")
+    if any(not re.fullmatch(r"\d{3}", str(item.get("bidNtceOrd") or "000")) for item in found):
+        raise CollectionError("공고 차수 형식이 예상과 다릅니다.")
+    latest = max(found, key=lambda item: int(item.get("bidNtceOrd") or "000"))
+    if any(word in str(latest.get("ntceKindNm", "")) for word in ("취소", "철회")):
+        raise CollectionError("선택 공고가 취소·철회되었습니다.")
+    return latest
+
+
 def notice_row(item, words, collected_at):
     return dict(bid_no=str(item["bidNtceNo"]), bid_order=str(item.get("bidNtceOrd") or "000"),
                 title=item.get("bidNtceNm", ""), agency=item.get("dminsttNm") or item.get("ntceInsttNm", ""),

@@ -109,7 +109,9 @@ def main():
             grounded = None
             hallucination = res.get("handoff") is False        # 문서에 없는데 답을 만들어 냄
         else:
-            correct = contains_all(answer, q["must_include"])
+            # must_not: "허용"이 정답인 문항에서 "허용되지 않음"이 맞게 채점되는 것을 막는다
+            correct = contains_all(answer, q["must_include"]) and not any(
+                norm(w) in norm(answer) for w in q.get("must_not", []))
             grounded = source_hit(sources, q["sources"], documents)
             hallucination = None                                # 답이 있는 질문의 환각은 사람이 판정
         review_ok = None if q["expect_needs_review"] is None else res.get("needs_review") == q["expect_needs_review"]
@@ -120,7 +122,7 @@ def main():
             "sources": " ; ".join(unicodedata.normalize("NFC", s) for s in sources),
             "correct": correct, "grounded": grounded, "hallucination": hallucination,
             "handoff": res.get("handoff"), "needs_review": res.get("needs_review"), "review_flag_ok": review_ok,
-            "baseline_correct": base_ok, "latency_ms": res.get("latency_ms", 0),
+            "baseline_correct": base_ok, "latency_ms": res.get("latency_ms", 0), "exception": exception,
             "human_judgement": "",  # 사람이 최종 확인: O / X / 부분
         })
         if not args.baseline_only:
@@ -136,8 +138,9 @@ def main():
         w.writeheader()
         w.writerows(rows)
 
-    answerable = [r for r in rows if not r["id"].startswith("E")]
-    exceptions = [r for r in rows if r["id"].startswith("E")]
+    # 예외 문항은 ID가 아니라 expect_handoff로 구분한다 (평가셋마다 ID 규칙이 다름)
+    answerable = [r for r in rows if not r["exception"]]
+    exceptions = [r for r in rows if r["exception"]]
     print(f"\n=== {args.label} ({bid_no}) ===")
     print(f"키워드 검색 베이스라인: {sum(r['baseline_correct'] for r in answerable)}/{len(answerable)} (top-1 조각에 정답 포함)")
     if not args.baseline_only:

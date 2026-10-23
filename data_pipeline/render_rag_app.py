@@ -6,6 +6,7 @@ import sys
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 
 from .render_app import authenticated
@@ -58,3 +59,10 @@ def combined_openapi():
 
 app.openapi_schema = None
 app.openapi = combined_openapi
+
+# 기존 CORS 허용 정책을 그대로 가장 바깥으로 옮긴다. 인증 실패 응답에도
+# CORS 헤더가 있어야 프론트가 브라우저 오류 대신 401을 확인할 수 있다.
+for middleware in list(app.user_middleware):
+    if middleware.cls is CORSMiddleware:
+        app.user_middleware.remove(middleware)
+        app.add_middleware(CORSMiddleware, *middleware.args, **middleware.kwargs)

@@ -29,7 +29,7 @@
 
 루트·헬스·Swagger·OpenAPI는 인증 없이 연다. 나머지 실제 요청은 Java /api/auth/check로 Bearer JWT를 검증한다. 공고 로직은 기존 /api/profile 의존성도 사용하므로 회사 프로필 등록이 필요하다. Swagger Authorize에 기존 백엔드 로그인 토큰을 넣는다.
 
-브라우저 CORS OPTIONS는 기존 RAG CORS 미들웨어에 전달하고 실제 API 요청에는 인증을 적용한다. POST 경로를 주소창에서 GET으로 열면 Method Not Allowed(405)가 나므로 Swagger의 Try it out이나 올바른 POST 요청을 사용한다. Swagger에 로그인 API는 없고 로그인은 기존 Java 백엔드 /api/login에서 한다.
+기존 RAG CORS 허용 정책을 배포 미들웨어 최외곽에 적용한다. OPTIONS 사전 요청뿐 아니라 인증 실패 401 응답에도 CORS 헤더를 유지해 브라우저가 실제 인증 오류를 읽을 수 있게 한다. POST 경로를 주소창에서 GET으로 열면 Method Not Allowed(405)가 나므로 Swagger의 Try it out이나 올바른 POST 요청을 사용한다. Swagger에 로그인 API는 없고 로그인은 기존 Java 백엔드 /api/login에서 한다.
 
 데이터 API만 실행하는 기존 data_pipeline.render_app:app은 유지한다. 통합 배포에서는 render_rag_app을 실행한다. API 키를 브라우저에 넘기거나 JWT 대신 API 키를 Authorize에 넣지 않는다.
 

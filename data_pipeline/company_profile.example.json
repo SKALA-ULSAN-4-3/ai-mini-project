@@ -1,0 +1,7 @@
+{
+  "name": "우리 회사",
+  "business_fields": ["정보시스템", "소프트웨어"],
+  "keywords": ["챗봇", "클라우드", "웹"],
+  "budget_min": null,
+  "budget_max": null
+}

@@ -1,17 +1,17 @@
 """데이터 파일·메타데이터·필수 첨부·중복 청크의 검수 보고서."""
 import argparse
 from collections import Counter, defaultdict
-import hashlib
 import json
 from pathlib import Path
 import re
+from .common import file_sha256
+from .common import read_json, read_csv, read_jsonl, write_jsonl, write_json, TEXT_READY
 
-from .prepare_documents import read_csv, write_jsonl
 from .convert_documents import validate_text_quality
 
 
 def load_jsonl(path):
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return read_jsonl(path, skip_blank=True)
 
 
 def clean_chunks(pages, chunks):
@@ -46,9 +46,9 @@ def audit(run_dir):
     pages = load_jsonl(root / "processed/pages.jsonl")
     documents = load_jsonl(root / "processed/documents.jsonl")
     original_chunks = load_jsonl(root / "processed/chunks.jsonl")
-    page_reviews = json.loads((root/"page_reviews.json").read_text()) if (root/"page_reviews.json").exists() else []
+    page_reviews = read_json(root/"page_reviews.json") if (root/"page_reviews.json").exists() else []
     reviewed_pages = {(r["document_id"],r["page"]):r for r in page_reviews}
-    items = json.loads((root / "candidates.json").read_text())["items"]
+    items = read_json(root / "candidates.json")["items"]
     latest = {}
     for item in items:
         no = str(item["bidNtceNo"])
@@ -71,9 +71,9 @@ def audit(run_dir):
             failures.append({"bid_no":row["bid_no"],"issue":"공고문 또는 제안요청서/과업지시서 없음"})
     for doc in documents:
         path = Path(doc["local_path"])
-        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=doc["sha256"]:
+        if not path.is_file() or file_sha256(path)!=doc["sha256"]:
             failures.append({"document_id":doc["document_id"],"issue":"PDF 파일/해시 불일치"})
-        if doc["status"] not in ("extracted","review_empty_pages"):
+        if doc["status"] not in TEXT_READY:
             failures.append({"document_id":doc["document_id"],"issue":doc["status"]})
         if doc.get("requires_layout_review"):
             warnings.append({"document_id":doc["document_id"],"issue":"변환 레이아웃 원문 대조 필요"})
@@ -95,14 +95,14 @@ def audit(run_dir):
     chunks, duplicates = clean_chunks(pages,original_chunks)
     write_jsonl(root/"processed/chunks.jsonl",chunks)
     summary_path = root/"processed/summary.json"
-    prepared = json.loads(summary_path.read_text())
+    prepared = read_json(summary_path)
     prepared.update(raw_chunks=sum(d["chunk_count"] for d in documents),chunks=len(chunks),duplicate_page_groups=len(duplicates))
-    summary_path.write_text(json.dumps(prepared,ensure_ascii=False,indent=2)+"\n")
+    write_json(summary_path, prepared)
     report = dict(scope="data_pipeline_only",bids=len(rows),documents=len(documents),pages=len(pages),chunks=len(chunks),
                   months=dict(Counter(r["published_at"][:7] for r in rows)),document_coverage=coverage,
                   page_reviews=dict(Counter(r["classification"] for r in page_reviews)),duplicate_pages=duplicates,
                   hard_failures=failures,review_items=warnings)
-    (root/"validation.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
+    write_json(root / "validation.json", report)
     lines=["# 데이터 파이프라인 검수 결과","",f"공고 {len(rows)}건 / 첨부 {len(documents)}개 / {len(pages)}페이지 / {len(chunks)}청크","",
            f"- 필수 첨부 확보: {sum(c['complete'] for c in coverage)}/{len(rows)}건",
            f"- 자동 검사 실패: {len(failures)}건",

@@ -1,7 +1,6 @@
 """HWP/HWPX를 LibreOffice + H2Orestart로 PDF 변환한다. 원본은 보존한다."""
 import argparse
 from collections import Counter
-import csv
 import hashlib
 import json
 import os
@@ -13,17 +12,19 @@ import sys
 import tempfile
 from urllib.request import urlopen
 
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    __package__ = "data_pipeline"
+
+from .common import read_csv, read_json, read_jsonl, write_jsonl, file_sha256, DOWNLOAD_SUCCESS, HWP_SUFFIXES
+
 ROOT = Path(__file__).resolve().parents[1]
+sha256 = file_sha256
 TOOLS = ROOT / "data" / "tools"
 PROFILE = TOOLS / "hwp-profile"
 EXTENSION_VERSION = "0.8.0"
 EXTENSION_SHA256 = "f36c19fa6b7dff1cf34114d926bdc088e6bcfa7fdc93d67eaafd3f572be1d62c"
 EXTENSION_URL = "https://github.com/ebandal/H2Orestart/releases/download/v0.8.0/H2Orestart.oxt"
-
-
-def sha256(path):
-    with Path(path).open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest() if hasattr(hashlib, "file_digest") else hashlib.sha256(stream.read()).hexdigest()
 
 
 def find_soffice(explicit=None):
@@ -56,7 +57,7 @@ def setup(soffice):
     """사용자 기본 설정을 바꾸지 않고 프로젝트 전용 프로필에 확장 설치."""
     TOOLS.mkdir(parents=True, exist_ok=True)
     extension = TOOLS / "H2Orestart.oxt"
-    if not extension.is_file() or sha256(extension) != EXTENSION_SHA256:
+    if not extension.is_file() or file_sha256(extension) != EXTENSION_SHA256:
         with urlopen(EXTENSION_URL, timeout=30) as response:
             data = response.read(20 * 1024 * 1024 + 1)
         if hashlib.sha256(data).hexdigest() != EXTENSION_SHA256:
@@ -122,19 +123,18 @@ def convert_run(run_dir, config=None, converter=convert_one):
         config_path = TOOLS / "converter.json"
         if not config_path.is_file():
             raise RuntimeError("먼저 convert_documents.py --setup을 실행하세요.")
-        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config = read_json(config_path)
     manifest = run_dir / "conversions.jsonl"
     old = {}
     if manifest.is_file():
-        old = {r["original_path"]: r for r in map(json.loads, manifest.read_text(encoding="utf-8").splitlines())}
-    with (run_dir / "attachments.csv").open(encoding="utf-8-sig", newline="") as stream:
-        attachments = list(csv.DictReader(stream))
+        old = {r["original_path"]: r for r in read_jsonl(manifest)}
+    attachments = read_csv(run_dir / "attachments.csv")
     records = []
     for row in attachments:
         if row.get("selected", "").lower() != "true":
             continue
         path = Path(row["local_path"]) if row.get("local_path") else None
-        if not path or path.suffix.lower() not in (".hwp", ".hwpx"):
+        if not path or path.suffix.lower() not in HWP_SUFFIXES:
             continue
         if not path.is_absolute():
             path = run_dir / path
@@ -145,9 +145,9 @@ def convert_run(run_dir, config=None, converter=convert_one):
                   "requires_layout_review": True}
         records.append(record)
         try:
-            if row.get("status") not in ("downloaded", "existing") or not path.is_file():
+            if row.get("status") not in DOWNLOAD_SUCCESS or not path.is_file():
                 raise RuntimeError("원본 다운로드가 완료되지 않았습니다.")
-            digest = sha256(path)
+            digest = file_sha256(path)
             record["original_sha256"] = digest
             # 파일명이 같아도 원본 경로/확장자가 다르면 충돌하지 않는다.
             source_id = hashlib.sha256((str(path) + digest).encode()).hexdigest()[:16]
@@ -155,20 +155,59 @@ def convert_run(run_dir, config=None, converter=convert_one):
             cached = old.get(str(path), {})
             if (cached.get("original_sha256") == digest and cached.get("status") in ("converted", "existing")
                     and all(cached.get(k) == config.get(k) for k in config)
-                    and target.is_file() and cached.get("pdf_sha256") == sha256(target)):
+                    and target.is_file() and cached.get("pdf_sha256") == file_sha256(target)):
                 record.update(pdf_path=str(target), pdf_sha256=cached["pdf_sha256"], status="existing")
             else:
                 print(f"PDF 변환: {path.name}", flush=True)
                 converter(path, target, config["soffice"])
-                record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted")
+                record.update(pdf_path=str(target), pdf_sha256=file_sha256(target), status="converted")
         except Exception as exc:
             record.update(status="failed", error=(str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__))
         # 중간에 멈춰도 완료된 파일은 다음 실행에서 재사용한다.
-        manifest.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
+        write_jsonl(manifest, records)
     if not records:
-        manifest.write_text("", encoding="utf-8")
+        write_jsonl(manifest, [])
     return records
 
+
+def convert_rhwp(output, executable):
+    """기존 LibreOffice 작업과 별도로 실행 가능. 원본/변환 해시로 재개한다."""
+    output = Path(output).resolve()
+    previous = {}
+    manifest = output / "conversions.jsonl"
+    if manifest.exists():
+        previous = {r["original_path"]: r for r in read_jsonl(manifest)}
+    records = []
+    for row in read_csv(output / "attachments.csv"):
+        source = Path(row["local_path"])
+        if source.suffix.lower() not in HWP_SUFFIXES or row["status"] not in DOWNLOAD_SUCCESS:
+            continue
+        digest = file_sha256(source)
+        target = output / "converted" / hashlib.sha256(str(source).encode()).hexdigest()[:16] / (source.stem + ".pdf")
+        old = previous.get(str(source), {})
+        record = dict(bid_no=row["bid_no"], bid_order=row["bid_order"], original_path=str(source),
+                      original_sha256=digest, pdf_path=str(target), pdf_sha256="", status="failed",
+                      engine="rhwp", requires_layout_review=True, error="")
+        try:
+            if not (target.exists() and old.get("original_sha256") == digest and
+                    old.get("pdf_sha256") == file_sha256(target)):
+                target.parent.mkdir(parents=True, exist_ok=True)
+                result = subprocess.run([str(executable), "export-pdf", str(source), "-o", str(target),
+                                         "--fallback-sans", "Apple SD Gothic Neo", "--fallback-serif", "AppleMyungjo"],
+                                        capture_output=True, text=True, timeout=120)
+                if result.returncode or not target.exists():
+                    raise RuntimeError("HWP 변환 실패")
+            from pypdf import PdfReader
+            reader = PdfReader(target)
+            if not reader.pages or not any((p.extract_text() or "").strip() for p in reader.pages):
+                raise RuntimeError("변환 PDF 텍스트 없음")
+            record.update(status="converted", pdf_sha256=file_sha256(target))
+            print(f"변환 완료: {source.name}", flush=True)
+        except Exception as exc:
+            record["error"] = str(exc)[:200]
+        records.append(record)
+        write_jsonl(manifest, records)
+    return records
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

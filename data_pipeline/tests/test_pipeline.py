@@ -11,8 +11,8 @@ from data_pipeline.build_dataset import collect_dataset
 from data_pipeline.collect_bids import parse_response
 from data_pipeline.convert_documents import validate_text_quality
 from data_pipeline.knowledge import KnowledgeStore, ingest_processed
-from data_pipeline.metadata import extract_deadline, extract_deadlines
-from data_pipeline.privacy import mask_personal
+from data_pipeline.prepare_documents import extract_deadline, extract_deadlines
+from data_pipeline.prepare_documents import mask_personal
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -74,11 +74,11 @@ class SelectionTests(unittest.TestCase):
             (root/"candidates.json").write_text(json.dumps(payload))
             before=b'keep downloaded manifest'
             (root/"attachments.csv").write_bytes(before)
-            with patch("data_pipeline.collect_bids.download_file") as download:
+            with patch("data_pipeline.g2b_client.download_file") as download:
                 collect_dataset(root,date(2026,8,1),date(2026,10,23),count=1,
                                 queries=["개발"],search_only=True)
                 download.assert_not_called()
-            self.assertEqual(json.loads((root/"selection.json").read_text()),["GOOD_000"])
+            self.assertEqual([r["bid_id"] for r in json.loads((root/"discovery/bid_list.json").read_text())["items"]],["GOOD_000"])
             self.assertEqual((root/"attachments.csv").read_bytes(),before)
 
 
@@ -105,7 +105,11 @@ class IndexTests(unittest.TestCase):
 class IngestionApiTests(unittest.TestCase):
     def test_api_only_has_data_ingestion_routes(self):
         from data_pipeline.api import app
-        self.assertEqual(set(app.openapi()['paths']),{'/upload-paper','/upload-topic','/data-status'})
+        self.assertEqual(set(app.openapi()['paths']),{'/upload-paper','/upload-topic','/data-status',
+            '/bid-runs','/bid-runs/{run_id}/bids','/bid-runs/{run_id}/evaluation-inputs',
+            '/bid-runs/{run_id}/bids/{bid_id}/evaluation','/bid-runs/{run_id}/selection',
+            '/bid-runs/{run_id}/recommendations','/bid-runs/{run_id}/download',
+            '/bid-runs/{run_id}/bids/{bid_id}/attachments/{file_id}'})
 
     @staticmethod
     def pdf_bytes():

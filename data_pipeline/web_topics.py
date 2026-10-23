@@ -5,14 +5,14 @@ import io
 import json
 from pathlib import Path
 import re
-from urllib.parse import urlparse, urljoin, parse_qs
+from urllib.parse import urlparse, urljoin
+from .common import read_json, ROOT
 
 import httpx
 from bs4 import BeautifulSoup
 
-from .knowledge import KnowledgeStore, ROOT
-from .prepare_documents import split_text
-from .privacy import mask_personal, extract_contacts
+from .knowledge import KnowledgeStore
+from .prepare_documents import split_text, mask_personal, extract_contacts
 
 TOPICS = {
     "협상에 의한 계약 제안서 평가 기준": "https://www.law.go.kr/LSW/admRulLsInfoP.do?admRulSeq=2100000273638",
@@ -61,7 +61,7 @@ def topic_records(topic, url=None, cache_root=None, refresh=False):
     identity = hashlib.sha256((topic+url).encode()).hexdigest()
     cached = root / (identity + ".json")
     if cached.exists() and not refresh:
-        return json.loads(cached.read_text())["records"]
+        return read_json(cached)["records"]
     raw, resolved = download(url)
     original_digest = hashlib.sha256(raw).hexdigest()
     if raw.startswith(b"%PDF-"):

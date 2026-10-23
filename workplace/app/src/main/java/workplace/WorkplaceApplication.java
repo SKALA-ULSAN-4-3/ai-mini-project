@@ -3,14 +3,20 @@ package workplace;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import workplace.config.AppConfig;
+import workplace.repository.BidDocumentRepository;
+import workplace.repository.BidSummaryRepository;
 import workplace.repository.CompanyProfileRepository;
 import workplace.repository.ConnectionFactory;
 import workplace.repository.DriverManagerConnectionFactory;
+import workplace.repository.JdbcBidDocumentRepository;
+import workplace.repository.JdbcBidSummaryRepository;
 import workplace.repository.JdbcCompanyProfileRepository;
 import workplace.repository.JdbcUserRepository;
 import workplace.repository.UserRepository;
 import workplace.security.JwtProvider;
 import workplace.service.AuthService;
+import workplace.service.BidDocumentService;
+import workplace.service.BidSummaryService;
 import workplace.service.CompanyProfileService;
 import workplace.web.CorsHandler;
 import workplace.web.CurrentUserResolver;
@@ -19,7 +25,11 @@ import workplace.web.HttpResponses;
 import workplace.web.JsonCodec;
 import workplace.web.RequestBodies;
 import workplace.web.RequestLoggingHandler;
+import workplace.web.ServiceKeyAuthenticator;
+import workplace.storage.DocumentStorage;
+import workplace.storage.SupabaseDocumentStorage;
 import workplace.web.handler.AuthCheckHandler;
+import workplace.web.handler.BidHandler;
 import workplace.web.handler.HealthHandler;
 import workplace.web.handler.LoginHandler;
 import workplace.web.handler.LivenessHandler;
@@ -62,8 +72,28 @@ public final class WorkplaceApplication {
                 jsonCodec.objectMapper()
         );
 
+        BidSummaryRepository bidSummaryRepository = new JdbcBidSummaryRepository(
+                connectionFactory,
+                jsonCodec.objectMapper()
+        );
+        BidDocumentRepository bidDocumentRepository =
+                new JdbcBidDocumentRepository(connectionFactory);
+        DocumentStorage documentStorage = config.supabaseConfigured()
+                ? new SupabaseDocumentStorage(
+                        jsonCodec.objectMapper(),
+                        config.supabaseUrl(),
+                        config.supabaseServiceKey(),
+                        config.supabaseBucket()
+                )
+                : null;
+
         AuthService authService = new AuthService(userRepository);
         CompanyProfileService profileService = new CompanyProfileService(profileRepository);
+        BidSummaryService bidSummaryService = new BidSummaryService(bidSummaryRepository);
+        BidDocumentService bidDocumentService =
+                new BidDocumentService(bidDocumentRepository, documentStorage);
+        ServiceKeyAuthenticator serviceKeys =
+                new ServiceKeyAuthenticator(config.serviceApiKey());
         JwtProvider jwtProvider = new JwtProvider(
                 config.jwtSecret(),
                 config.jwtIssuer(),
@@ -110,6 +140,20 @@ public final class WorkplaceApplication {
                 new ProfileHandler(
                         currentUserResolver,
                         profileService,
+                        requestBodies,
+                        responses
+                ),
+                responses,
+                config
+        );
+        register(
+                server,
+                "/api/bids",
+                new BidHandler(
+                        currentUserResolver,
+                        serviceKeys,
+                        bidSummaryService,
+                        bidDocumentService,
                         requestBodies,
                         responses
                 ),

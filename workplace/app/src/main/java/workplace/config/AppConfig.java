@@ -13,7 +13,11 @@ public record AppConfig(
         String jwtSecret,
         String jwtIssuer,
         long jwtExpirationSeconds,
-        Set<String> allowedOrigins
+        Set<String> allowedOrigins,
+        String serviceApiKey,
+        String supabaseUrl,
+        String supabaseServiceKey,
+        String supabaseBucket
 ) {
 
     /** 환경 변수를 읽고 필수 설정 누락 여부를 즉시 검증합니다. */
@@ -30,8 +34,17 @@ public record AppConfig(
                         "CORS_ORIGINS",
                         "http://localhost:5174,http://127.0.0.1:5174,"
                                 + "http://localhost:8008,http://127.0.0.1:8008"
-                ))
+                )),
+                value("SERVICE_API_KEY", ""),
+                value("SUPABASE_URL", ""),
+                value("SUPABASE_SERVICE_KEY", ""),
+                value("SUPABASE_BUCKET", "documents")
         );
+    }
+
+    /** PDF 저장소(Supabase)가 설정되었는지 알려 줍니다. 미설정이면 문서 API만 비활성화됩니다. */
+    public boolean supabaseConfigured() {
+        return !supabaseUrl.isEmpty() && !supabaseServiceKey.isEmpty();
     }
 
     private static String required(String name) {

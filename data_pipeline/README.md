@@ -8,12 +8,21 @@
 
 프로젝트 루트 `.env`의 `DATA_GO_KR_SERVICE_KEY`(조회), `OPENAI_API_KEY`(임베딩)를 사용합니다. 값을 출력하거나 산출물에 기록하지 않습니다.
 
+macOS(Homebrew 필요) 또는 Ubuntu 24.04에서 다음 Bash로 Python 패키지·LibreOffice·JDK 21을 설치하고 H2Orestart를 프로젝트 프로필에 등록합니다. 스크립트 전체를 sudo로 실행하지 않습니다. Ubuntu에서는 시스템 패키지 설치 단계에서만 sudo를 사용합니다.
+
+```bash
+bash data_pipeline/setup_environment.sh --help
+bash data_pipeline/setup_environment.sh
+```
+
+macOS는 LibreOffice 25.8.7.3 설치 파일의 SHA-256을 확인해 `data/tools/LibreOffice.app`에 설치하고, Ubuntu는 배포판 패키지를 사용합니다. 설치 도구는 변환 환경만 준비하며 공고 검색·다운로드·임베딩을 실행하지 않습니다. Python 패키지만 설치하려면 아래 명령을 사용합니다.
+
 ```bash
 python3 -m venv data_pipeline/.venv
 data_pipeline/.venv/bin/python -m pip install -r data_pipeline/requirements.txt
 ```
 
-HWP/HWPX 변환은 Java 지원 LibreOffice + H2Orestart가 필요합니다. 현재 컴퓨터는 `data/tools/LibreOffice.app`의 LibreOffice 25.8.7.3 + H2Orestart 0.8.0 + JDK 21로 설정돼 있습니다. 다른 컴퓨터에서는 다음 초기 설정을 실행합니다.
+HWP/HWPX 변환은 Java 지원 LibreOffice + H2Orestart가 필요합니다. 현재 컴퓨터는 `data/tools/LibreOffice.app`의 LibreOffice 25.8.7.3 + H2Orestart 0.8.0 + JDK 21로 설정돼 있습니다. Bash 대신 이미 설치한 LibreOffice를 연결하려면 다음 초기 설정을 실행합니다.
 
 ```bash
 data_pipeline/.venv/bin/python data_pipeline/convert_documents.py --setup --soffice /Applications/LibreOffice.app/Contents/MacOS/soffice

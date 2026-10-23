@@ -128,7 +128,8 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         self.assertEqual(status["입찰가격평가"][0], "manual")
 
     def test_checklist_payload_passes_builder(self):
-        extraction = {"docs": [{"doc_name": "제안서", "note": "PDF", "source_refs": [self.REF]},
+        extraction = {"docs": [{"doc_name": "제안서", "note": "PDF", "source_refs": [self.REF],
+                                "due_iso": "2026-11-03T10:00+09:00"},
                                {"doc_name": "사업자등록증 사본", "note": "", "source_refs": [self.REF]}],
                       "due_iso": "2026-11-03T10:00+09:00", "due_note": "제출 기한 원문: 2026. 11. 3.(화) 10:00",
                       "schedule": [{"event": "개찰", "when": "2026. 11. 3.(화) 11:00", "due_iso": "2026-11-03T11:00+09:00",
@@ -184,8 +185,8 @@ class ExtractionToBidLogicTest(unittest.TestCase):
 
 
 @unittest.skipIf(kb is None, "FAISS/LangChain 미설치")
-class SearchSnapshotToBidLogicTest(unittest.TestCase):
-    """흐름 ③: 1번 /search-bids 스냅샷 → 3번 /bids?search_id=… (공고명 유사도 정렬)."""
+class SearchResultsAdapterTest(unittest.TestCase):
+    """흐름 ③: 1번 /search-bids 스냅샷 → search_results 어댑터 → 3번 /bids?search_id=…"""
     SID = "a" * 32
 
     def item(self, no, order, title, kind="등록공고", close="2026-11-20 10:00:00", price="100000000"):
@@ -218,41 +219,34 @@ class SearchSnapshotToBidLogicTest(unittest.TestCase):
             os.environ["BID_SEARCH_ROOT"] = self.saved_root
         self.tmp.cleanup()
 
-    def test_rows_keep_only_active_latest_and_leave_restrictions_unknown(self):
-        rows = {(r["bid_no"], r["revision"]): r for r in kb.search_bid_rows(self.SID)}
-        self.assertEqual(set(rows), {("R1", "000"), ("R2", "000"), ("R3", "001"), ("R5", "000")})
-        r1 = rows[("R1", "000")]
-        self.assertEqual((r1["published_at"], r1["deadline"], r1["budget"]),
-                         ("2026-10-20", "2026-11-20T10:00+09:00", "100000000"))
-        self.assertIsNone(r1["regions"])            # 공고문 전이라 제한은 미확인
-        with self.assertRaises(LookupError):
-            kb.search_bid_rows("b" * 32)
+    def test_adapter_returns_public_active_items_with_period(self):
+        out = kb.search_results(self.SID, {})
+        self.assertEqual((out["from"], out["to"]), ("2026-10-16", "2026-10-22"))
+        keys = {(i["bid_no"], i["bid_order"]) for i in out["items"]}
+        self.assertEqual(keys, {("R1", "000"), ("R2", "000"), ("R3", "001"), ("R5", "000")})   # 취소 · 이전 차수 제외
+        self.assertIsNone(kb.search_results("b" * 32, {}))
 
-    def test_bid_router_ranks_search_results_by_title(self):
+    def test_bid_logic_router_shortlists_saved_search(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from bid_logic.api import create_bid_router
 
-        def provider(search_id):
-            rows = kb.search_bid_rows(search_id)
-            return rows, kb.title_search(search_id, rows, "local-char-ngram-v1")
         app = FastAPI()
         app.include_router(create_bid_router(
-            profile_dependency=lambda: {"keywords": ["교육 플랫폼 홈페이지"], "region": "울산"},
+            profile_dependency=lambda: {"keywords": ["교육 플랫폼 홈페이지"], "region": "울산광역시"},
             bids_provider=lambda: [], scoring_provider=lambda *a: None, checklist_provider=lambda *a: None,
-            search=lambda q, k: [], search_bids_provider=provider,
+            search=lambda q, k: [], search_results_provider=kb.search_results, require_search_id=True,
             clock=lambda: "2026-10-23T12:00+09:00"))
         client = TestClient(app)
-        body = client.get("/bids", params={"from": "2026-10-16", "to": "2026-10-22", "limit": 20,
-                                            "search_id": self.SID}).json()
-        self.assertEqual(body["bids"][0]["bid_no"], "R1")           # 키워드와 가장 비슷한 공고명이 먼저
+        period = {"from": "2026-10-16", "to": "2026-10-22"}
+        body = client.get("/bids", params={**period, "limit": 20, "search_id": self.SID}).json()
+        self.assertEqual(body["bids"][0]["bid_no"], "R1")            # 키워드와 가장 비슷한 공고명이 먼저
         self.assertEqual({b["bid_no"] for b in body["bids"]}, {"R1", "R2", "R3"})
-        self.assertEqual([e["bid_no"] for e in body["excluded"]], ["R5"])   # 마감 공고는 제외 사유와 함께
-        self.assertTrue(all(b["distance"] is not None for b in body["bids"]))
-        # search_id 없이 부르면 기존 방식(빈 CSV 공급자) 그대로
-        self.assertEqual(client.get("/bids", params={"from": "2026-10-16", "to": "2026-10-22"}).json()["bids"], [])
-        self.assertEqual(client.get("/bids", params={"from": "2026-10-16", "to": "2026-10-22",
-                                                      "search_id": "xyz"}).status_code, 422)
+        self.assertEqual([e["bid_no"] for e in body["excluded"]], ["R5"])   # 마감 공고는 사유와 함께 제외
+        self.assertEqual(client.get("/bids", params={**period, "search_id": "f" * 32}).status_code, 404)
+        self.assertEqual(client.get("/bids", params={"from": "2026-10-01", "to": "2026-10-22",
+                                                      "search_id": self.SID}).status_code, 422)  # 검색 기간과 다름
+        self.assertEqual(client.get("/bids", params=period).status_code, 422)                  # search_id 필수
 
 if __name__ == "__main__":
     unittest.main()

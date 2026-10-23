@@ -1,0 +1,263 @@
+{
+  "scope": "in-process TestClient using actual frozen data, cached real vectors, fake test-only auth",
+  "production_jwt_verified": false,
+  "ui_e2e_verified": false,
+  "passed": 37,
+  "total": 37,
+  "checks": [
+    {
+      "case": "unauthorized",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "case": "list",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "returned": 6,
+      "passed": true
+    },
+    {
+      "case": "recheck",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01667722",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01667722",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01706837",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01706837",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01751013",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01751013",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01706954",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01706954",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01760198",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01760198",
+      "profile_id": "seoul_web",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "list",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "returned": 6,
+      "passed": true
+    },
+    {
+      "case": "recheck",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01667722",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01667722",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01706837",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01706837",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01751013",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01751013",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01706954",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01706954",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01760198",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01760198",
+      "profile_id": "ulsan_data",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "list",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "returned": 7,
+      "passed": true
+    },
+    {
+      "case": "recheck",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01667722",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01667722",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01706837",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01706837",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01751013",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01751013",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01706954",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01706954",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "score",
+      "bid_no": "R26BK01760198",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "checklist",
+      "bid_no": "R26BK01760198",
+      "profile_id": "jeju_campus",
+      "status": 200,
+      "passed": true
+    }
+  ]
+}

@@ -193,57 +193,18 @@ def convert_bids_csv(src: Path = BIDS_SOURCE, dst: Path = BIDS_FOR_BID_LOGIC) ->
 
 
 # ---------------------------------------------------------------- 1번 실시간 검색 결과 → 3번 /bids 입력
-SEARCH_ID = re.compile(r"[a-f0-9]{32}")
-_TITLE_VECTORS: dict[str, dict] = {}   # search_id → {(bid_no, revision): 공고명 벡터}. 같은 검색은 다시 임베딩하지 않음
-_TITLE_LOCK = threading.Lock()
-
-
-def search_bid_rows(search_id: str) -> list[dict]:
-    """1번 /search-bids 스냅샷(data/searches/{search_id}/search.json)의 유효 공고를 3번 recommend_bids 입력으로.
-
-    목록 단계에는 공고문이 없으므로 지역 · 업종 · 면허 · 규모 · 인증 제한은 확정하지 않고 null(미확인)로 둔다.
-    취소 · 철회 공고와 최신이 아닌 차수는 1번과 같은 기준(search_jobs.is_active_notice)으로 뺀다.
-    없는 search_id면 LookupError."""
-    from data_pipeline import collect_bids as collector, search_jobs
-    if not SEARCH_ID.fullmatch(search_id or ""):
-        raise LookupError("검색 결과가 없습니다.")
-    path = search_jobs.root_dir() / search_id / "search.json"
-    if not path.is_file():
-        raise LookupError("검색 결과가 없습니다. 다시 검색해 주세요.")
-    saved = json.loads(path.read_text(encoding="utf-8"))
-    latest = search_jobs.latest_notices(saved["items"])
-    rows = []
-    for item in saved["items"]:
-        if not search_jobs.is_active_notice(item, latest):
-            continue
-        row = collector.notice_row(item, saved["request"]["queries"], saved["collected_at"])
-        rows.append({"bid_no": row["bid_no"].strip(), "revision": row["bid_order"].strip(),
-                     "title": row["title"], "agency": row["agency"],
-                     "published_at": _date(row["published_at"]) or None, "budget": _budget(row) or None,
-                     "deadline": _deadline(row["deadline"]) or None,
-                     "regions": None, "industries": None, "licenses": None, "company_sizes": None, "certs": None,
-                     "filename": "", "url": row["detail_url"]})
-    return rows
-
-
-def title_search(search_id: str, rows: list[dict], model: str):
-    """3번 search(query, allowed_keys) 규격의 함수. 목록 단계라 공고문 대신 공고명 임베딩과의 L2 거리를 준다
-    (정규화 벡터라 작을수록 유사, 1번 · 2번 저장소와 같은 임베딩 모델)."""
-    def search(query, allowed_keys):
-        if not query or not allowed_keys:
-            return []
-        with _TITLE_LOCK:
-            vectors = _TITLE_VECTORS.get(search_id)
-            if vectors is None:
-                keys = [(r["bid_no"], r["revision"]) for r in rows if r["title"]]
-                embedded = Embedder(model).embed([r["title"] for r in rows if r["title"]]) if keys else []
-                vectors = _TITLE_VECTORS[search_id] = dict(zip(keys, embedded))
-        if not vectors:
-            return []
-        q = Embedder(model).embed([query])[0]
-        return [{"bid_no": k[0], "revision": k[1], "distance": float(((v - q) ** 2).sum())}
-                for k, v in vectors.items() if k in allowed_keys]
-    return search
+def search_results(search_id: str, profile: dict | None = None) -> dict | None:
+    """3번 create_bid_router의 search_results_provider. 1번 /search-bids가 저장한 검색 결과를
+    1번 응답과 같은 공개 항목(최신 차수, 취소 · 철회 제외, 담당자 성명 · 연락처 없음)으로 돌려준다.
+    from/to는 3번이 요청 기간과 같은지 확인하는 데 쓴다. 없는 검색이면 None(→ 3번이 404).
+    검색 결과는 회사별로 저장되지 않으므로 profile로 접근을 제한하지 않는다."""
+    from data_pipeline import search_jobs
+    try:
+        saved = search_jobs._snapshot(search_id)
+    except search_jobs.SearchNotFound:
+        return None
+    public = search_jobs._public_search(saved, True)
+    return {"from": saved["request"]["from"], "to": saved["request"]["to"], "items": public["items"]}
 
 
 def sync_bids_csv() -> bool:
@@ -283,14 +244,18 @@ def to_bid_logic_checklist(extraction: dict, bid_no: str, revision: str) -> dict
     docs = [d for d in extraction["docs"] if d.get("source_refs")]
     events = [s for s in extraction.get("schedule", []) if s.get("source_refs")]
     documents = [{"id": f"doc{i:02d}", "doc": d["doc_name"], "bid_no": bid_no, "revision": revision,
-                  "due": extraction.get("due_iso"), "sources": d["source_refs"],
+                  "due": d.get("due_iso"), "sources": d["source_refs"],
+                  "needs_review": d.get("needs_review", False),
                   "notes": [n for n in (d.get("note"), extraction.get("due_note")) if n]}
                  for i, d in enumerate(docs, start=1)]
     schedule = [{"id": f"evt{i:02d}", "event": s["event"], "bid_no": bid_no, "revision": revision,
                  "due": s.get("due_iso"), "sources": s["source_refs"],
+                 "needs_review": s.get("needs_review", False),
                  "notes": [s["when"]] if s.get("when") else []}
                 for i, s in enumerate(events, start=1)]
-    return {"bid_no": bid_no, "revision": revision, "documents": documents, "schedule": schedule}
+    return {"bid_no": bid_no, "revision": revision, "documents": documents, "schedule": schedule,
+            "needs_review": extraction.get("needs_review", False),
+            "quality_warnings": extraction.get("quality_warnings", [])}
 
 
 _DATETIME = re.compile(r"(?:(\d{4})\s*[.\-/년]\s*)?(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*[.일]?\s*(?:\([^)]*\))?\s*"

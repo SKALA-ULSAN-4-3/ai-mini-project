@@ -1,0 +1,661 @@
+[
+  {
+    "profile_id": "seoul_web",
+    "result": {
+      "bids": [
+        {
+          "bid_no": "R26BK01753530",
+          "revision": "000",
+          "title": "혁신사업 학생역량 통합관리시스템(디지털 포트폴리오) 구축 용역",
+          "agency": "영진전문대학교 산학협력단",
+          "published_at": "2026-10-01",
+          "budget": "471000000",
+          "deadline": null,
+          "regions": null,
+          "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "입찰마감 일시 미확인",
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.48822684229685365,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01757019",
+          "revision": "000",
+          "title": "동국대학교 nDRIMS 이공계 연구생활장려금 지원사업 전산 시스템  구축",
+          "agency": "동국대학교 산학협력단",
+          "published_at": "2026-10-06",
+          "budget": "30000000",
+          "deadline": "2026-10-19T11:00:00+09:00",
+          "regions": null,
+          "filename": "1. 입찰공고문.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01757019&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.43008653335766667,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01754897",
+          "revision": "000",
+          "title": "방폐물인수관리시스템(WTSRI-UTOPIA) 고도화  및 연계체계 구축 용역",
+          "agency": "한국원자력환경공단",
+          "published_at": "2026-10-02",
+          "budget": "495019640",
+          "deadline": "2026-10-13T12:00:00+09:00",
+          "regions": null,
+          "filename": "2-1. 입찰공고문(사본).pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01754897&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.34230589428455005,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01663676",
+          "revision": "000",
+          "title": "통합정보시스템 기능개선 및 이지바로 모듈 전환 사업",
+          "agency": "광주과학기술원",
+          "published_at": "2026-08-03",
+          "budget": "280000000",
+          "deadline": null,
+          "regions": null,
+          "filename": "용역 2026-025호 - 통합정보시스템 기능개선 및 이지바로 모듈 전환 사업 - 공고문(협상)_재공고-2차.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01663676&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "입찰마감 일시 미확인",
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.3393789375504639,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01753451",
+          "revision": "000",
+          "title": "2026년 녹색자금통합관리시스템 집행검증 기능 개발(재공고)",
+          "agency": "한국산림복지진흥원",
+          "published_at": "2026-10-01",
+          "budget": "85000000",
+          "deadline": "2026-10-12T11:00:00+09:00",
+          "regions": null,
+          "filename": "붙임1_입찰공고문.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753451&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.33115236776347956,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        }
+      ],
+      "excluded": [
+        {
+          "bid_no": "R26BK01667722",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01706837",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01661818",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01706954",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707131",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01662752",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707212",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01659989",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01657129",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01664258",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707886",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01702784",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01702853",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "지역 제한 조건 불일치"
+          ]
+        }
+      ],
+      "candidate_count": 6,
+      "needs_review": true,
+      "ranking_kind": "injected",
+      "stage": "list_only"
+    }
+  },
+  {
+    "profile_id": "ulsan_data",
+    "result": {
+      "bids": [
+        {
+          "bid_no": "R26BK01757019",
+          "revision": "000",
+          "title": "동국대학교 nDRIMS 이공계 연구생활장려금 지원사업 전산 시스템  구축",
+          "agency": "동국대학교 산학협력단",
+          "published_at": "2026-10-06",
+          "budget": "30000000",
+          "deadline": "2026-10-19T11:00:00+09:00",
+          "regions": null,
+          "filename": "1. 입찰공고문.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01757019&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.4829670728780684,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01753530",
+          "revision": "000",
+          "title": "혁신사업 학생역량 통합관리시스템(디지털 포트폴리오) 구축 용역",
+          "agency": "영진전문대학교 산학협력단",
+          "published_at": "2026-10-01",
+          "budget": "471000000",
+          "deadline": null,
+          "regions": null,
+          "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "입찰마감 일시 미확인",
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.4248834878250136,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01663676",
+          "revision": "000",
+          "title": "통합정보시스템 기능개선 및 이지바로 모듈 전환 사업",
+          "agency": "광주과학기술원",
+          "published_at": "2026-08-03",
+          "budget": "280000000",
+          "deadline": null,
+          "regions": null,
+          "filename": "용역 2026-025호 - 통합정보시스템 기능개선 및 이지바로 모듈 전환 사업 - 공고문(협상)_재공고-2차.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01663676&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "입찰마감 일시 미확인",
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.4082968050533964,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01754897",
+          "revision": "000",
+          "title": "방폐물인수관리시스템(WTSRI-UTOPIA) 고도화  및 연계체계 구축 용역",
+          "agency": "한국원자력환경공단",
+          "published_at": "2026-10-02",
+          "budget": "495019640",
+          "deadline": "2026-10-13T12:00:00+09:00",
+          "regions": null,
+          "filename": "2-1. 입찰공고문(사본).pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01754897&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.3694063827053071,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01751013",
+          "revision": "000",
+          "title": "2026년 의료기술재평가 정보시스템 기능개선 사업",
+          "agency": "한국보건의료연구원",
+          "published_at": "2026-10-01",
+          "budget": "80000000",
+          "deadline": "2026-10-14T10:00:00+09:00",
+          "regions": null,
+          "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.35903120487432716,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        }
+      ],
+      "excluded": [
+        {
+          "bid_no": "R26BK01667722",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01706837",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01661818",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01706954",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707131",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01662752",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707212",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01659989",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01657129",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01664258",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707886",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01702784",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01702853",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "지역 제한 조건 불일치"
+          ]
+        }
+      ],
+      "candidate_count": 6,
+      "needs_review": true,
+      "ranking_kind": "injected",
+      "stage": "list_only"
+    }
+  },
+  {
+    "profile_id": "jeju_campus",
+    "result": {
+      "bids": [
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "title": "제주대학교 통합(학사행정)정보시스템 기능개선 사업",
+          "agency": "제주대학교 디지털정보처",
+          "published_at": "2026-10-07",
+          "budget": "76000000",
+          "deadline": "2026-10-19T10:00:00+09:00",
+          "regions": [
+            "제주"
+          ],
+          "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "업종 제한 미확인"
+          ],
+          "score": 0.5331568022907618,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01753530",
+          "revision": "000",
+          "title": "혁신사업 학생역량 통합관리시스템(디지털 포트폴리오) 구축 용역",
+          "agency": "영진전문대학교 산학협력단",
+          "published_at": "2026-10-01",
+          "budget": "471000000",
+          "deadline": null,
+          "regions": null,
+          "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "입찰마감 일시 미확인",
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.4865572167503842,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01757019",
+          "revision": "000",
+          "title": "동국대학교 nDRIMS 이공계 연구생활장려금 지원사업 전산 시스템  구축",
+          "agency": "동국대학교 산학협력단",
+          "published_at": "2026-10-06",
+          "budget": "30000000",
+          "deadline": "2026-10-19T11:00:00+09:00",
+          "regions": null,
+          "filename": "1. 입찰공고문.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01757019&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.47403782094346525,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01754897",
+          "revision": "000",
+          "title": "방폐물인수관리시스템(WTSRI-UTOPIA) 고도화  및 연계체계 구축 용역",
+          "agency": "한국원자력환경공단",
+          "published_at": "2026-10-02",
+          "budget": "495019640",
+          "deadline": "2026-10-13T12:00:00+09:00",
+          "regions": null,
+          "filename": "2-1. 입찰공고문(사본).pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01754897&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "unknown": [
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.34935628493349213,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        },
+        {
+          "bid_no": "R26BK01663676",
+          "revision": "000",
+          "title": "통합정보시스템 기능개선 및 이지바로 모듈 전환 사업",
+          "agency": "광주과학기술원",
+          "published_at": "2026-08-03",
+          "budget": "280000000",
+          "deadline": null,
+          "regions": null,
+          "filename": "용역 2026-025호 - 통합정보시스템 기능개선 및 이지바로 모듈 전환 사업 - 공고문(협상)_재공고-2차.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01663676&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "unknown": [
+            "입찰마감 일시 미확인",
+            "지역 제한 미확인",
+            "업종 제한 미확인"
+          ],
+          "score": 0.3217602299092732,
+          "needs_review": true,
+          "reason": "목록 정보에서 제외 사유 없음; 공고명 유사도 순"
+        }
+      ],
+      "excluded": [
+        {
+          "bid_no": "R26BK01667722",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01706837",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01661818",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01706954",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707131",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01662752",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707212",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01659989",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01657129",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01664258",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01707886",
+          "revision": "000",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01702784",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        },
+        {
+          "bid_no": "R26BK01702853",
+          "revision": "001",
+          "status": "excluded",
+          "reasons": [
+            "입찰이 마감되었습니다."
+          ]
+        }
+      ],
+      "candidate_count": 7,
+      "needs_review": true,
+      "ranking_kind": "injected",
+      "stage": "list_only"
+    }
+  }
+]

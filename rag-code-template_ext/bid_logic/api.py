@@ -8,12 +8,14 @@ import logging
 from typing import Any, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
+from pydantic import BaseModel, Field, field_validator
 
 from .checklist import build_checklist
 from .common import SEOUL, RequestError
-from .recommendation import recommend_bids
+from .shortlist import shortlist_bids, recheck_after_ingest
 from .scoring import calculate_scores
+from .agent_runner import run_scoring_agent
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,36 @@ class BidListResponse(BaseModel):
     excluded: list[dict[str, Any]]
     candidate_count: int
     needs_review: bool
+    ranking_kind: str
+    stage: str
+    search_id: str | None = None
+
+
+class BidKey(BaseModel):
+    bid_no: str = Field(min_length=1, strict=True)
+    revision: str = Field(min_length=1, strict=True)
+
+    @field_validator("bid_no", "revision")
+    @classmethod
+    def clean_identifier(cls, value):
+        if not value.strip():
+            raise ValueError("공고번호·차수는 비어 있을 수 없습니다.")
+        return value.strip()
+
+
+class RecheckRequest(BaseModel):
+    start: date = Field(alias="from")
+    end: date = Field(alias="to")
+    bids: list[BidKey] = Field(min_length=1, max_length=20)
+    search_id: str | None = Field(default=None, min_length=1)
+
+
+class RecheckResponse(BaseModel):
+    bids: list[dict[str, Any]]
+    needs_review: bool
+    stage: str
+    disqualified: list[str]
+    not_evaluated: list[str]
 
 
 class ScoreResponse(BaseModel):
@@ -44,11 +76,10 @@ class ChecklistResponse(BaseModel):
 
 def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
                       scoring_provider: Callable, checklist_provider: Callable,
-                      search: Callable, clock=None, search_bids_provider: Callable | None = None):
+                      search: Callable, clock=None, search_results_provider=None,
+                      title_similarity=None, loaded_keys_provider=None, agent_model=None,
+                      require_search_id=False):
     """공급자는 동기 함수. profile_dependency는 sync/async FastAPI Depends 함수.
-
-    search_bids_provider(search_id) -> (공고 목록, search 함수): 1번 실시간 검색 결과로 추릴 때 사용(선택).
-    없는 search_id면 공급자가 HTTPException(404)을 발생시킨다. search_id 없이 부르면 기존 bids_provider를 쓴다.
 
     인증 의존성이 서명·만료 검증 후 프로필 dict를 반환해야 한다.
     JWT 미검증/만료 401, 프로필 없음 404는 해당 의존성이 발생시킨다.
@@ -57,6 +88,9 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
     if any(not callable(f) for f in (profile_dependency, bids_provider, scoring_provider,
                                      checklist_provider, search)):
         raise ValueError("인증된 프로필 및 모든 데이터 공급 함수를 연결해야 합니다.")
+    if any(f is not None and not callable(f) for f in (
+            search_results_provider, title_similarity, loaded_keys_provider, agent_model)):
+        raise ValueError("선택 공급자는 함수여야 합니다.")
     clock = clock or (lambda: datetime.now(SEOUL))
     router = APIRouter(tags=["공고 추리기·점수·체크리스트"])
 
@@ -79,20 +113,63 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
             raise HTTPException(status_code=404, detail="해당 공고·차수의 데이터가 없습니다.")
         return value
 
+    def saved_rows(search_id, profile, start, end):
+        if search_results_provider is None:
+            raise HTTPException(503, "검색 결과 공급 함수를 연결해 주세요.")
+        if not search_id or not search_id.strip():
+            raise RequestError("① 검색 응답의 search_id가 필요합니다.")
+        payload = search_results_provider(search_id, profile)
+        if payload is None:
+            raise HTTPException(404, "검색 결과가 없거나 접근할 수 없습니다.")
+        if isinstance(payload, dict):
+            if ((payload.get("from") and payload["from"] != str(start)) or
+                    (payload.get("to") and payload["to"] != str(end))):
+                raise RequestError("저장된 검색 기간과 요청 기간이 다릅니다. 새로 검색해 주세요.")
+            return payload.get("bids", payload.get("items", payload.get("results")))
+        return payload
+
     @router.get("/bids", response_model=BidListResponse)
     def bids(start: date = Query(..., alias="from"), end: date = Query(..., alias="to"),
-             limit: int = Query(5, ge=1, le=20), profile: dict = Depends(profile_dependency),
-             search_id: str | None = Query(None, pattern=r"^[a-f0-9]{32}$")):
-        if search_id is None:
-            return invoke(lambda: recommend_bids(bids_provider(), profile, start, end,
-                                                 now=clock(), search=search, limit=limit))
-        if search_bids_provider is None:
-            raise HTTPException(status_code=422, detail="이 서버는 search_id 추천이 연결되지 않았습니다.")
+             limit: int = Query(20, ge=1, le=20),
+             search_id: str | None = Query(None, min_length=1),
+             profile: dict = Depends(profile_dependency)):
+        def run():
+            if start > end:
+                raise RequestError("공고 기간이 뒤집혔습니다.")
+            if search_results_provider is not None or require_search_id:
+                rows = saved_rows(search_id, profile, start, end)
+            elif search_id is not None:
+                raise HTTPException(status_code=503, detail="검색 결과 공급 함수를 연결해 주세요.")
+            else:
+                rows = bids_provider()  # 고정 CSV 평가·개발 호환. 본문 검색은 하지 않는다.
+            if not isinstance(rows, (list, tuple)):
+                raise ValueError("검색 결과 공고 배열이 필요합니다.")
+            result = shortlist_bids(rows, profile, start=start, end=end, now=clock(),
+                                    limit=limit, similarity=title_similarity)
+            return {**result, "search_id": search_id}
+        return invoke(run)
 
-        def from_search():
-            rows, search_fn = search_bids_provider(search_id)
-            return recommend_bids(rows, profile, start, end, now=clock(), search=search_fn, limit=limit)
-        return invoke(from_search)
+    @router.post("/bids/recheck", response_model=RecheckResponse)
+    def recheck(payload: RecheckRequest, profile: dict = Depends(profile_dependency)):
+        def run():
+            if payload.start > payload.end:
+                raise RequestError("공고 기간이 뒤집혔습니다.")
+            if require_search_id and not payload.search_id:
+                raise RequestError("① 검색 응답의 search_id가 필요합니다.")
+            if payload.search_id is not None:
+                # CSV에는 아직 없는 새 공고도 저장 검색의 메타데이터로 재확인한다.
+                # 자격 제약은 추정하지 않고 미확인 보존. 실제 적재 여부는 아래에서 검사한다.
+                from .shortlist import recheck_metadata
+                saved = saved_rows(payload.search_id, profile, payload.start, payload.end)
+                rows = [recheck_metadata(r) for r in saved]
+            else:
+                rows = bids_provider()
+            if loaded_keys_provider is not None:
+                loaded = set(loaded_keys_provider())
+                rows = [row for row in rows if (row["bid_no"], row["revision"]) in loaded]
+            return recheck_after_ingest([key.model_dump() for key in payload.bids], rows,
+                                        profile, payload.start, payload.end, now=clock(), search=search)
+        return invoke(run)
 
     # revision 필수: 어느 차수인지 모르는 요청을 최신이라고 추정하지 않는다.
     @router.get("/bids/{bid_no}/score", response_model=ScoreResponse)
@@ -106,5 +183,17 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
                   profile: dict = Depends(profile_dependency)):
         return invoke(lambda: build_checklist(selected_payload(checklist_provider, bid_no, revision),
                                              profile, bid_no, revision, now=clock()))
+
+    if agent_model is not None:
+        @router.post("/agent/score")
+        async def agent_score(payload: BidKey, profile: dict = Depends(profile_dependency)):
+            # 동기 RAG 추출 I/O가 이벤트 루프를 막지 않게 먼저 threadpool에서 읽는다.
+            table = await run_in_threadpool(invoke, lambda: selected_payload(
+                scoring_provider, payload.bid_no, payload.revision))
+            # 모델 호출 전에 기존 C4 입력 범위와 프로필을 검사한다. 409는 그대로 전달된다.
+            await run_in_threadpool(invoke, lambda: calculate_scores(
+                table, profile, payload.bid_no, payload.revision))
+            return await run_scoring_agent(table, profile, payload.bid_no, payload.revision,
+                model=agent_model, timeout_seconds=60, max_tool_calls=max(30, len(table["items"])*2+4))
 
     return router

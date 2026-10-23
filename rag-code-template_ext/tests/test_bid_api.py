@@ -100,12 +100,21 @@ class ApiTest(unittest.TestCase):
         app = FastAPI()
         app.include_router(create_bid_router(**{**self.arguments, "search": unavailable_search}))
         response = TestClient(app).get("/bids?from=2026-10-01&to=2026-10-31", headers=self.headers)
+        self.assertEqual(response.status_code, 200)  # ②는 본문 저장소 없이 동작한다.
+        response = TestClient(app).post("/bids/recheck", headers=self.headers, json={
+            "from": "2026-10-01", "to": "2026-10-31",
+            "bids": [{"bid_no": "SYN-05", "revision": "00"}]})
         self.assertEqual(response.status_code, 503)
 
     def get_with(self, path, **overrides):
         app = FastAPI()
         app.include_router(create_bid_router(**{**self.arguments, **overrides}))
-        return TestClient(app).get(path, headers=self.headers)
+        client = TestClient(app)
+        if path == "/bids/recheck":
+            return client.post(path, headers=self.headers, json={
+                "from": "2026-10-01", "to": "2026-10-31",
+                "bids": [{"bid_no": "SYN-05", "revision": "00"}]})
+        return client.get(path, headers=self.headers)
 
     def test_data_errors_503_without_detail(self):
         from types import SimpleNamespace
@@ -118,7 +127,7 @@ class ApiTest(unittest.TestCase):
         wrong_revision["items"][0]["revision"] = "01"
         for path, overrides in (
                 ("/bids?from=2026-10-01&to=2026-10-31", {"bids_provider": broken_csv}),
-                ("/bids?from=2026-10-01&to=2026-10-31",
+                ("/bids/recheck",
                  {"search": lambda q, k: faiss_hits(legacy, q, k)}),
                 ("/bids/SYN-01/score?revision=00", {"scoring_provider": lambda *a: wrong_revision})):
             with self.subTest(path=path, overrides=list(overrides)):
@@ -196,14 +205,18 @@ class MainFileIntegrationTest(unittest.TestCase):
     def test_vectorstore_resolved_at_request_time(self):
         self.register(**self.arguments)
         client = TestClient(self.app)
-        self.assertEqual(client.get(self.url, headers=self.headers).status_code, 503)
+        self.assertEqual(client.get(self.url, headers=self.headers).status_code, 200)
+        payload = {"from": "2026-10-01", "to": "2026-10-31",
+                   "bids": [{"bid_no": "SYN-05", "revision": "00"}]}
+        self.assertEqual(client.post("/bids/recheck", headers=self.headers, json=payload).status_code, 503)
         from types import SimpleNamespace
         doc = SimpleNamespace(metadata={"bid_no": "SYN-05", "revision": "00"})
         self.namespace["VECTORSTORE_PDF"] = SimpleNamespace(
             index=SimpleNamespace(ntotal=1), similarity_search_with_score=lambda *a, **kw: [(doc, 0.1)])
-        result = client.get(self.url, headers=self.headers)
+        result = client.post("/bids/recheck", headers=self.headers, json=payload)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json()["bids"][0]["bid_no"], "SYN-05")
+        self.assertEqual(result.json()["bids"][0]["recheck"]["distance"], 0.1)
 
     def test_duplicate_registration_rejected(self):
         self.register(**self.arguments)

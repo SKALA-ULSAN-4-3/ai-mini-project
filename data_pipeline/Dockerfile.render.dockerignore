@@ -1,0 +1,12 @@
+**
+!project_env.py
+!data_pipeline/
+!data_pipeline/**
+!rag-code-template_ext/
+!rag-code-template_ext/knowledge_bridge.py
+**/.env
+**/.env.*
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc

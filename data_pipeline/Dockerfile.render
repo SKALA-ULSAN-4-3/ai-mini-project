@@ -1,0 +1,30 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    JAVA_HOME=/usr/lib/jvm/default-java \
+    PATH=/opt/venv/bin:$PATH
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates python3 python3-venv libgomp1 \
+    libreoffice-writer libreoffice-java-common default-jdk-headless \
+    fonts-noto-cjk fonts-noto-core \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m venv /opt/venv \
+    && useradd --create-home --uid 10001 app
+
+WORKDIR /app
+COPY data_pipeline/requirements*.txt /tmp/dependencies/
+RUN python -m pip install --no-cache-dir -r /tmp/dependencies/requirements-render.txt
+
+COPY --chown=app:app project_env.py /app/project_env.py
+COPY --chown=app:app data_pipeline /app/data_pipeline
+COPY --chown=app:app rag-code-template_ext/knowledge_bridge.py /app/rag-code-template_ext/knowledge_bridge.py
+RUN mkdir -p /app/data && chown -R app:app /app
+
+USER app
+RUN python -B data_pipeline/convert_documents.py --setup --soffice /usr/bin/soffice
+
+EXPOSE 10000
+CMD ["sh", "-c", "exec python -m uvicorn data_pipeline.render_app:app --host 0.0.0.0 --port ${PORT:-10000} --workers 1"]

@@ -1,0 +1,5 @@
+-r requirements.txt
+# 문서 판별 함수가 있는 knowledge_bridge의 import 의존성.
+# RAG 서버나 LLM 질의 API는 실행하지 않는다.
+langchain-community==0.4.1
+langchain-core>=1.2.7,<2.0

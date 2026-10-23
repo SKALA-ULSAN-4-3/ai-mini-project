@@ -212,10 +212,40 @@ def needs_review_for(question: str) -> bool:
 # ✅ PDF 질의 응답 형식: 답을 찾았는지(found)와 인용 문서(cited)를 답변 문장과 따로 받는다.
 #    문장 속 표시("[명시 없음]", "근거: 1, 3")에 기대면 표현이 조금만 달라져도 handoff · 출처가 틀어졌다.
 class RagAnswer(BaseModel):
-    found: bool = Field(description="질문이 묻는 내용의 답이 PDF에 직접 적혀 있으면 true. 관련 내용만 있고 질문의 답 자체가 없으면 false")
+    # 실제 공고 평가(A08, B08, 2026-01 Q17): "얼마"를 물었는데 원문이 "입찰금액의 5% 이상"처럼 비율로 정해 두면 답을 옮기고도 false로 판단했다.
+    # 다만 "비율 · 조건도 답"이라고만 쓰면 E01(예상 낙찰가)에 사업금액 상한을 답으로 끌어와 추정했다 → 그 항목 자체의 규정만 인정
+    found: bool = Field(description="질문이 묻는 항목의 답이 PDF에 직접 적혀 있으면 true. 질문한 바로 그 항목의 금액 · 기간을 PDF가 "
+                                    "비율 · 산식으로 정해 두었다면(예: '입찰보증금: 입찰금액의 5% 이상') 그것이 답이므로 true. "
+                                    "다른 항목의 상한 · 조건에서 값을 이끌어 내거나 추정해야 하면(예: 예상 낙찰가를 사업금액 상한으로 짐작) false. "
+                                    "관련 내용만 있고 질문의 답 자체가 없으면 false")
     answer: str = Field(description="한국어 답변. found가 false면 '문서에 명시되어 있지 않습니다.'로 시작하고 PDF에 적힌 관련 사실만 덧붙이며, "
-                                    "그 사실로부터 '따라서 ~일 것입니다' 같은 결론이나 추정을 만들지 않는다")
+                                    "그 사실로부터 '따라서 ~일 것입니다' 같은 결론이나 추정을 만들지 않는다. "
+                                    "'[문서 2]에 따르면'처럼 내부 문서 번호를 답변 문장에 쓰지 않는다 (출처는 cited로만 표시)")
     cited: List[int] = Field(description="답변의 근거로 사용한 [문서 n]의 번호 목록")
+
+# 프롬프트를 지켜도 번호가 새어 나오는 경우를 대비해 답변 문장에서 지운다 (사용자에게 [문서 n]은 의미 없는 내부 번호)
+DOC_REF_RE = re.compile(r"\s*\[문서\s*\d+(?:\s*[,|][^\]]*)?\]\s*(?:에\s*따르면|에서는|에서|에)?,?\s*")
+
+def strip_doc_refs(text: str) -> str:
+    text = re.sub(r"\s{2,}", " ", DOC_REF_RE.sub(" ", text))
+    return re.sub(r"\s+([.,])", r"\1", text).strip()
+
+# ✅ 글자마다 띄어 쓴 PDF 텍스트("계 약 보 증 금(계 약 금 액  10%이 상)")를 LLM에 넘기기 전에 붙인다.
+#    이런 PDF는 글자 사이 1칸 · 단어 사이 2칸이라, 한 글자씩 떨어진 4글자 이상 또는 2칸 띄움이 섞인 구간만 고친다
+#    ("할 수 있다"처럼 원래 한 글자 단어가 이어지는 정상 문장은 3글자 이하라 그대로 둔다). 저장된 원문은 바꾸지 않는다.
+SPACED_RUN_RE = re.compile(r"(?<![가-힣])[가-힣](?: {1,2}[가-힣](?![가-힣]))+")
+
+def _join_run(m: re.Match) -> str:
+    run = m.group()
+    parts = run.split("  ")
+    if all(len(p) == 1 for p in parts) and len(parts) > 1:   # "개  찰  장  소"처럼 모든 글자를 2칸씩 띄운 제목
+        return "".join(parts)
+    if len(re.findall(r"[가-힣]", run)) < 4 and len(parts) == 1:
+        return run
+    return " ".join(p.replace(" ", "") for p in parts)
+
+def join_spaced_letters(text: str) -> str:
+    return SPACED_RUN_RE.sub(_join_run, text)
 
 # 답을 찾지 못한 답변에서 LLM이 관련 사실로부터 덧붙인 추정 문장을 지운다 (프롬프트로는 2번 중 1번꼴로 남았음)
 SPECULATION_RE = re.compile(r"따라서|그러므로|일 것|것으로 보|로 추정|해석될 수|예상됩니다")
@@ -423,7 +453,7 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             chunks, sources, total = [], [], 0
             doc_labels = {}  # 프롬프트의 [문서 i] 번호 → 출처
             for i, (doc, _) in enumerate(docs_scores, start=1):
-                content = (doc.page_content or "").strip()
+                content = join_spaced_letters((doc.page_content or "").strip())
                 if not content:
                     continue
                 remaining = MAX_CONTEXT_CHARS - total
@@ -457,7 +487,7 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             result = llm.with_structured_output(RagAnswer, method="function_calling").invoke(
                 [HumanMessage(content=full_prompt)])
             print(f"[PDF LLM 응답] found={result.found} cited={result.cited} answer={result.answer[:1500]}")
-            final = (result.answer or "").strip()
+            final = strip_doc_refs(result.answer or "")
             if not result.found:
                 final = drop_speculation(final)
             if not final:
@@ -596,7 +626,7 @@ def numbered_context(docs: list[Document], limit_chars: int = 24000):
         if total + len(d.page_content) > limit_chars:
             break
         labels[i], texts[i], refs[i] = source_label(d.metadata), d.page_content, source_ref(d.metadata)
-        parts.append(f"[문서 {i} | {labels[i]}]\n{d.page_content}")
+        parts.append(f"[문서 {i} | {labels[i]}]\n{join_spaced_letters(d.page_content)}")
         total += len(d.page_content)
     return "\n\n".join(parts), labels, texts, refs
 
@@ -647,11 +677,12 @@ def bid_documents(bid_no: str, revision: str) -> dict:
             "has_notice": "notice" in kinds, "has_rfp": "rfp" in kinds,
             "stage": "full" if "rfp" in kinds else ("notice_only" if files else "none")}
 
-def require_rfp(bid_no: str, revision: str):
+def require_rfp(bid_no: str, revision: str, partial_hint: bool = True):
     # 채점표는 대부분 제안요청서에 있다. 공고문만으로 추출하면 "기술 90 : 가격 10" 비율만 나와 빈 채점표가 되므로 막는다
     if not bid_documents(bid_no, revision)["has_rfp"]:
+        hint = " (공고문만으로 추출하려면 allow_partial=true)" if partial_hint else ""
         raise HTTPException(status_code=409, detail="제안요청서가 아직 적재되지 않았습니다. 이 공고를 선택해 나머지 첨부를 "
-                                                    "적재한 뒤 다시 요청하세요. (공고문만으로 추출하려면 allow_partial=true)")
+                                                    f"적재한 뒤 다시 요청하세요.{hint}")
 
 def run_endpoint(bid_no: str, revision: str | None, kind: str, refresh: bool, builder, needs_rfp: bool = False) -> dict:
     revision = resolve_revision(bid_no, revision)
@@ -908,7 +939,7 @@ def bid_summaries(req: SummaryBatchRequest):
 def get_extracted_scoring_table(bid_no: str, revision: str) -> dict | None:
     if (bid_no, revision) not in stored_bids(VECTORSTORE_PDF):
         return None
-    require_rfp(bid_no, revision)  # 409: 3번 라우터는 HTTPException을 그대로 전달한다 (흐름 ⑥ 전에는 점수 불가)
+    require_rfp(bid_no, revision, partial_hint=False)  # 409: 3번 라우터는 HTTPException을 그대로 전달한다 (흐름 ⑥ 전에는 점수 불가)
     data = cached(bid_no, revision, "scoring", False, lambda: build_scoring(bid_no, revision))
     return to_bid_logic_scoring(data, bid_no, revision) if data.get("items") else None
 
@@ -928,6 +959,12 @@ def connect_bid_routes(profile_dependency):
     return register_bid_routes(profile_dependency=profile_dependency,
                                scoring_provider=get_extracted_scoring_table,
                                checklist_provider=get_extracted_checklist)
+
+# 4번 백엔드 주소가 있으면 토큰을 백엔드 /api/profile로 확인하는 의존성으로 바로 연결한다 (backend_auth.py)
+from backend_auth import backend_url, get_authenticated_profile
+if backend_url():
+    connect_bid_routes(get_authenticated_profile)
+    print(f"[공고 API 연결] /bids · /bids/{{bid_no}}/score · /bids/{{bid_no}}/checklist ← 프로필: {backend_url()}/api/profile")
 
 
 # 실행 명령어 예시:

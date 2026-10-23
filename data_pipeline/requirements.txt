@@ -1,0 +1,9 @@
+pypdf>=6.10,<7
+faiss-cpu>=1.7,<2
+numpy>=1.26,<3
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+python-multipart>=0.0.9
+httpx>=0.27,<1
+openai>=1.109,<4
+beautifulsoup4>=4.12,<5

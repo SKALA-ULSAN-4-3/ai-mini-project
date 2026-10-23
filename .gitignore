@@ -25,3 +25,7 @@ voice-ai_code/app/routers/uploads/
 
 # 강의 교재 (저작물)
 AI서비스개발_Mini-project_교재_*.pdf
+
+# 데이터 파이프라인 로컬 산출물 · 도구
+/data/
+!.env.example

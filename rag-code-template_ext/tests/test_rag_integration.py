@@ -152,6 +152,10 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         self.assertEqual(kb.classify_attachment("(과업내용서)2027년 용인시.hwpx"), {"rfp"})
         self.assertEqual(kb.classify_attachment("입찰참가_첨부양식(용역).hwp"), {"other"})
         self.assertIn("cancel", kb.classify_attachment("취소공고서.hwpx"))
+        # 2026-10 실제 검색: 재공고 표시가 붙은 제안요청서는 공고문이 아님, 재공고 공고문은 그대로 공고문
+        self.assertEqual(kb.classify_attachment("(최종)제안요청서(재공고)_설치류 수면 시 글림프시스템.pdf"), {"rfp"})
+        self.assertEqual(kb.classify_attachment("(최종)입찰공고문(재공고)_설치류 수면 시.pdf"), {"notice"})
+        self.assertEqual(kb.classify_attachment("재공고_용역.hwp"), {"notice"})
 
     def test_due_parser(self):
         self.assertEqual(kb.to_iso_due("2026.10.23.(금)09:00~11.3.(화)\n10:00"), "2026-11-03T10:00+09:00")

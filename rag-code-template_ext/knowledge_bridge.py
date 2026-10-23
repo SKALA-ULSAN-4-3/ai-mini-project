@@ -118,6 +118,10 @@ def classify_attachment(filename: str) -> set[str]:
     import unicodedata
     name = unicodedata.normalize("NFC", filename or "")  # macOS 파일명(NFD)도 같게 비교
     kinds = {k for k, words in (("rfp", RFP_WORDS), ("notice", NOTICE_WORDS)) if any(w in name for w in words)}
+    # "(최종)제안요청서(재공고)"처럼 "재공고"는 재공고 사실만 붙인 것이다. 제안요청서 이름에서는 공고문으로 보지 않는다
+    # (1번이 공고문만 받을 때 이 함수로 고르므로, 공고문이 HWP뿐이면 제안요청서 PDF를 공고문으로 받게 됨)
+    if "rfp" in kinds and not any(w in name.replace("재공고", "") for w in NOTICE_WORDS):
+        kinds.discard("notice")
     if "취소" in name:
         kinds.add("cancel")
     return kinds or {"other"}

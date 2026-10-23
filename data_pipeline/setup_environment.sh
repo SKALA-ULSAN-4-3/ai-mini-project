@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Python 의존성 → LibreOffice/Java → 프로젝트 전용 H2Orestart 설정.
-set -euo pipefail
+set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 VENV="$SCRIPT_DIR/.venv"
-PYTHON="${PYTHON:-python3}"
+PYTHON="${PYTHON:-}"
 LO_VERSION="25.8.7.3"
+STAGE="시작"
 
 fail() { printf '설치 중단: %s\n' "$*" >&2; exit 1; }
+step() { STAGE="$1"; printf '\n[설치] %s\n' "$STAGE"; }
+trap 'printf "설치 실패 단계: %s (줄 %s)\n" "$STAGE" "$LINENO" >&2' ERR
 
 if [[ "${1:-}" == "--help" ]]; then
     printf '%s\n' \
@@ -20,6 +23,12 @@ if [[ "${1:-}" == "--help" ]]; then
 fi
 [[ $# -eq 0 ]] || fail '지원하지 않는 옵션입니다. --help를 확인하세요.'
 [[ $EUID -ne 0 ]] || fail 'sudo로 스크립트 전체를 실행하지 말고 일반 사용자로 실행하세요.'
+if [[ -z "$PYTHON" ]]; then
+    PYTHON=python3
+    if [[ -x "$VENV/bin/python" ]]; then
+        PYTHON="$("$VENV/bin/python" -c 'import sys; print(sys._base_executable)')"
+    fi
+fi
 
 temporary=""
 mounted=""
@@ -97,6 +106,7 @@ install_ubuntu() {
     SOFFICE="$(command -v soffice)"
 }
 
+step '운영체제별 LibreOffice · JDK 준비'
 case "$(uname -s)" in
     Darwin) install_macos ;;
     Linux) install_ubuntu ;;
@@ -107,7 +117,20 @@ python_usable || fail 'Python 3.10 이상이 필요합니다.'
 java21_usable || fail 'JAVA_HOME의 JDK 21 설치와 CPU 아키텍처를 확인하세요.'
 [[ -x "$SOFFICE" ]] || fail 'soffice 실행파일을 찾을 수 없습니다.'
 "$SOFFICE" --version
+step 'Python 가상환경 준비'
+if [[ -x "$VENV/bin/python" ]]; then
+    existing_version="$("$VENV/bin/python" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+    requested_version="$("$PYTHON" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+    [[ "$existing_version" == "$requested_version" ]] ||
+        fail "기존 가상환경은 Python $existing_version, 선택한 Python은 $requested_version 입니다. PYTHON=python$existing_version 으로 재실행하세요. 기존 환경은 덮어쓰지 않습니다."
+fi
 "$PYTHON" -m venv "$VENV"
+step 'Python 패키지 설치'
 "$VENV/bin/python" -m pip install -r "$SCRIPT_DIR/requirements.txt"
+step 'H2Orestart 등록'
 "$VENV/bin/python" -B "$SCRIPT_DIR/convert_documents.py" --setup --soffice "$SOFFICE"
+step '패키지 및 API 로딩 확인'
+"$VENV/bin/python" -m pip check
+PYTHONPATH="$PROJECT_ROOT${PYTHONPATH:+:$PYTHONPATH}" "$VENV/bin/python" -B -c \
+    'import faiss, numpy, pypdf; from data_pipeline.api import app; app.openapi(); print("FAISS · PDF · API 로딩 정상")'
 printf '설치 완료. 실행 환경: %s\n' "$VENV/bin/python"

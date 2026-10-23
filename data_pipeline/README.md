@@ -15,6 +15,8 @@ bash data_pipeline/setup_environment.sh --help
 bash data_pipeline/setup_environment.sh
 ```
 
+기존 가상환경이 있으면 해당 Python을 재사용합니다. `PYTHON=python3.12`처럼 버전을 명시할 수도 있지만, 기존 가상환경과 버전이 다르면 덮어쓰지 않고 중단합니다. 실패하면 설치 단계와 도구 오류를 표시합니다. 완료 메시지는 패키지 의존성 검사와 FAISS·PDF·API 로딩까지 통과한 뒤 출력됩니다.
+
 macOS는 LibreOffice 25.8.7.3 설치 파일의 SHA-256을 확인해 `data/tools/LibreOffice.app`에 설치하고, Ubuntu는 배포판 패키지를 사용합니다. 설치 도구는 변환 환경만 준비하며 공고 검색·다운로드·임베딩을 실행하지 않습니다. Python 패키지만 설치하려면 아래 명령을 사용합니다.
 
 ```bash
@@ -29,6 +31,10 @@ data_pipeline/.venv/bin/python data_pipeline/convert_documents.py --setup --soff
 ```
 
 공식 확장 배포 파일은 SHA-256을 검증하고 프로젝트 전용 `data/tools/hwp-profile`에 등록합니다. 기존 LibreOffice 설정은 수정하지 않습니다. 26.8.1은 실제 첨부의 한글 손상이 발견돼 사용하지 않았습니다. [H2Orestart 공식 문서](https://github.com/ebandal/H2Orestart).
+
+macOS 신규 프로필에서는 `unopkg`가 실행하는 보조 프로세스가 `Launch Constraint Violation`으로 종료되는 문제가 재현됐습니다. macOS에서는 LibreOffice 내부의 임시 설치 매크로로 검증된 확장만 등록하고, 완료 후 매크로를 제거하며 원래 매크로 목록을 복원합니다. 앱 서명이나 시스템 보안 설정은 변경하지 않습니다. 설치할 때는 해당 프로필을 쓰는 변환 작업을 종료해야 합니다.
+
+2026-10-23 macOS 26.5.2 arm64에서 가상환경·LibreOffice·확장 프로필이 없는 별도 경로(공백 포함)로 다운로드부터 설치 종료까지 검증했습니다. Python 3.14.6에서 API 로딩·의존성 검사, 실제 HWP 3쪽·HWPX 5쪽의 PDF 변환 및 텍스트 추출, 설치 재실행, 기존 등록 실패 프로필 복구를 통과했습니다. Homebrew·JDK 21은 호스트에 이미 설치되어 있었으므로 이 두 도구의 신규 설치 및 Ubuntu 실행은 검증 범위에 포함되지 않습니다.
 
 ## 화면 연결용 확정 흐름
 

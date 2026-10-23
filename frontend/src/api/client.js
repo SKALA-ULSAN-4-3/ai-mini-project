@@ -32,8 +32,12 @@ function makeClient(baseURL) {
   return c
 }
 
-const client = makeClient('/api') // 가입·로그인·프로필
-export const rag = makeClient('/rag') // RAG 서버(:8001): 공고·요약·채점표·Q&A
+// 개발: 주소를 안 적으면 '/api' → vite 프록시가 :8080 으로 전달
+// 배포: .env.production 에 실제 서버 주소를 적으면 그 주소로 직접 요청
+const AUTH_URL = import.meta.env.VITE_AUTH_URL || '/api'
+const RAG_URL = import.meta.env.VITE_RAG_URL || '/rag'
+const client = makeClient(AUTH_URL) // 가입·로그인·프로필
+export const rag = makeClient(RAG_URL) // RAG 서버(:8001): 공고·요약·채점표·Q&A
 
 // 서버 오류를 사용자에게 보여줄 문장으로 바꿔 주는 도우미
 export function errorMessage(error, messages = {}) {

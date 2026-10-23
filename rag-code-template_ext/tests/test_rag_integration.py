@@ -142,6 +142,15 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         events = {e["event"]: e["status"] for e in out["schedule"]}
         self.assertEqual(events, {"개찰": "upcoming", "제안서 평가": "unknown"})
 
+    def test_attachment_kinds_from_real_api_names(self):
+        # 2026-10 실제 API 검색 결과의 파일명
+        self.assertEqual(kb.classify_attachment("(공고문) 2027년 용인시보건소 PACS.pdf"), {"notice"})
+        self.assertEqual(kb.classify_attachment("입찰공고서_지방_1468+0036_유지관리.hwpx"), {"notice"})
+        self.assertEqual(kb.classify_attachment("[제안요청서] 2027년 침해신고센터.hwp"), {"rfp"})
+        self.assertEqual(kb.classify_attachment("(과업내용서)2027년 용인시.hwpx"), {"rfp"})
+        self.assertEqual(kb.classify_attachment("입찰참가_첨부양식(용역).hwp"), {"other"})
+        self.assertIn("cancel", kb.classify_attachment("취소공고서.hwpx"))
+
     def test_due_parser(self):
         self.assertEqual(kb.to_iso_due("2026.10.23.(금)09:00~11.3.(화)\n10:00"), "2026-11-03T10:00+09:00")
         self.assertIsNone(kb.to_iso_due("2026. 11. 5.(목) ~ 11. 11.(수)"))

@@ -106,6 +106,23 @@ class StoreCache:
             return store, current, manifest
 
 
+# ---------------------------------------------------------------- 첨부 종류 판별 (흐름 ③ 공고문만 / ⑥ 나머지)
+# 실제 API 결과 파일명 예: "(공고문) …pdf", "입찰공고(2026-249) ….hwp", "입찰공고서_….hwpx",
+#                          "[제안요청서] ….hwp", "(과업내용서) ….hwpx", "3. 과업지시서(…).hwp"
+NOTICE_WORDS = ("공고문", "공고서", "입찰공고", "재공고")
+RFP_WORDS = ("제안요청서", "제안요청", "과업지시서", "과업내용서", "규격서", "RFP")
+
+
+def classify_attachment(filename: str) -> set[str]:
+    """파일명으로 공고문(notice) · 제안요청서류(rfp)를 판별. 둘 다 아니면 {"other"}. 둘 다 해당할 수 있다."""
+    import unicodedata
+    name = unicodedata.normalize("NFC", filename or "")  # macOS 파일명(NFD)도 같게 비교
+    kinds = {k for k, words in (("rfp", RFP_WORDS), ("notice", NOTICE_WORDS)) if any(w in name for w in words)}
+    if "취소" in name:
+        kinds.add("cancel")
+    return kinds or {"other"}
+
+
 # ---------------------------------------------------------------- 1번 bids.csv → 3번 형식
 REGION_SHORT = {"서울특별시": "서울", "부산광역시": "부산", "대구광역시": "대구", "인천광역시": "인천",
                 "광주광역시": "광주", "대전광역시": "대전", "울산광역시": "울산", "세종특별자치시": "세종",

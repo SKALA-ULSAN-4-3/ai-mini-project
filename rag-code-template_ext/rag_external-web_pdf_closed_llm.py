@@ -48,7 +48,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # 프로젝트 루트 .env(1·3번과 공통)를 먼저 읽고, 옮기는 동안만 이 폴더의 .env도 보조로 읽는다 (이미 있는 값은 덮지 않음)
-from knowledge_bridge import StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due
+from knowledge_bridge import (StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
+                              classify_attachment)
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -84,7 +85,8 @@ VECTORSTORE_WEB = None
 VECTORSTORE_PDF = None
 STORES = StoreCache()
 STORE_STATE: dict[str, str | None] = {"pdf_generation": None, "web_generation": None, "embedding_model": None}
-EXTRACT_CACHE: dict[tuple[str, str, str], dict] = {}  # (bid_no, revision, 종류) → 결과. 같은 공고 재요청 시 LLM 비용 절감
+EXTRACT_CACHE: dict[tuple[str, str, str], dict] = {}  # (bid_no, revision, 종류) → {지문, 결과}. 같은 공고 재요청 시 LLM 비용 절감
+BID_FINGERPRINTS: dict[tuple[str, str], int] = {}     # (bid_no, revision) → 적재된 조각 목록의 지문
 
 def refresh_stores():
     # 요청마다 1번 저장소의 현재 세대를 확인해, 업로드로 세대가 바뀌었을 때만 다시 읽는다
@@ -92,7 +94,16 @@ def refresh_stores():
     pdf, pdf_generation, manifest = STORES.get("pdf")
     web, web_generation, _ = STORES.get("web")
     if pdf_generation != STORE_STATE["pdf_generation"]:
-        EXTRACT_CACHE.clear()  # 문서가 바뀌면 저장해 둔 추출 결과는 낡은 것
+        # 실시간 흐름에서는 공고를 자주 적재하므로 캐시를 통째로 지우지 않고, 공고별 문서 지문만 다시 계산한다.
+        # 지문이 바뀐 공고(문서가 추가 · 교체된 공고)만 다음 요청 때 다시 추출된다.
+        BID_FINGERPRINTS.clear()
+        if pdf is not None:
+            chunks: dict[tuple[str, str], list[str]] = {}
+            for d in pdf.docstore._dict.values():
+                if d.metadata.get("bid_no"):
+                    chunks.setdefault((d.metadata["bid_no"], d.metadata.get("revision", "")), []).append(
+                        d.metadata.get("chunk_id", ""))
+            BID_FINGERPRINTS.update({k: hash(tuple(sorted(v))) for k, v in chunks.items()})
     STORE_STATE.update(pdf_generation=pdf_generation, web_generation=web_generation,
                        embedding_model=(manifest or {}).get("embedding_model"))
     VECTORSTORE_PDF, VECTORSTORE_WEB = pdf, web
@@ -619,12 +630,33 @@ def run_extraction(schema, instruction: str, context: str):
 
 def cached(bid_no: str, revision: str, kind: str, refresh: bool, build) -> dict:
     key = (bid_no, revision, kind)
-    if refresh or key not in EXTRACT_CACHE:
-        EXTRACT_CACHE[key] = build()
-    return EXTRACT_CACHE[key]
+    fingerprint = BID_FINGERPRINTS.get((bid_no, revision))
+    entry = EXTRACT_CACHE.get(key)
+    # 그 공고의 문서가 바뀌었을 때만 다시 추출 (다른 공고 적재로는 지워지지 않음)
+    if refresh or entry is None or entry["fingerprint"] != fingerprint:
+        entry = EXTRACT_CACHE[key] = {"fingerprint": fingerprint, "data": build()}
+    return entry["data"]
 
-def run_endpoint(bid_no: str, revision: str | None, kind: str, refresh: bool, builder) -> dict:
+def bid_documents(bid_no: str, revision: str) -> dict:
+    """그 공고에 적재된 파일과 종류. 공고문만 적재(흐름 ③)인지, 제안요청서까지 적재(흐름 ⑥)인지 판단한다."""
+    files = sorted({d.metadata.get("filename", "") for d in VECTORSTORE_PDF.docstore._dict.values()
+                    if (d.metadata.get("bid_no"), d.metadata.get("revision")) == (bid_no, revision)})
+    typed = [{"filename": f, "kinds": sorted(classify_attachment(f))} for f in files]
+    kinds = {k for t in typed for k in t["kinds"]}
+    return {"bid_no": bid_no, "revision": revision, "files": typed,
+            "has_notice": "notice" in kinds, "has_rfp": "rfp" in kinds,
+            "stage": "full" if "rfp" in kinds else ("notice_only" if files else "none")}
+
+def require_rfp(bid_no: str, revision: str):
+    # 채점표는 대부분 제안요청서에 있다. 공고문만으로 추출하면 "기술 90 : 가격 10" 비율만 나와 빈 채점표가 되므로 막는다
+    if not bid_documents(bid_no, revision)["has_rfp"]:
+        raise HTTPException(status_code=409, detail="제안요청서가 아직 적재되지 않았습니다. 이 공고를 선택해 나머지 첨부를 "
+                                                    "적재한 뒤 다시 요청하세요. (공고문만으로 추출하려면 allow_partial=true)")
+
+def run_endpoint(bid_no: str, revision: str | None, kind: str, refresh: bool, builder, needs_rfp: bool = False) -> dict:
     revision = resolve_revision(bid_no, revision)
+    if needs_rfp:
+        require_rfp(bid_no, revision)
     try:
         return cached(bid_no, revision, kind, refresh, lambda: builder(bid_no, revision))
     except HTTPException:
@@ -741,8 +773,9 @@ def build_scoring(bid_no: str, revision: str) -> dict:
 
 @app.get("/bids/{bid_no}/scoring-table", summary="공고 채점표 추출 (3번 점수 계산용)", tags=["공고 추출"])
 async def scoring_table(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
-                        refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
-    return run_endpoint(bid_no, revision, "scoring", refresh, build_scoring)
+                        refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출"),
+                        allow_partial: bool = Query(False, description="true면 제안요청서 없이 공고문만으로 추출 (채점표가 비거나 불완전할 수 있음)")):
+    return run_endpoint(bid_no, revision, "scoring", refresh, build_scoring, needs_rfp=not allow_partial)
 
 # ---- 제출서류 · 일정 ----
 class RequiredDoc(BaseModel):
@@ -834,12 +867,48 @@ async def bid_summary(bid_no: str, revision: Optional[str] = Query(None, descrip
                       refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
     return run_endpoint(bid_no, revision, "summary", refresh, build_summary)
 
+# ---- 흐름 ③ · ⑥ 진행 확인: 공고별로 무엇이 적재되었는지 ----
+@app.get("/bids/{bid_no}/documents", summary="공고별 적재 문서 · 단계 (none / notice_only / full)", tags=["공고 추출"])
+async def bid_documents_status(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수")):
+    return bid_documents(bid_no, resolve_revision(bid_no, revision))
+
+# ---- 흐름 ④: 추린 공고 20건을 한 번에 요약 ----
+class BidKey(BaseModel):
+    bid_no: str
+    revision: Optional[str] = None
+
+class SummaryBatchRequest(BaseModel):
+    bids: List[BidKey] = Field(min_length=1, max_length=20, description="요약할 공고 (최대 20건)")
+    refresh: bool = False
+
+@app.post("/bids/summaries", summary="공고 여러 건 요약 (흐름 ④, 최대 20건 · 동시 5건)", tags=["공고 추출"])
+def bid_summaries(req: SummaryBatchRequest):
+    # LLM 호출을 공고마다 순서대로 하면 20건에 1분 이상 걸려 5건씩 동시에 처리한다. 한 건이 실패해도 나머지는 돌려준다
+    from concurrent.futures import ThreadPoolExecutor
+    t0 = time.perf_counter()
+
+    def one(key: BidKey) -> dict:
+        try:
+            revision = resolve_revision(key.bid_no, key.revision)
+            data = cached(key.bid_no, revision, "summary", req.refresh, lambda: build_summary(key.bid_no, revision))
+            return {"status": "ok", **data, "documents": bid_documents(key.bid_no, revision)["stage"]}
+        except HTTPException as e:
+            return {"bid_no": key.bid_no, "revision": key.revision, "status": "error", "code": e.status_code, "detail": e.detail}
+        except Exception as e:
+            return {"bid_no": key.bid_no, "revision": key.revision, "status": "error", "code": 500, "detail": str(e)}
+
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        results = list(pool.map(one, req.bids))
+    return {"results": results, "ok": sum(r["status"] == "ok" for r in results),
+            "failed": sum(r["status"] != "ok" for r in results), "latency_ms": elapsed_ms(t0)}
+
 # =====================================================================
 # ✅ 3번(공고 로직) 공급 함수: (bid_no, revision) → 3번 입력 형식. 없거나 추출 실패면 None(3번이 404 처리)
 # =====================================================================
 def get_extracted_scoring_table(bid_no: str, revision: str) -> dict | None:
     if (bid_no, revision) not in stored_bids(VECTORSTORE_PDF):
         return None
+    require_rfp(bid_no, revision)  # 409: 3번 라우터는 HTTPException을 그대로 전달한다 (흐름 ⑥ 전에는 점수 불가)
     data = cached(bid_no, revision, "scoring", False, lambda: build_scoring(bid_no, revision))
     return to_bid_logic_scoring(data, bid_no, revision) if data.get("items") else None
 

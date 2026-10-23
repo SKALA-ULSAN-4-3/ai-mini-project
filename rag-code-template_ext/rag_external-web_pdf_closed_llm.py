@@ -1,6 +1,6 @@
 #### 다음 실습 코드는 학습 목적으로만 사용 바랍니다. 문의 : audit@korea.ac.kr 임성열 Ph.D.
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import create_async_engine
 from fastapi.responses import JSONResponse
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -34,6 +34,7 @@ import re
 import json
 import asyncio
 import tempfile
+import time
 from datetime import datetime, UTC
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -103,10 +104,80 @@ if os.path.exists(f"{pdf_path}/index.faiss") and os.path.exists(f"{pdf_path}/ind
 else:
     print("❌ VECTORSTORE_PDF 벡터화된 파일이 없습니다.")
 
-# ✅ PDF 텍스트 추출
-def load_paper(file_path: str) -> str:
+# ✅ PDF 텍스트 추출 (쪽 단위: 출처에 "파일명 p.쪽"을 남기기 위해)
+def load_paper(file_path: str) -> list[tuple[int, str]]:
     reader = PdfReader(file_path)
-    return "\n".join(text for page in reader.pages if (text := page.extract_text()))
+    return [(i, text) for i, page in enumerate(reader.pages, start=1) if (text := page.extract_text())]
+
+# ✅ 공고문 담당자 연락처 마스킹 (전화번호 · 이메일)
+PHONE_RE = re.compile(r"\b0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}\b")
+EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+
+def mask_contacts(text: str) -> str:
+    text = PHONE_RE.sub("[전화번호]", text)
+    return EMAIL_RE.sub("[이메일]", text)
+
+# ✅ 출처 표기: PDF는 "파일명 p.쪽", 웹은 "제목 | URL"
+def source_label(meta: dict) -> str:
+    src = meta.get("source", "unknown")
+    if meta.get("page"):
+        return f"{src} p.{meta['page']}"
+    if meta.get("title"):
+        return f"{meta['title']} | {src}"
+    return src
+
+# ✅ 업로드할 때마다 덮어쓰지 않고 기존 저장소에 누적
+def add_to_store(store, docs):
+    if store is None:
+        return FAISS.from_documents(docs, OpenAIEmbeddings())
+    store.add_documents(docs)
+    return store
+
+def stored_sources(store) -> set[str]:
+    if store is None:
+        return set()
+    return {d.metadata.get("source", "unknown") for d in store.docstore._dict.values()}
+
+def stored_bid_nos(store) -> set[str]:
+    if store is None:
+        return set()
+    return {b for d in store.docstore._dict.values() if (b := d.metadata.get("bid_no"))}
+
+# ✅ 자격 · 배점처럼 사람이 최종 확인해야 하는 질문
+REVIEW_KEYWORDS = ("자격", "참가", "제한", "면허", "업종", "지역", "배점", "점수", "평가")
+
+def needs_review_for(question: str) -> bool:
+    return any(k in question for k in REVIEW_KEYWORDS)
+
+UNSTATED_MARK = "[명시 없음]"
+
+# ✅ LLM 답변 끝의 "근거: 1, 3"을 떼어 내고, 실제로 인용한 문서의 출처만 남긴다
+def split_cited(raw: str, doc_labels: dict[int, str]) -> tuple[str, list[str]]:
+    m = re.search(r"\n?\s*근거\s*[:：]\s*([\d,\s]*)$", raw.strip())
+    if not m:
+        return raw.strip(), []
+    cited = []
+    for n in re.findall(r"\d+", m.group(1)):
+        label = doc_labels.get(int(n))
+        if label and label not in cited:
+            cited.append(label)
+    return raw.strip()[:m.start()].strip(), cited
+
+def elapsed_ms(t0: float) -> int:
+    return round((time.perf_counter() - t0) * 1000)
+
+# ✅ 엔진 · 적재 상태 확인
+@app.get("/health", summary="엔진 · 벡터 저장소 상태", tags=["운영"])
+async def health():
+    def count(store):
+        return len(store.docstore._dict) if store is not None else 0
+    return {
+        "status": "ok",
+        "pdf_chunks": count(VECTORSTORE_PDF),
+        "pdf_files": sorted(stored_sources(VECTORSTORE_PDF)),
+        "bid_nos": sorted(stored_bid_nos(VECTORSTORE_PDF)),
+        "web_chunks": count(VECTORSTORE_WEB),
+    }
 
 # ✅ 웹 검색 → 외부 정보 벡터화
 @app.post("/upload-topic", summary="웹 검색 → 외부 정보 벡터화", tags=["외부 정보"])
@@ -172,17 +243,20 @@ async def upload_topic(topic: str = Query(..., description="검색할 주제")):
         ]
         # 너무 긴 텍스트는 잘라서 임베딩 안정화
         texts = [t[:3000] for t in texts]
+        collected_at = datetime.now(UTC).strftime("%Y-%m-%d")
+        metadatas = [{"source": it.get("link", ""), "title": it.get("title", ""),
+                      "topic": topic, "collected_at": collected_at} for it in items]
 
         # ---- 3) 텍스트 분할 ----
         splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=80)
-        docs = splitter.create_documents(texts)
+        docs = splitter.create_documents(texts, metadatas=metadatas)
 
         if not docs:
             return {"message": "벡터화할 문서가 없습니다.", "collected": len(items)}
 
-        # ---- 4) 벡터화 ----
+        # ---- 4) 벡터화 (키워드 3~5개를 차례로 넣으므로 누적) ----
         global VECTORSTORE_WEB
-        VECTORSTORE_WEB = FAISS.from_documents(docs, OpenAIEmbeddings())
+        VECTORSTORE_WEB = add_to_store(VECTORSTORE_WEB, docs)
 
         # ---- 5) 디스크 저장 ----
         save_path = "faiss_db/web"
@@ -200,9 +274,14 @@ async def upload_topic(topic: str = Query(..., description="검색할 주제")):
 
 # ✅ PDF 업로드 및 벡터화
 @app.post("/upload-paper", summary="PDF 업로드 및 벡터화", tags=["PDF 처리"]) 
-async def upload_pdf(file: UploadFile = File(...)):
-    if not file.filename.endswith(".pdf"):
+async def upload_pdf(file: UploadFile = File(...),
+                     bid_no: str = Form(default="", description="공고번호 (질의 시 공고별 검색 범위 지정용, 선택)")):
+    global VECTORSTORE_PDF
+    bid_no = bid_no.strip()
+    if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="PDF 파일만 허용됩니다.")
+    if file.filename in stored_sources(VECTORSTORE_PDF):
+        raise HTTPException(status_code=409, detail=f"이미 적재된 파일입니다: {file.filename}")
 
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
@@ -210,22 +289,30 @@ async def upload_pdf(file: UploadFile = File(...)):
             tmp_path = tmp.name
 
         try:
-            paper_text = load_paper(tmp_path)
+            pages = load_paper(tmp_path)
         finally:
             os.unlink(tmp_path)
+        paper_text = "\n".join(text for _, text in pages)
         if not paper_text.strip():
             raise HTTPException(status_code=422, detail="PDF에서 텍스트를 추출하지 못했습니다. 스캔 PDF라면 OCR이 필요합니다.")
         # [Q01] PDF 청크 설계
         # [설계 판단] PDF 전체 텍스트를 임베딩하기 전에 검색 가능한 작은 단위로 나누되, 청크 경계에서 정보가 끊어지지 않도록 일부 중첩을 둡니다. 이 서버의 PDF 청크 크기와 중첩 크기를 설정하세요.
         # [TODO Q01] 아래 ... 부분을 적절한 코드로 교체하세요.
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        docs = splitter.create_documents([paper_text], metadatas=[{"source": file.filename}])
+        # 쪽 단위로 나눈 뒤 청크로 자르므로 모든 청크가 자기 쪽 번호를 가진다
+        # 1000자 청크에서는 공고문 1쪽(계약방법·예산·자격이 한 덩어리)이 "입찰 방식" 질문에 검색되지 않아 500자로 줄임
+        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=80)
+        collected_at = datetime.now(UTC).strftime("%Y-%m-%d")
+        docs = splitter.create_documents(
+            [mask_contacts(text) for _, text in pages],
+            metadatas=[{"source": file.filename, "page": page, "bid_no": bid_no, "collected_at": collected_at}
+                       for page, _ in pages],
+        )
 
-        global VECTORSTORE_PDF
         # [Q02] PDF 임베딩과 벡터 저장소 연결
         # [설계 판단] 분할한 PDF 문서(docs)를 OpenAI 임베딩 모델로 벡터화하여 FAISS 검색 저장소로 만드세요.
         # [TODO Q02] 아래 ... 부분을 적절한 코드로 교체하세요.
-        VECTORSTORE_PDF = FAISS.from_documents(docs, OpenAIEmbeddings())
+        # 공고 20건을 차례로 올리므로 덮어쓰지 않고 누적한다
+        VECTORSTORE_PDF = add_to_store(VECTORSTORE_PDF, docs)
 
         # ✅ 디스크에 저장
         os.makedirs("faiss_db/pdf", exist_ok=True)
@@ -233,6 +320,9 @@ async def upload_pdf(file: UploadFile = File(...)):
 
         return JSONResponse(content={
             "message": f"{len(docs)}개의 PDF 청크 벡터화 및 저장 완료",
+            "pages": len(pages),
+            "bid_no": bid_no,
+            "total_files": len(stored_sources(VECTORSTORE_PDF)),
             "extracted_characters": len(paper_text),
             "preview": paper_text[:300]
         })
@@ -247,6 +337,7 @@ class RAGRequest(BaseModel):
     prompt: str = Field(default=..., description="질문 프롬프트")
     source: str = Field(default=..., description="web | pdf")
     top_k: int = Field(default=5, ge=1, description="검색할 결과 수 (기본값 5)")
+    bid_no: Optional[str] = Field(default=None, description="공고번호 (지정하면 그 공고 PDF에서만 검색)")
 
     class Config:
         validate_by_name = True
@@ -255,6 +346,10 @@ class RAGRequest(BaseModel):
 class AnswerResponse(BaseModel):
     prompt: str
     response: str
+    sources: List[str] = Field(default_factory=list, description="근거 위치 (PDF: 파일명 p.쪽, 웹: 제목 | URL)")
+    needs_review: bool = Field(default=False, description="자격 · 배점 등 담당자 확인이 필요한 답변")
+    handoff: bool = Field(default=False, description="문서에서 근거를 찾지 못해 담당자에게 넘김")
+    latency_ms: int = 0
 
 # ✅ RAG 기반 질의 응답 처리
 from fastapi import Body
@@ -305,6 +400,14 @@ def fallback_extract_from_context(context: str, question: str) -> str | None:
 # ✅ 질의 응답 라우터
 @app.post("/rag-query", response_model=AnswerResponse, summary="Closed Source LLM + 벡터 DB 질의", tags=["질의 응답"])
 async def rag_query(rag_request: RAGRequest = Body(...)):
+    t0 = time.perf_counter()
+    review = needs_review_for(rag_request.prompt)
+
+    def not_found(message: str) -> AnswerResponse:
+        # 근거가 없으면 LLM이 지어내지 않도록 답하지 않고 담당자에게 넘긴다
+        return AnswerResponse(prompt=rag_request.prompt, response=message,
+                              handoff=True, latency_ms=elapsed_ms(t0))
+
     # 1. 벡터스토어 및 LLM 결정
     if rag_request.source == "web":
         if VECTORSTORE_WEB is None:
@@ -329,6 +432,13 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
         llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
         llm_type = "openai"
 
+        # 없는 공고번호로 검색하면 "문서에 답이 없음"과 구분되지 않으므로 오류로 알린다
+        if rag_request.bid_no and rag_request.bid_no not in stored_bid_nos(VECTORSTORE_PDF):
+            raise HTTPException(
+                status_code=404,
+                detail=f"적재되지 않은 공고번호입니다: {rag_request.bid_no} (적재된 공고번호: {sorted(stored_bid_nos(VECTORSTORE_PDF))})",
+            )
+
     else:
         raise HTTPException(
             status_code=400,
@@ -345,18 +455,21 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             # [Q04] 질문과 유사 문서 검색 연결
             # [설계 판단] 사용자 질문을 기준으로 선택된 벡터 저장소에서 상위 top_k개 문서와 거리 점수를 가져오세요.
             # [TODO Q04] 아래 ... 부분을 적절한 코드로 교체하세요.
-            docs_scores = vectorstore.similarity_search_with_score(rag_request.prompt, k=top_k)
+            # bid_no를 주면 그 공고의 청크만 검색 (fetch_k개를 먼저 찾은 뒤 필터)
+            search_kwargs = {"filter": {"bid_no": rag_request.bid_no}, "fetch_k": 100} if rag_request.bid_no else {}
+            docs_scores = vectorstore.similarity_search_with_score(rag_request.prompt, k=top_k, **search_kwargs)
             print(f"[PDF 검색] 질문={rag_request.prompt!r}, 검색 문서 수={len(docs_scores)}")
             for i, (doc, score) in enumerate(docs_scores, start=1):
-                print(f"[PDF 검색 {i}] 거리={score:.5f}, 내용={doc.page_content[:300]!r}")
+                print(f"[PDF 검색 {i}] 거리={score:.5f}, 출처={source_label(doc.metadata)}, 내용={doc.page_content[:300]!r}")
 
             if not docs_scores:
-                return AnswerResponse(prompt=rag_request.prompt, response="PDF 지식베이스에서 검색 결과를 찾을 수 없습니다.")
+                return not_found("PDF 지식베이스에서 검색 결과를 찾을 수 없습니다.")
 
             # 임의의 거리 임계값을 제거하고 상위 검색 결과를 사용합니다.
             # 기존 로직은 0.12 마진으로 문서를 과도하게 배제할 수 있었습니다.
             MAX_CONTEXT_CHARS = 12000
-            chunks, total = [], 0
+            chunks, sources, total = [], [], 0
+            doc_labels = {}  # 프롬프트의 [문서 i] 번호 → 출처
             for i, (doc, _) in enumerate(docs_scores, start=1):
                 content = (doc.page_content or "").strip()
                 if not content:
@@ -365,16 +478,24 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
                 if remaining <= 0:
                     break
                 excerpt = content[:remaining]
-                chunks.append(f"[문서 {i}]\n{excerpt}")
+                label = source_label(doc.metadata)
+                chunks.append(f"[문서 {i} | {label}]\n{excerpt}")
+                doc_labels[i] = label
+                if label not in sources:
+                    sources.append(label)
                 total += len(excerpt)
             context = "\n\n".join(chunks)
             if not context.strip():
-                return AnswerResponse(prompt=rag_request.prompt, response="PDF에서 검색된 텍스트가 비어 있습니다.")
+                return not_found("PDF에서 검색된 텍스트가 비어 있습니다.")
 
             full_prompt = (
                 "아래는 업로드된 PDF에서 검색한 내용입니다. PDF 내용에 근거해 한국어로 답변하세요. "
                 "질문이 한 단어 또는 주제명이라면 그 주제를 PDF에 근거해 설명하세요. "
-                "PDF에 없는 사실을 만들어 내지 마세요. 근거가 정말 없다면 'N/A'라고 답하세요.\n\n"
+                "PDF에 없는 사실을 만들어 내지 마세요. 근거가 정말 없다면 'N/A'라고 답하세요.\n"
+                "날짜 · 시각 · 금액 · 배점은 PDF에 적힌 그대로 옮기고 계산하거나 바꾸지 마세요.\n"
+                "PDF에 직접 적혀 있지 않은 내용을 일반 상식이나 법령 해석으로 추론하지 마세요. "
+                f"질문에 대한 직접 근거가 없으면 답변을 '{UNSTATED_MARK}'으로 시작하고, PDF에서 확인되는 관련 내용만 덧붙이세요.\n"
+                "답변의 마지막 줄에는 근거로 사용한 문서 번호를 '근거: 1, 3' 형식으로 적으세요.\n\n"
                 f"PDF 검색 내용:\n{context}\n\n"
                 f"질문: {rag_request.prompt}\n\n"
                 "답변:"
@@ -386,10 +507,16 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             raw = raw.strip() if isinstance(raw, str) else str(raw).strip()
             print(f"[PDF LLM 원본 응답] {raw[:1500]}")
             # 마커가 없어도 LLM 원문을 답변으로 사용합니다.
-            final = (extract_by_marker(raw) or raw).strip()
+            final, cited = split_cited(extract_by_marker(raw) or raw, doc_labels)
             if not final or final.upper() == "N/A":
-                final = "PDF 지식베이스에서 답을 찾을 수 없습니다. 질문을 구체적으로 작성해 보세요."
-            return AnswerResponse(prompt=rag_request.prompt, response=final)
+                return not_found("PDF 지식베이스에서 답을 찾을 수 없습니다. 공고 담당 기관에 문의하거나 질문을 구체적으로 작성해 보세요.")
+            # 직접 근거가 없다고 표시한 답은 관련 내용만 보여 주고 담당자에게 넘긴다
+            unstated = final.startswith(UNSTATED_MARK)
+            if unstated:
+                final = "문서에 명시되어 있지 않습니다. " + final.removeprefix(UNSTATED_MARK).strip()
+            return AnswerResponse(prompt=rag_request.prompt, response=final, sources=cited or sources,
+                                  needs_review=review or unstated, handoff=unstated,
+                                  latency_ms=elapsed_ms(t0))
 
         # -------------------- WEB 검색 --------------------
         elif source == "web":
@@ -399,7 +526,7 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             merged = []
 
             def limited_context(docs, limit_chars=4000):
-                buf, total = [], 0
+                buf, used, total = [], [], 0
                 for d in docs:
                     pc = getattr(d, "page_content", "") or ""
                     if not pc.strip():
@@ -407,7 +534,10 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
                     if total + len(pc) > limit_chars:
                         break
                     buf.append(pc); total += len(pc)
-                return "\n\n".join(buf)
+                    label = source_label(d.metadata)
+                    if label not in used:
+                        used.append(label)
+                return "\n\n".join(buf), used
 
             # 1차: 원문 질의
             docs1 = vectorstore.similarity_search(q, k=top_k)
@@ -431,13 +561,11 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
                     seen.add(key); merged_uniq.append(d)
 
             if not merged_uniq:
-                return AnswerResponse(prompt=rag_request.prompt,
-                                    response="웹 검색 기반 지식베이스에서 충분한 결과를 찾지 못했습니다. 키워드를 달리하여 다시 시도해 주십시오.")
+                return not_found("웹 검색 기반 지식베이스에서 충분한 결과를 찾지 못했습니다. 키워드를 달리하여 다시 시도해 주십시오.")
 
-            context = limited_context(merged_uniq, limit_chars=4000)
+            context, sources = limited_context(merged_uniq, limit_chars=4000)
             if not context.strip():
-                return AnswerResponse(prompt=rag_request.prompt,
-                                    response="웹 검색 기반 지식베이스에서 충분한 결과를 찾지 못했습니다. 키워드를 달리하여 다시 시도해 주십시오.")
+                return not_found("웹 검색 기반 지식베이스에서 충분한 결과를 찾지 못했습니다. 키워드를 달리하여 다시 시도해 주십시오.")
 
             # 인용 유도, N/A 강제는 사용하지 않음
             full_prompt = (
@@ -462,8 +590,9 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
 
             final = (answer or "").strip()
             if final == "":
-                final = "웹 검색 기반 지식베이스에서 충분한 결과를 찾지 못했습니다. 키워드를 달리하여 다시 시도해 주십시오."
-            return AnswerResponse(prompt=rag_request.prompt, response=final)
+                return not_found("웹 검색 기반 지식베이스에서 충분한 결과를 찾지 못했습니다. 키워드를 달리하여 다시 시도해 주십시오.")
+            return AnswerResponse(prompt=rag_request.prompt, response=final, sources=sources,
+                                  needs_review=review, latency_ms=elapsed_ms(t0))
 
         # -------------------- 기타 --------------------
         else:

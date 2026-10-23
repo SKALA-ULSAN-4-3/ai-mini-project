@@ -116,16 +116,16 @@ public final class JdbcCompanyProfileRepository implements CompanyProfileReposit
     ) throws SQLException, JsonProcessingException {
         statement.setString(1, businessRegistrationNumber);
         statement.setString(2, request.industry());
-        statement.setString(3, objectMapper.writeValueAsString(request.licenses()));
+        statement.setString(3, json(request.licenses()));
         statement.setString(4, request.region());
         statement.setString(5, request.companySize());
-        statement.setString(6, objectMapper.writeValueAsString(request.certs()));
+        statement.setString(6, json(request.certs()));
         statement.setString(7, request.creditRating());
-        statement.setString(8, objectMapper.writeValueAsString(request.trackRecords()));
-        statement.setString(9, objectMapper.writeValueAsString(request.ownedDocs()));
+        statement.setString(8, json(request.trackRecords()));
+        statement.setString(9, json(request.ownedDocs()));
         setNullableLong(statement, 10, request.budgetMin());
         setNullableLong(statement, 11, request.budgetMax());
-        statement.setString(12, objectMapper.writeValueAsString(request.keywords()));
+        statement.setString(12, json(request.keywords()));
     }
 
     private CompanyProfile toProfile(ResultSet result)
@@ -137,19 +137,30 @@ public final class JdbcCompanyProfileRepository implements CompanyProfileReposit
                 result.getLong("id"),
                 result.getString("business_registration_number"),
                 result.getString("industry"),
-                objectMapper.readValue(result.getString("licenses"), STRING_LIST_TYPE),
+                read(result, "licenses", STRING_LIST_TYPE),
                 result.getString("region"),
                 result.getString("company_size"),
-                objectMapper.readValue(result.getString("certs"), STRING_LIST_TYPE),
+                read(result, "certs", STRING_LIST_TYPE),
                 result.getString("credit_rating"),
-                objectMapper.readValue(result.getString("track_records"), MAP_LIST_TYPE),
-                objectMapper.readValue(result.getString("owned_docs"), STRING_LIST_TYPE),
+                read(result, "track_records", MAP_LIST_TYPE),
+                read(result, "owned_docs", STRING_LIST_TYPE),
                 nullableLong(result, "budget_min"),
                 nullableLong(result, "budget_max"),
-                objectMapper.readValue(result.getString("keywords"), STRING_LIST_TYPE),
+                read(result, "keywords", STRING_LIST_TYPE),
                 createdAt.toInstant(),
                 updatedAt.toInstant()
         );
+    }
+
+    /** null은 JSON "null"이 아닌 SQL NULL로 저장해 "모름"과 "없음([])"을 구분합니다. */
+    private String json(Object value) throws JsonProcessingException {
+        return value == null ? null : objectMapper.writeValueAsString(value);
+    }
+
+    private <T> T read(ResultSet result, String column, TypeReference<T> type)
+            throws SQLException, JsonProcessingException {
+        String value = result.getString(column);
+        return value == null ? null : objectMapper.readValue(value, type);
     }
 
     private void setNullableLong(PreparedStatement statement, int index, Long value)

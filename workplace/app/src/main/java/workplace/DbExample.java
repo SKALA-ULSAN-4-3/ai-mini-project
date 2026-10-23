@@ -9,14 +9,16 @@ public class DbExample {
                 "DB_URL",
                 "jdbc:postgresql://localhost:54321/workplace_db"
         );
-        String user = System.getenv().getOrDefault("DB_USER", "root");
+        String user = System.getenv().getOrDefault("DB_USER", "workplace_app");
         String pw = System.getenv("DB_PASSWORD");
 
         if (pw == null || pw.isBlank()) {
             throw new IllegalStateException("DB_PASSWORD 환경 변수가 필요합니다.");
         }
 
-        String sql = "SHOW TABLES";
+        // SHOW TABLES는 MySQL 문법이라 PostgreSQL에서는 information_schema로 조회합니다.
+        String sql = "SELECT table_name FROM information_schema.tables "
+                + "WHERE table_schema = 'public' ORDER BY table_name";
 
         try (Connection conn = DriverManager.getConnection(url, user, pw);
              PreparedStatement ps = conn.prepareStatement(sql);

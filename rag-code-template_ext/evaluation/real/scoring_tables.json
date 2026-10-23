@@ -1,1 +1,2114 @@
-[]
+[
+  {
+    "bid_no": "R26BK01667722",
+    "revision": "000",
+    "items": [
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item01",
+        "item": "경영상태",
+        "kind": "quantitative",
+        "max": 5,
+        "basis": "원문 신용평가등급표에 따른 항목 원점수",
+        "metric": {
+          "field": "credit_rating"
+        },
+        "rule": {
+          "type": "category",
+          "values": {
+            "AAA": 5,
+            "AA+": 5,
+            "AA0": 5,
+            "AA-": 5,
+            "A+": 5,
+            "A0": 5,
+            "A-": 5,
+            "BBB+": 5,
+            "BBB0": 5,
+            "BBB-": 4.75,
+            "BB+": 4.75,
+            "BB0": 4.75,
+            "BB-": 4.75,
+            "B+": 4.5,
+            "B0": 4.5,
+            "B-": 4.5
+          }
+        },
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          },
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-4190",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item02",
+        "item": "사업수행능력",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item03",
+        "item": "사업이해도",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item04",
+        "item": "추진전략",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item05",
+        "item": "적용기술",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item06",
+        "item": "표준프레임워크 적용",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item07",
+        "item": "개발방법론",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item08",
+        "item": "기능요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item09",
+        "item": "데이터요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item10",
+        "item": "보안요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item11",
+        "item": "제약사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item12",
+        "item": "성능요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item13",
+        "item": "인터페이스요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item14",
+        "item": "품질요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item15",
+        "item": "테스트요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item16",
+        "item": "관리방법론",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item17",
+        "item": "일정계획",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item18",
+        "item": "품질보증",
+        "kind": "qualitative",
+        "max": 2,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item19",
+        "item": "시험운영",
+        "kind": "qualitative",
+        "max": 2,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item20",
+        "item": "교육훈련",
+        "kind": "qualitative",
+        "max": 2,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item21",
+        "item": "하자보수",
+        "kind": "qualitative",
+        "max": 2,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item22",
+        "item": "기밀보안",
+        "kind": "qualitative",
+        "max": 2,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "item23",
+        "item": "추가제안",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "제안요청서_농지정보시스템 기능개발 및 통합 사업.hwpx",
+            "page": null,
+            "locator": "Contents/section7.xml#element-2477",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "0cd5e1663966892d40fd88ec12ff805a663100228fbb9c831232bfc5f378cfad"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "id": "price",
+        "item": "입찰가격평가",
+        "kind": "price",
+        "max": 10,
+        "basis": "가격 항목은 담당자 판단. 원문 배점만 표시",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+            "page": 1,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      }
+    ],
+    "curation": "AI source-reading draft",
+    "notes": [
+      "농지 공고는 기술평가표 100점 원점수를 90점으로 환산. 이 파일은 항목 원점수만 비교하며 총점 미산출"
+    ]
+  },
+  {
+    "bid_no": "R26BK01706837",
+    "revision": "001",
+    "items": [
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item01",
+        "item": "경영상태",
+        "kind": "quantitative",
+        "max": 5,
+        "basis": "원문 신용평가등급표에 따른 항목 원점수",
+        "metric": {
+          "field": "credit_rating"
+        },
+        "rule": {
+          "type": "category",
+          "values": {
+            "AAA": 5,
+            "AA+": 5,
+            "AA0": 5,
+            "AA-": 5,
+            "A+": 5,
+            "A0": 5,
+            "A-": 5,
+            "BBB+": 5,
+            "BBB0": 5,
+            "BBB-": 4.5,
+            "BB+": 4.5,
+            "BB0": 4.5,
+            "BB-": 4.5,
+            "B+": 4,
+            "B0": 4,
+            "B-": 4
+          }
+        },
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-5745",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item02",
+        "item": "사업이해도-배경과목표",
+        "kind": "qualitative",
+        "max": 10,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item03",
+        "item": "사업이해도-과업범위",
+        "kind": "qualitative",
+        "max": 10,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item04",
+        "item": "DB 분석 스키마 설계 및 이관 방안",
+        "kind": "qualitative",
+        "max": 20,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item05",
+        "item": "이전 데이터 확인 인터페이스 개발",
+        "kind": "qualitative",
+        "max": 10,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item06",
+        "item": "클라우드 환경 구성",
+        "kind": "qualitative",
+        "max": 15,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item07",
+        "item": "일정 보안 형상 문서 관리",
+        "kind": "qualitative",
+        "max": 10,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "item08",
+        "item": "수행조직 및 업무분장",
+        "kind": "qualitative",
+        "max": 10,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "id": "price",
+        "item": "입찰가격평가",
+        "kind": "price",
+        "max": 10,
+        "basis": "가격 항목은 담당자 판단. 원문 배점만 표시",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "filename": "[제안요청서]겨레말큰사전 검색 시스템 개발(기반 구축).hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-4471",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "50683c5960877e27032f5c0538797ebc325ffd6d359e8b7075993ff49a8c9e4b"
+          }
+        ]
+      }
+    ],
+    "curation": "AI source-reading draft",
+    "notes": []
+  },
+  {
+    "bid_no": "R26BK01751013",
+    "revision": "000",
+    "items": [
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item01",
+        "item": "사업이해도",
+        "kind": "qualitative",
+        "max": 6,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item02",
+        "item": "추진전략",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item03",
+        "item": "추진체계",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item04",
+        "item": "사업추진방법론",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item05",
+        "item": "기능요구사항",
+        "kind": "qualitative",
+        "max": 6,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item06",
+        "item": "성능요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item07",
+        "item": "인터페이스요구사항",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item08",
+        "item": "유지보수 용이성",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item09",
+        "item": "적용기술",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item10",
+        "item": "개발환경",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item11",
+        "item": "보안요구사항",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item12",
+        "item": "제약사항",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item13",
+        "item": "일정관리",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item14",
+        "item": "품질관리",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item15",
+        "item": "기밀보안관리",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item16",
+        "item": "위험 및 이슈 관리",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item17",
+        "item": "인수인계",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item18",
+        "item": "교육훈련",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item19",
+        "item": "기술지원",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "item20",
+        "item": "하자보수계획",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "2026년_의료기술재평가사업_정보시스템_기능개선_제안요청서.hwpx",
+            "page": null,
+            "locator": "Contents/section0.xml#element-14315",
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "5623aa1653c0885ae21eccb37a76b48a95d7f1485b6c5f8ecdeee8f2768fa76a"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "id": "price",
+        "item": "입찰가격평가",
+        "kind": "price",
+        "max": 10,
+        "basis": "가격 항목은 담당자 판단. 원문 배점만 표시",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01751013",
+            "revision": "000",
+            "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+            "page": 10,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      }
+    ],
+    "curation": "AI source-reading draft",
+    "notes": []
+  },
+  {
+    "bid_no": "R26BK01706954",
+    "revision": "000",
+    "items": [
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item01",
+        "item": "경영상태",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item02",
+        "item": "제안개요",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item03",
+        "item": "추진전략",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item04",
+        "item": "기능",
+        "kind": "qualitative",
+        "max": 18,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item05",
+        "item": "AI",
+        "kind": "qualitative",
+        "max": 15,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item06",
+        "item": "데이터",
+        "kind": "qualitative",
+        "max": 6,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item07",
+        "item": "보안",
+        "kind": "qualitative",
+        "max": 6,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item08",
+        "item": "관리방법 및 일정계획",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item09",
+        "item": "사업수행조직",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item10",
+        "item": "품질보증",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 26,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item11",
+        "item": "교육훈련",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 26,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "item12",
+        "item": "유지보수",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 26,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "id": "price",
+        "item": "입찰가격평가",
+        "kind": "price",
+        "max": 20,
+        "basis": "가격 항목은 담당자 판단. 원문 배점만 표시",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "filename": "가. 제안요청서.pdf",
+            "page": 25,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "5badb1e7d85fcc4264cae43ec2422cdd2b320f6bd3894ac70e600657ef160611",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      }
+    ],
+    "curation": "AI source-reading draft",
+    "notes": []
+  },
+  {
+    "bid_no": "R26BK01760198",
+    "revision": "000",
+    "items": [
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item01",
+        "item": "경영상태",
+        "kind": "quantitative",
+        "max": 5,
+        "basis": "원문 신용평가등급표에 따른 항목 원점수",
+        "metric": {
+          "field": "credit_rating"
+        },
+        "rule": {
+          "type": "category",
+          "values": {
+            "AAA": 5,
+            "AA+": 5,
+            "AA0": 5,
+            "AA-": 5,
+            "A+": 5,
+            "A0": 5,
+            "A-": 5,
+            "BBB+": 5,
+            "BBB0": 5,
+            "BBB-": 4.75,
+            "BB+": 4.75,
+            "BB0": 4.75,
+            "BB-": 4.75,
+            "B+": 4.5,
+            "B0": 4.5,
+            "B-": 4.5
+          }
+        },
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 37,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item02",
+        "item": "용역사업 수행실적",
+        "kind": "quantitative",
+        "max": 5,
+        "basis": "입찰공고일 기준 최근 3년 Axis 프레임워크 대학 정보화사업 수행실적 합산 구간표",
+        "metric": {
+          "field": "track_records",
+          "aggregate": "sum",
+          "unit": "KRW",
+          "from": "2023-10-07",
+          "to": "2026-10-07",
+          "categories": [
+            "Axis 대학 정보화"
+          ]
+        },
+        "rule": {
+          "type": "bands",
+          "bands": [
+            {
+              "min": 0,
+              "max": 30400000,
+              "score": 3.5
+            },
+            {
+              "min": 30400000,
+              "max": 53200000,
+              "score": 4
+            },
+            {
+              "min": 53200000,
+              "max": 76000000,
+              "score": 4.5
+            },
+            {
+              "min": 76000000,
+              "score": 5
+            }
+          ]
+        },
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 37,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item03",
+        "item": "사업이해도",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item04",
+        "item": "추진전략",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item05",
+        "item": "프레임워크 적용",
+        "kind": "qualitative",
+        "max": 6,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item06",
+        "item": "KRI 연계 기능구현",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item07",
+        "item": "교수공채 시스템 기능구현",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item08",
+        "item": "피트니스센터 출입관리 기능구현",
+        "kind": "qualitative",
+        "max": 5,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item09",
+        "item": "보안요구사항",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item10",
+        "item": "데이터요구사항",
+        "kind": "qualitative",
+        "max": 3,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item11",
+        "item": "제약사항요구사항",
+        "kind": "qualitative",
+        "max": 3,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item12",
+        "item": "성능요구사항",
+        "kind": "qualitative",
+        "max": 7,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item13",
+        "item": "품질요구사항",
+        "kind": "qualitative",
+        "max": 7,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item14",
+        "item": "인터페이스요구사항",
+        "kind": "qualitative",
+        "max": 6,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item15",
+        "item": "관리방법론",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item16",
+        "item": "일정계획",
+        "kind": "qualitative",
+        "max": 3,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item17",
+        "item": "개발환경",
+        "kind": "qualitative",
+        "max": 3,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item18",
+        "item": "장애대처",
+        "kind": "qualitative",
+        "max": 4,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item19",
+        "item": "품질관리",
+        "kind": "qualitative",
+        "max": 3,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "item20",
+        "item": "유지관리",
+        "kind": "qualitative",
+        "max": 3,
+        "basis": "원문 기술성 평가표의 해당 항목. 구간/등급 산정표가 없는 정성 항목",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 36,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "id": "price",
+        "item": "입찰가격평가",
+        "kind": "price",
+        "max": 10,
+        "basis": "가격 항목은 담당자 판단. 원문 배점만 표시",
+        "metric": null,
+        "rule": null,
+        "sources": [
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "filename": "제주대학교 통합정보시스템 기능개선사업_제안요청서(협상에 의한 계약 방식)_최종.pdf",
+            "page": 35,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+            "sha256": "b0d5a051a79606fc603cf4a6c43de299a22d16d94b9e7a1a0ae46f4dda3433a6",
+            "collected_at": "2026-10-23T16:36:01.914892+09:00"
+          }
+        ]
+      }
+    ],
+    "curation": "AI source-reading draft",
+    "notes": []
+  }
+]

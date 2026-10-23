@@ -1,15 +1,24 @@
 {
   "schema_version": 1,
   "dataset_kind": "real",
-  "from": null,
-  "to": null,
-  "now": null,
-  "ranking_input_kind": "unmeasured",
-  "embedding_model": null,
-  "index_version": null,
+  "from": "2026-08-01",
+  "to": "2026-10-07",
+  "now": "2026-10-07T16:00:00+09:00",
+  "ranking_input_kind": "actual_embeddings",
+  "embedding_model": "text-embedding-3-small",
+  "index_version": "notice-chunks-l2-c915e702febcad29",
   "targets": {
     "bids": 20,
     "profiles": 3,
     "score_bids": 5
-  }
+  },
+  "evaluation_mode": "historical_replay",
+  "notes": "과거 공고 고정 시각 재생. 현재 유효 입찰 추천 아님. 자격 제한 미확인은 null.",
+  "score_bid_nos": [
+    "R26BK01667722",
+    "R26BK01706837",
+    "R26BK01751013",
+    "R26BK01706954",
+    "R26BK01760198"
+  ]
 }

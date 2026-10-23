@@ -14,7 +14,7 @@ from pypdf import PdfReader
 from langchain_core.messages import HumanMessage
 
 # 담당 기능의 구현은 bid_logic의 기능별 파일에서 관리합니다.
-from bid_logic import load_bids_csv, faiss_hits
+from bid_logic import load_bids_csv, faiss_hits, embedding_title_similarity
 from bid_logic.api import create_bid_router
 
 
@@ -124,7 +124,9 @@ app.include_router(data_pipeline_router, tags=["데이터 적재 (1번)"])
 
 # ✅ 공고 추리기·예상 점수·체크리스트 API 연결
 def register_bid_routes(*, profile_dependency, scoring_provider, checklist_provider,
-                        bids_provider=None, search=None, clock=None):
+                        bids_provider=None, search=None, clock=None, search_results_provider=None,
+                        title_similarity=None, loaded_keys_provider=None, agent_model=None,
+                        require_search_id=False):
     """팀원의 인증/추출 결과를 연결한 뒤 호출하면 기존 app에 C2·C4·C5를 등록합니다.
 
     profile_dependency: JWT 검증 후 현재 회사 프로필을 반환하는 FastAPI 의존성.
@@ -142,6 +144,11 @@ def register_bid_routes(*, profile_dependency, scoring_provider, checklist_provi
         search=(search if search is not None else
                 lambda query, keys: faiss_hits(VECTORSTORE_PDF, query, keys)),
         clock=clock,
+        search_results_provider=search_results_provider,
+        title_similarity=title_similarity,
+        loaded_keys_provider=loaded_keys_provider,
+        agent_model=agent_model,
+        require_search_id=require_search_id,
     )
     # include_router의 내부 표현이 달라지는 FastAPI 버전에서도 공개 스키마로 확인합니다.
     existing_paths = set(app.openapi().get("paths", {}))
@@ -916,18 +923,40 @@ def get_extracted_checklist(bid_no: str, revision: str) -> dict | None:
     if (bid_no, revision) not in stored_bids(VECTORSTORE_PDF):
         return None
     data = cached(bid_no, revision, "required_docs", False, lambda: build_required_docs(bid_no, revision))
+    # 3번 공급 경계에서 원문과 대조한다. 2번의 추출 모델/캐시는 변경하지 않는다.
+    from bid_logic.checklist_quality import reconcile_required_docs
+    evidence = bid_chunks(bid_no, revision)
+    texts = {i: doc.page_content for i, doc in enumerate(evidence, 1)}
+    refs = {i: source_ref(doc.metadata) for i, doc in enumerate(evidence, 1)}
+    labels = {i: source_label(doc.metadata) for i, doc in enumerate(evidence, 1)}
+    data = reconcile_required_docs(data, texts, refs, labels)
     if not data.get("docs") and not data.get("schedule"):
         return None
-    return to_bid_logic_checklist({**data, "due_note": f"제출 기한 원문: {data['due']}" if data.get("due") else ""},
-                                  bid_no, revision)
+    return to_bid_logic_checklist(data, bid_no, revision)
 
-def connect_bid_routes(profile_dependency):
+def connect_bid_routes(profile_dependency, *, bids_provider=None, search_results_provider=None,
+                       title_similarity=None, agent_model=None):
     """4번(JWT 검증 + 회사 프로필 조회)이 준비되면 서버 시작 전에 한 번 호출한다.
     GET /bids, /bids/{bid_no}/score, /bids/{bid_no}/checklist(3번)가 실제 데이터 · 추출 결과로 등록된다.
-    bids.csv는 1번 산출물을 변환한 data/bids.csv(3번 기본 경로), 검색은 1번 저장소를 쓴다."""
-    return register_bid_routes(profile_dependency=profile_dependency,
+    search_results_provider(search_id, profile)는 저장된 ① 목록을 반환하고 사용자 접근을 검증한다.
+    ②는 공고명 임베딩만 사용하고, POST /bids/recheck는 적재된 공고만 본문으로 재확인한다.
+    bids_provider는 ③'용 정규화 메타데이터 공급자(기본: 변환된 data/bids.csv)다."""
+    def pipeline_similarity(query, titles):
+        from knowledge_bridge import PipelineEmbeddings
+        from data_pipeline.knowledge import KnowledgeStore
+        model = STORE_STATE.get("embedding_model") or KnowledgeStore("pdf").model
+        return embedding_title_similarity(PipelineEmbeddings(model), query, titles)
+
+    router = register_bid_routes(profile_dependency=profile_dependency,
                                scoring_provider=get_extracted_scoring_table,
-                               checklist_provider=get_extracted_checklist)
+                               checklist_provider=get_extracted_checklist,
+                               bids_provider=bids_provider,
+                               search_results_provider=search_results_provider,
+                               title_similarity=title_similarity or pipeline_similarity,
+                               agent_model=agent_model,
+                               require_search_id=search_results_provider is not None,
+                               loaded_keys_provider=lambda: stored_bids(VECTORSTORE_PDF))
+    return router
 
 
 # 실행 명령어 예시:

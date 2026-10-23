@@ -10,31 +10,38 @@ FastAPI 라우터 팩토리와 합성 fixture 평가를 추가했다. Python 표
 기존 RAG 진입 파일에는 import와 `register_bid_routes()` 등록 함수만 추가했다.
 공통 처리·추천·채점·체크리스트·API 로직을 원본 파일에 중복으로 넣지 않는다.
 업로드·질의 API, Java 인증, 회원 DB, 화면, 음성 코드의 동작은 유지한다.
-현재 저장소에 공고 20건용 bids.csv, 공고별 추출 결과, 인증된 프로필 조회 공통 함수가 없어서
-실제 앱에 새 라우터를 자동 등록하지 않는다. 아래 공급 함수들이 준비되면 연결 함수를 한 번 호출한다.
+인증된 프로필 의존성이 연결될 때 라우터를 등록한다. 실시간 흐름에서는 저장된 검색 결과 공급자도
+연결해야 한다. 실제 공고 20건과 평가 입력은 준비했으며, 정답은 AI 원문 검산 초안으로 사람 검토 대기다.
 이 패키지 import만으로 API가 노출되거나 외부 API/DB/LLM이 초기화되지 않는다.
 
-X2 도구와 제한된 비동기 실행기를 사전 준비하고 가짜 모델로 검증했다.
-실제 LLM 호출, 운영 엔드포인트, 고정 경로와의 정확도·응답 시간·토큰 비용 비교는
-**핵심 E2E 확인 대기**다. 실제 비교 결과를 만들지 않았다.
-실제 평가 입력 틀과 팀원별 연결 규격은 [HANDOFF.md](HANDOFF.md)를 참고한다.
+X2에 실제 OpenAI 비동기 어댑터와 선택 등록되는 인증 의존성 적용 `/agent/score`를 추가했다.
+실제 GPT-4o로 5공고 × 3프로필의 고정 코드 대비 실측을 완료했다. 운영 JWT·화면 E2E와
+사람 정답 검토 완료는 별도다. [실제 평가 보고서](../evaluation/real/REPORT.md),
+[원문 검산 초안](../evaluation/real/REVIEW.md), [팀원 연결 규격](HANDOFF.md)을 참고한다.
 
 ## 파일과 책임
 
 | 파일 | 역할 |
 | --- | --- |
 | `common.py` | 공고·차수, 출처 범위 검증, 서울 시각, Decimal 숫자 처리 |
-| `recommendation.py` | C2 규칙 필터·청크 집계·순위, CSV와 기존 FAISS 어댑터 |
+| `recommendation.py` | C2 규칙 필터·청크 집계·순위, CSV와 기존 FAISS 어댑터 (③' 재확인) |
+| `shortlist.py` | ② 목록 기반 추리기와 ③' 재확인 래퍼. 공고문 적재 전 단계 |
+| `title_similarity.py` | 같은 모델의 공고명·프로필 질의를 코사인 유사도로 비교 |
 | `scoring.py` | C4 구간표·등급표·명시적 비례식 계산, 실적 집계 |
 | `checklist.py` | C5 보유 서류 표시·일정·D-day |
 | `api.py` | 인증된 프로필 및 데이터 공급 함수를 주입하는 라우터 |
 | `agent_tools.py` | X2 도구 4개와 호출 기록. 점수는 `scoring.py`에 위임 |
 | `agent_runner.py` | 주입한 비동기 모델의 도구 실행 반복·제한·오류 처리 |
+| `agent_model.py` | 실제 OpenAI SDK 어댑터·토큰 비용 계산 |
+| `prepare_real.py`, `extract_pdf.swift` | 고정 공고 메타데이터·원문·가상 프로필·출처 준비 |
+| `curate_real.py` | 코드 출력과 별도로 작성한 원문 기준 정답 초안 |
+| `real_measurements.py` | 실제 임베딩·독립 추출 실험·X2 비교 측정 |
+| `review_real.py`, `smoke_real.py` | 검토 보고서 생성·실제 입력의 라우터 점검 |
 | `agent_demo.py` | 가짜 모델과 합성 데이터만으로 실행하는 시연 |
 | `evaluate.py` | 합성 정답 초안과 추천·점수·체크리스트 비교 |
 | `validation.py` | 실제 자료 작성 틀 생성·누락 검증·정답과 코드 결과 비교 |
 | `HANDOFF.md` | 팀원별 데이터 계약, 평가 입력·모델 어댑터 형식 |
-| `../evaluation/real/` | 실제 자료를 받을 때 채울 빈 평가 파일들 |
+| `../evaluation/real/` | 실제 고정 20건 입력·정답 초안·실측·검토 보고서 |
 | `../tests/` | 독립 로직 및 테스트 앱 API 검증, 합성 입력·정답 |
 | `../evaluation/synthetic-report.json` | 실제 실행한 합성 평가 결과 |
 
@@ -43,8 +50,9 @@ X2 도구와 제한된 비동기 실행기를 사전 준비하고 가짜 모델�
 `rag-code-template_ext` 디렉터리에서 실행한다.
 
 ```sh
-# 외부 패키지·키·DB 없이 핵심 로직 40개 테스트
+# 외부 패키지·키·DB 없이 핵심 로직 + ② 목록 추리기
 python3 -B -m unittest discover -s tests -p test_bid_logic.py -v
+python3 -B -m unittest discover -s tests -p test_shortlist.py -v
 
 # 기존 FastAPI/Pydantic 및 httpx가 설치된 Python으로 API 포함 전체 검증
 python3 -m unittest discover -s tests -v
@@ -55,20 +63,36 @@ python3 -m bid_logic.evaluate --output evaluation/synthetic-report.json
 # 가짜 모델 시연. 실제 LLM 성능 비교가 아님
 python3 -B -m bid_logic.agent_demo --output evaluation/offline-agent-demo.json
 
-# 실제 자료 준비 검사. 아직 자료가 없어 종료 코드 2가 정상
+# 공식 검증: 사람 검토 및 HWPX PDF 쪽수 대조가 남아 종료 코드 2
 python3 -B -m bid_logic.validation --dataset evaluation/real --output evaluation/real-readiness.json
+
+# AI 정답 초안과의 잠정 비교. human_verified=false를 유지한다.
+python3 -B -m bid_logic.validation --dataset evaluation/real --draft --output evaluation/real/draft-report.json
+
+# 실제 데이터·캐시된 실제 벡터로 API 점검 (테스트 앱 전용 인증)
+python3 -B -m bid_logic.smoke_real
+
+# 네트워크·OpenAI 키 필요. 모델 호출 비용 발생. 기존 결과는 evaluation/real에 있음.
+python3 -B -m bid_logic.real_measurements embed
+python3 -B -m bid_logic.real_measurements extract
+python3 -B -m bid_logic.real_measurements compare
+python3 -B -m bid_logic.review_real
 ```
 
-FastAPI/httpx가 없는 환경에서는 API 테스트만 skip된다. 실제 검증에서는 임시 가상환경에
-FastAPI 0.161.1, Pydantic 2.14.1, HTTPX 0.28.1을 설치하여 **97개 테스트 모두 통과**했다.
-핵심 로직 40개, X2 도구 19개, 실행기 13개, 평가 입력 12개,
-API 9개, 원본 서버 연결 4개를 포함한다.
-해당 테스트는 Python 3.11에서 실행했고 핵심 테스트·평가 CLI는 Python 3.14에서도 통과했다.
-프로젝트의 requirements나 기존 가상환경은 변경하지 않았다.
+2026-10-23 수정 후 Python 3.11 임시 API 검증 환경에서 **167개 중 158개 통과,
+RAG 연동 9개는 FAISS/LangChain 미설치로 skip**했다. ②에서 본문 검색을 하지 않는지,
+기본 20건, 저장된 검색 결과와 인증 전달, ③' 적재 대상·부적격 표시,
+시간대·초 보존, 순위 잘림 회귀, 409 전달과 여러 건 체크리스트를 포함한다.
+프로젝트 requirements와 기존 가상환경은 변경하지 않았다.
 
 API 테스트의 `Bearer fixture-only`는 테스트 앱 전용 가짜 인증이다.
 실제 JWT 서명·만료·사용자 DB 연동을 검증한 결과가 아니다.
-기존 전체 RAG 서버 기동, 실제 FAISS 임베딩 검색, 실제 공고 PDF 추출 및 화면 E2E는 미검증이다.
+기존 전체 RAG 서버 기동, 실제 FAISS 인덱스 실행 및 화면 E2E는 미검증이다.
+평가에서는 실제 임베딩의 제곱 L2 완전탐색을 사용하고, PDFKit으로 PDF 253페이지를 읽었다.
+별도로 실제 입력을 넣은 테스트 앱에서 목록·재확인·점수·체크리스트 37/37 점검을 통과했다.
+실제 나라장터 수집은 별도 임시 경로에서 고정 20건·첨부 74개 다운로드까지 확인했다.
+전체 HWP 변환은 환경 미설정으로 중단됐으며, 이번 평가는 확보된 PDF와 HWPX XML 원문을 사용했다.
+[검증 기록](VERIFICATION.md)을 참고한다.
 
 ## 공통 입력 계약
 
@@ -151,6 +175,96 @@ query는 관심 키워드와 실적 요약을 합친 문자열이다.
 **적재 관련 선행 조건:** 기존 `/upload-paper`는 저장소를 교체하고 파일명 중심 메타데이터를 만든다.
 데이터 담당자가 누적 적재, 공고·차수·쪽수·수집일 메타데이터와 CSV 대응 관계를 제공해야 한다.
 파일명뿐인 기존 인덱스를 새 공고 인덱스인 것처럼 사용하지 않는다.
+
+## ② 목록 기반 추리기 — 공고문 적재 전
+
+확정 흐름의 ② 시점에는 아직 공고문이 없어 본문 거리를 쓰는 `recommend_bids`를 쓸 수 없다.
+1번 `/search-bids` 결과를 그대로 받아 목록 정보만으로 거르는 `shortlist_bids`를 따로 둔다.
+
+```python
+from bid_logic import shortlist_bids
+
+result = shortlist_bids(search_results, profile, limit=20)
+```
+
+- 제외 규칙은 **마감 지남 · 희망 금액 범위 밖 · 지역 제한 불일치** 셋뿐이다.
+- 업종 제한(`indstrytyLmtYn = Y`)은 **제외하지 않는다.** 목록에 대상 업종이 없어 맞는지 알 수 없으므로
+  `업종 제한 있음, 대상 업종 미확인`으로 남긴다.
+- `rgnLmtBidLocplcJdgmBssNm`는 제한이 있다는 신호일 뿐 지역명이 아니다. 지역명은
+  `jntcontrctDutyRgnNm1~3`에서만 읽고, 신호만 있고 지역을 모르면 미확인으로 둔다.
+- 정규화 이름(`bid_no`, `title`, `deadline`)과 API 원문 이름(`bidNtceNo`, `bidNtceNm`, `bidClseDt`)을
+  모두 받는다. 금액은 `asignBdgtAmt` → `presmptPrce` 순으로 본다.
+- 시각 없는 마감은 임의 시각을 만들지 않고 미확인이다.
+
+순위는 공고명과 프로필 키워드의 유사도다. `similarity(query, titles)`를 주입하면 그것을 쓰고,
+없으면 글자 2-gram Jaccard로 대체한다. **`recommend_bids`의 `hits`와 방향이 반대다** —
+여기서는 클수록 유사한 점수를 받는다. 응답의 `ranking_kind`가 `injected`/`lexical`/`none`을 구분한다.
+
+```python
+from knowledge_bridge import PipelineEmbeddings   # 1번 저장소와 같은 모델·정규화
+
+embeddings = PipelineEmbeddings(model)
+def similarity(query, titles):
+    q = embeddings.embed_query(query)
+    return [sum(a * b for a, b in zip(q, v)) for v in embeddings.embed_documents(titles)]
+```
+
+어휘 점수만으로는 `시스템`이 `설치류 수면 시 글림프시스템 연구용역`에 걸리는 오매칭을 막지 못한다.
+운영에서는 임베딩을 주입해야 하고, `ranking_kind: "lexical"`은 순위 근거가 약하다는 표시다.
+
+`connect_bid_routes`는 `PipelineEmbeddings`와 `embedding_title_similarity`를 자동으로 연결한다.
+적재 저장소의 모델이 있으면 해당 모델, 없으면 `KnowledgeStore`의 설정 모델을 사용한다.
+②는 본문 인덱스가 없어도 실행되며, 임베딩 실패를 어휘 순위로 조용히 대체하지 않는다.
+공고 마감의 초·소수초·시간대를 보존한다. 선택 기간은 공고일 기준 양 끝을 포함한다.
+
+### ③' 공고문 적재 후 재확인
+
+```python
+from bid_logic import recheck_after_ingest
+
+reviewed = recheck_after_ingest(result["bids"], load_bids_csv(path), profile, start, end,
+                                search=lambda q, keys: faiss_hits(VECTORSTORE_PDF, q, keys))
+```
+
+기존 `recommend_bids`를 그대로 다시 돌려 공고마다 `recheck`를 붙인다.
+`confirmed`(여전히 적격) · `disqualified`(본문·CSV에서 드러난 부적격) ·
+`unknown`(공고일 미확인 등) · `not_evaluated`(아직 적재 안 됨)로 구분한다.
+②에서 고른 건수를 모두 평가하도록 `limit` 기본값을 자동으로 맞춘다.
+
+재확인 대상 공고·차수만 평가하며 외부 `limit`으로 잘리지 않는다.
+`confirmed`도 최종 참가자격 확정이 아니며 `needs_review`와 `recheck.unknown`을 확인해야 한다.
+
+### 화면·백엔드 연결 계약 (확정 흐름)
+
+```python
+connect_bid_routes(
+    get_authenticated_profile,
+    search_results_provider=get_saved_search_results,
+    # bids_provider=get_notice_metadata,  # 생략 시 변환된 data/bids.csv
+)
+```
+
+`get_saved_search_results(search_id, profile)`는 동기 함수다. ①에서 저장한 검색 결과를
+공고 배열 또는 `{bids: [...]}` / `{items: [...]}` / `{results: [...]}`로 반환한다.
+인증된 프로필을 사용해 검색 소유권·접근을 검증하고, 미존재면 None/404,
+접근 거절이면 HTTPException(403)을 반환한다. 새 검색을 실행하지 않는다.
+검색 결과에는 첨부 링크와 차수·제한 필드를 유지한다. 공급자는 API 담당자와 연결해야 한다.
+
+- ②: `GET /bids?from=2026-10-01&to=2026-10-31&search_id=검색ID`
+  — 기본 20건, `stage: list_only`, `ranking_kind`, `search_id`, 첨부 링크 유지.
+  검색 공급자가 있으면 search_id 필수(422). 공급자 없이 search_id를 보내면 503.
+  search_id 없는 CSV 방식은 고정 평가·개발용 호환 경로다.
+- ③': 공고문 적재 작업이 끝난 후 `POST /bids/recheck`.
+  요청은 `{"from":"2026-10-01","to":"2026-10-31","bids":[{"bid_no":"공고번호","revision":"000"}]}`.
+  최대 20건이며 클라이언트는 자격 조건·프로필을 전달하지 않는다.
+  서버의 정규화 메타데이터와 본문 검색을 사용한다. `connect_bid_routes`는 현재 적재된
+  공고·차수만 평가해 아직 적재되지 않은 공고는 `not_evaluated`로 남긴다.
+  부적격도 배열에서 삭제하지 않아 ④의 20건 요약 흐름에 표시할 수 있다.
+- ⑦·⑨: 기존 `GET /bids/{bid_no}/score?revision=000`,
+  `GET /bids/{bid_no}/checklist?revision=000`을 공고별 호출한다. 제안요청서 미적재 409 유지.
+
+① `/search-bids`, ③·⑥ 적재 작업 API, 사용자별 선택·승인 저장, JWT와 화면 폴링은
+각 담당자의 연결이 필요하다. 이 패키지가 대체 구현하거나 로그인 없이 활성화하지 않는다.
 
 ## C4 — RAG 담당자 연결
 
@@ -278,6 +392,7 @@ register_bid_routes(
    - `GET /bids?from=2026-10-01&to=2026-10-31&limit=5`
    - `GET /bids/{bid_no}/score?revision=00`
    - `GET /bids/{bid_no}/checklist?revision=00`
+   - `POST /bids/recheck`
 5. `revision`은 차수 혼동을 막기 위해 추가한 필수 query다. 프론트와 API 담당자가 합의해야 한다.
    추천 목록은 기획서 개략 배열에 더해 `{bids, excluded, candidate_count, needs_review}`로 감쌌다.
    기존에 동일 경로가 구현되면 중복 등록하지 말고 해당 핸들러에서 핵심 함수를 호출한다.
@@ -324,10 +439,11 @@ tools.dispatch("calc_score", {"item_id": "credit"})   # LLM이 고른 도구 실
 데이터는 실행 전에 읽어 두어야 하고, 모델 어댑터는 비동기 취소를 준수해야 한다.
 가짜 모델 실행 기록은 `evaluation/offline-agent-demo.json`에 별도 표시했다.
 
-**아직 없는 것:** 실제 LLM 호출, `POST /agent/score` 엔드포인트,
-그리고 정확도·응답 시간·토큰 비용 **비교 결과**.
-비교는 실제 LLM 호출과 사람이 검증한 정답이 모두 있어야 성립하므로
-현재 보고서의 `x2.comparison`은 null로 둔다.
+`agent_model.OpenAIChatModel(client, model="gpt-4o")`를 `connect_bid_routes(..., agent_model=...)`에
+주입하면 `POST /agent/score`가 등록된다. JSON은 `{bid_no, revision}`이고 프로필은 인증 의존성에서만 받는다.
+모델 미주입 시 경로는 노출되지 않는다. 제안요청서 미적재 409를 그대로 전달한다.
+실제 비교는 `evaluation/real/x2-measurements.json`에 있다. AI 정답 초안 기준이므로
+공식 검토 완료 결과와 구분한다. 기존 합성 보고서의 미실행 X2 값은 그대로 null이다.
 
 ## 평가와 남은 작업
 
@@ -351,11 +467,11 @@ tools.dispatch("calc_score", {"item_id": "credit"})   # LLM이 고른 도구 실
 3. 프론트에서 기간→추천→점수→체크리스트 E2E를 확인한다.
 4. 실제 공고 5건 × 프로필 3개를 원문 기준으로 사람이 검산하고 정답 검토 상태를 기록한다.
    팀 전체 Q&A 평가셋 20쌍과 체크리스트 원문 검증에도 필요한 사례를 제공한다.
-5. 그 뒤 X2에 실제 LLM 어댑터와 `POST /agent/score` 엔드포인트를 붙인다.
-   도구·공고 범위 검증·부족 정보 질문·반복/시간 제한은 오프라인으로 사전 준비했다.
+5. X2 실제 어댑터·엔드포인트 코드는 준비됐으며, 핵심 화면 E2E 후 운영 JWT·로그와 함께 검증한다.
 6. X2 비교는 같은 입력·같은 원문 정답·모델/버전·호출 조건으로 측정한다.
    C4 함수만의 지연과 에이전트 전체 지연을 혼동하지 않도록 측정 범위를 기록하고,
    공통 추출 비용/캐시 유무를 양쪽에 동일 적용한다. 입력·출력 토큰, 임베딩 토큰,
    측정일의 단가·통화, 요청별 비용·정확도를 남긴다. 미실행 값은 null로 둔다.
 
-현재 운영 API 연결과 실제 데이터 평가 및 X2 비교는 대기 상태다.
+실제 평가와 X2 선행 실측은 완료했다. 정답 사람 검토·HWPX PDF 쪽수 대조·운영 연결은 대기 상태다.
+재생 기준 시각, 정답 초안의 한계, 독립 서류 추출의 누락·출처 문제는 실제 평가 보고서에 기록했다.

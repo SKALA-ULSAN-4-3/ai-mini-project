@@ -1,0 +1,76 @@
+{
+  "human_verified": false,
+  "scope": "independent JSON extraction experiment, not live RAG server",
+  "findings": [
+    {
+      "bid_no": "R26BK01706837",
+      "kind": "missing_document_anchor",
+      "anchor": "정량적제안서",
+      "source_page": 7,
+      "note": "원문 제출서류 목록에는 있으나 독립 모델 추출 명칭 목록에는 없음"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "kind": "missing_document_anchor",
+      "anchor": "정성적제안서",
+      "source_page": 8,
+      "note": "원문 제출서류 목록에는 있으나 독립 모델 추출 명칭 목록에는 없음"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "kind": "missing_document_anchor",
+      "anchor": "발표자료",
+      "source_page": 8,
+      "note": "원문 제출서류 목록에는 있으나 독립 모델 추출 명칭 목록에는 없음"
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "kind": "different_deadlines",
+      "documents_due": "2026-09-11T11:00:00+09:00",
+      "price_due": "2026-09-14T11:00:00+09:00",
+      "null_due_documents": 18,
+      "note": "공고문 p.1. 서류 마감과 가격입찰 마감을 구분. 추출기는 서류 due를 비워 반환"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "kind": "schedule_citation_review",
+      "event": "제안서 평가회",
+      "due": "2026-09-16T14:00:00",
+      "cited_page": 9,
+      "correct_page": 10,
+      "note": "예정 일시는 원문 p.10에 있음. 모델은 다른 페이지를 인용했으므로 출처 보정 필요"
+    }
+  ],
+  "raw_counts": [
+    {
+      "bid_no": "R26BK01706954",
+      "items": 13,
+      "documents": 18,
+      "schedule": 3
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "items": 24,
+      "documents": 15,
+      "schedule": 5
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "items": 21,
+      "documents": 4,
+      "schedule": 4
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "items": 9,
+      "documents": 18,
+      "schedule": 5
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "items": 21,
+      "documents": 10,
+      "schedule": 5
+    }
+  ]
+}

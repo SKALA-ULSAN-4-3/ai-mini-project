@@ -47,8 +47,8 @@ def build_checklist(extracted, profile, bid_no, revision, *, now=None, aliases=N
                               submitted=False)
             else:
                 result["event"] = item["event"]
-            result["needs_review"] = info["status"] in ("unknown", "needs_review") or (
+            result["needs_review"] = item.get("needs_review", False) or info["status"] in ("unknown", "needs_review") or (
                 collection == "documents" and owned is None)
             destination.append(result)
     return {"bid_no": bid_no, "revision": revision, "documents": docs, "schedule": schedules,
-            "needs_review": any(x["needs_review"] for x in docs + schedules)}
+            "needs_review": extracted.get("needs_review", False) or any(x["needs_review"] for x in docs + schedules)}

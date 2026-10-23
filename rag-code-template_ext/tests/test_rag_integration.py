@@ -126,7 +126,8 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         self.assertEqual(status["입찰가격평가"][0], "manual")
 
     def test_checklist_payload_passes_builder(self):
-        extraction = {"docs": [{"doc_name": "제안서", "note": "PDF", "source_refs": [self.REF]},
+        extraction = {"docs": [{"doc_name": "제안서", "note": "PDF", "source_refs": [self.REF],
+                                "due_iso": "2026-11-03T10:00+09:00"},
                                {"doc_name": "사업자등록증 사본", "note": "", "source_refs": [self.REF]}],
                       "due_iso": "2026-11-03T10:00+09:00", "due_note": "제출 기한 원문: 2026. 11. 3.(화) 10:00",
                       "schedule": [{"event": "개찰", "when": "2026. 11. 3.(화) 11:00", "due_iso": "2026-11-03T11:00+09:00",

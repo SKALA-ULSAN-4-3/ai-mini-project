@@ -1,0 +1,32 @@
+{
+  "scope": "replay actual cached extraction and source text; not live RAG endpoint",
+  "human_verified": false,
+  "passed": 5,
+  "total": 5,
+  "checks": [
+    {
+      "case": "dictionary_quantitative_proposal",
+      "passed": true
+    },
+    {
+      "case": "dictionary_date_citation",
+      "passed": true
+    },
+    {
+      "case": "ewha_document_deadline",
+      "passed": true
+    },
+    {
+      "case": "medical_정성적제안서",
+      "passed": true
+    },
+    {
+      "case": "medical_발표자료",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "보완 서류의 조건·수량·개별 기한은 검토 필요",
+    "일시 인용 불일치는 보정하거나 미확인 표시; 사람 확인 아님"
+  ]
+}

@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Optional;
 
 /** PreparedStatement만 사용해 SQL 삽입 공격을 방지하는 사용자 저장소입니다. */
@@ -86,9 +85,13 @@ public final class JdbcUserRepository implements UserRepository {
                     request.businessItem(),
                     request.unitTaxpayerApplicable()
             );
-        } catch (SQLIntegrityConstraintViolationException exception) {
-            throw new ConflictException("이미 가입된 사업자등록번호입니다.");
         } catch (SQLException exception) {
+            // PostgreSQL은 UNIQUE 위반을 SQLState 23505로 전달합니다. JDBC 구현
+            // 클래스에 의존하지 않고 표준 SQLState로 판별해야 드라이버 변경에도
+            // 저장소의 업무 오류 변환 규칙이 유지됩니다.
+            if ("23505".equals(exception.getSQLState())) {
+                throw new ConflictException("이미 가입된 사업자등록번호입니다.");
+            }
             throw unavailable("사용자를 저장할 수 없습니다.", exception);
         }
     }

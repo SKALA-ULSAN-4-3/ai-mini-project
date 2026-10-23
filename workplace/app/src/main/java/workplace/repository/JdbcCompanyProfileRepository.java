@@ -73,19 +73,23 @@ public final class JdbcCompanyProfileRepository implements CompanyProfileReposit
                     company_size, certs,
                     credit_rating, track_records, owned_docs,
                     budget_min, budget_max, keywords
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    industry = VALUES(industry),
-                    licenses = VALUES(licenses),
-                    region = VALUES(region),
-                    company_size = VALUES(company_size),
-                    certs = VALUES(certs),
-                    credit_rating = VALUES(credit_rating),
-                    track_records = VALUES(track_records),
-                    owned_docs = VALUES(owned_docs),
-                    budget_min = VALUES(budget_min),
-                    budget_max = VALUES(budget_max),
-                    keywords = VALUES(keywords)
+                ) VALUES (
+                    ?, ?, CAST(? AS jsonb), ?, ?, CAST(? AS jsonb), ?,
+                    CAST(? AS jsonb), CAST(? AS jsonb), ?, ?, CAST(? AS jsonb)
+                )
+                ON CONFLICT (business_registration_number) DO UPDATE SET
+                    industry = EXCLUDED.industry,
+                    licenses = EXCLUDED.licenses,
+                    region = EXCLUDED.region,
+                    company_size = EXCLUDED.company_size,
+                    certs = EXCLUDED.certs,
+                    credit_rating = EXCLUDED.credit_rating,
+                    track_records = EXCLUDED.track_records,
+                    owned_docs = EXCLUDED.owned_docs,
+                    budget_min = EXCLUDED.budget_min,
+                    budget_max = EXCLUDED.budget_max,
+                    keywords = EXCLUDED.keywords,
+                    updated_at = CURRENT_TIMESTAMP
                 """;
 
         try (Connection connection = connectionFactory.open();

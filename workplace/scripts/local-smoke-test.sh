@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# 로컬 Docker 환경에서 실제 MariaDB를 사용해 핵심 인증 흐름을 검증합니다.
+# 로컬 Docker 환경에서 실제 PostgreSQL을 사용해 핵심 인증 흐름을 검증합니다.
 # 테스트가 끝나면 이 스크립트가 만든 회원 한 명과 연결된 프로필을 삭제합니다.
 set -euo pipefail
 
 readonly API_BASE_URL="${API_BASE_URL:-http://localhost:8080}"
-readonly MARIADB_CONTAINER="${MARIADB_CONTAINER:-ai-mini-mariadb}"
+readonly POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-ai-mini-postgres}"
 
 for command_name in curl jq docker; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
@@ -26,8 +26,8 @@ cleanup() {
   # users 삭제 시 외래키 ON DELETE CASCADE가 테스트 프로필도 함께 정리합니다.
   docker exec \
     --env "CLEANUP_SQL=${cleanup_sql}" \
-    "${MARIADB_CONTAINER}" \
-    sh -lc 'mariadb --user="$MARIADB_USER" --password="$MARIADB_PASSWORD" "$MARIADB_DATABASE" --execute="$CLEANUP_SQL"' \
+    "${POSTGRES_CONTAINER}" \
+    sh -lc 'PGPASSWORD="$POSTGRES_PASSWORD" psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --command="$CLEANUP_SQL"' \
     >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -36,10 +36,7 @@ curl --fail --silent --show-error \
   "${API_BASE_URL}/api/health/ready" \
   >/dev/null
 
-signup_response="$(curl --fail-with-body --silent --show-error \
-  --request POST \
-  --header 'Content-Type: application/json' \
-  --data "{
+signup_payload="{
     \"business_registration_number\": \"${TEST_BUSINESS_NUMBER}\",
     \"password\": \"${TEST_PASSWORD}\",
     \"corporate_name\": \"통합 테스트 주식회사\",
@@ -47,8 +44,28 @@ signup_response="$(curl --fail-with-body --silent --show-error \
     \"business_type\": \"정보통신업\",
     \"business_item\": \"소프트웨어 개발 및 공급업\",
     \"unit_taxpayer_applicable\": \"부\"
-  }" \
+  }"
+
+signup_response="$(curl --fail-with-body --silent --show-error \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data "${signup_payload}" \
   "${API_BASE_URL}/api/signup")"
+
+# PostgreSQL의 UNIQUE 위반(SQLState 23505)이 공통 409 오류로 변환되는지
+# 확인합니다. 응답 본문은 버리고 상태 코드만 검사해 테스트 로그를 간결하게 둡니다.
+duplicate_signup_status="$(curl --silent --show-error \
+  --output /dev/null \
+  --write-out '%{http_code}' \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data "${signup_payload}" \
+  "${API_BASE_URL}/api/signup")"
+
+if [[ "${duplicate_signup_status}" != "409" ]]; then
+  echo "중복 회원가입 응답이 409가 아닙니다: ${duplicate_signup_status}" >&2
+  exit 1
+fi
 
 login_response="$(curl --fail-with-body --silent --show-error \
   --request POST \
@@ -106,8 +123,9 @@ printf '%s' "${profile_response}" \
   >/dev/null
 
 echo "로컬 통합 테스트 성공"
-echo "- MariaDB 준비 상태"
+echo "- PostgreSQL 준비 상태"
 echo "- 회원가입"
+echo "- 중복 사업자등록번호 409 오류 처리"
 echo "- 로그인 및 JWT 발급"
 echo "- Bearer JWT 검증"
 echo "- 회사 프로필 저장 및 조회"

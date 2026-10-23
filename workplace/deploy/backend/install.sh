@@ -14,12 +14,14 @@ if [[ -f "${SCRIPT_DIR}/.env" ]]; then
 fi
 
 readonly NAMESPACE="${K8S_NAMESPACE:-class-4}"
-readonly MARIADB_SERVICE="${MARIADB_SERVICE_NAME:-ai-mini-mariadb}"
 readonly JWT_ISSUER_VALUE="${JWT_ISSUER:-simple-auth-server}"
 readonly JWT_EXPIRATION_VALUE="${JWT_EXPIRATION_SECONDS:-3600}"
 readonly CORS_ORIGINS_VALUE="${CORS_ORIGINS:-http://localhost:5174,http://localhost:8008}"
 
 : "${BACKEND_IMAGE:?BACKEND_IMAGE 값이 필요합니다.}"
+: "${DB_URL:?DB_URL 값이 필요합니다.}"
+: "${DB_USER:?DB_USER 값이 필요합니다.}"
+: "${DB_PASSWORD:?DB_PASSWORD 값이 필요합니다.}"
 : "${JWT_SECRET:?JWT_SECRET 값이 필요합니다.}"
 
 if [[ "${BACKEND_IMAGE}" == CHANGE_ME/* ]]; then
@@ -49,8 +51,8 @@ fi
 kubectl create configmap workplace-backend-config \
   --namespace "${NAMESPACE}" \
   --from-literal="SERVER_PORT=8080" \
-  --from-literal="DB_URL=jdbc:mariadb://${MARIADB_SERVICE}:3306/sql_db" \
-  --from-literal="DB_USER=workplace_app" \
+  --from-literal="DB_URL=${DB_URL}" \
+  --from-literal="DB_USER=${DB_USER}" \
   --from-literal="JWT_ISSUER=${JWT_ISSUER_VALUE}" \
   --from-literal="JWT_EXPIRATION_SECONDS=${JWT_EXPIRATION_VALUE}" \
   --from-literal="CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
@@ -58,16 +60,18 @@ kubectl create configmap workplace-backend-config \
   --output yaml \
   | kubectl apply -f -
 
-# JWT Secret을 명령 출력에 노출하지 않으면서 생성·갱신합니다.
+# DB 비밀번호와 JWT Secret을 명령 출력에 노출하지 않으면서 생성·갱신합니다.
+db_password_base64="$(printf '%s' "${DB_PASSWORD}" | base64 | tr -d '\n')"
 jwt_secret_base64="$(printf '%s' "${JWT_SECRET}" | base64 | tr -d '\n')"
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: workplace-backend-auth
+  name: workplace-backend-secrets
   namespace: ${NAMESPACE}
 type: Opaque
 data:
+  db-password: ${db_password_base64}
   jwt-secret: ${jwt_secret_base64}
 EOF
 

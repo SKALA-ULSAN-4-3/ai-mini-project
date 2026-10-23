@@ -27,7 +27,9 @@ cp deploy/backend/.env.example deploy/backend/.env
 
 - `K8S_NAMESPACE`: 허용받은 교육용 Namespace
 - `BACKEND_IMAGE`: Registry에 올린 실제 이미지 주소
-- `MARIADB_SERVICE_NAME`: MariaDB Service 이름
+- `DB_URL`: Aiven PostgreSQL JDBC 주소
+- `DB_USER`: Aiven PostgreSQL 사용자
+- `DB_PASSWORD`: Aiven PostgreSQL 비밀번호
 - `CORS_ORIGINS`: 배포된 프론트엔드 Origin
 - `JWT_SECRET`: 새로 생성한 충분히 긴 무작위 값
 
@@ -35,13 +37,9 @@ cp deploy/backend/.env.example deploy/backend/.env
 
 ## 3. 선행 조건
 
-동일한 Namespace에 다음 MariaDB 리소스가 먼저 있어야 합니다.
-
-- Service: 기본값 `ai-mini-mariadb`
-- Secret: `ai-mini-mariadb-auth`
-- Secret 키: `mariadb-password`
-- DB 사용자: `workplace_app`
-- DB 이름: `sql_db`
+Aiven PostgreSQL 서비스가 먼저 준비되어 있어야 하며
+`database/schema.sql`을 대상 데이터베이스에 적용해야 합니다. Kubernetes에는
+DB 서버를 별도로 설치하지 않고 외부 Aiven PostgreSQL에 TLS로 연결합니다.
 
 권한은 배포 전에 확인합니다.
 

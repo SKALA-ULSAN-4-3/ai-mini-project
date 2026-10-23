@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/** 환경 설정을 이용해 MariaDB JDBC 연결을 생성합니다. */
+/** 환경 설정을 이용해 PostgreSQL JDBC 연결을 생성합니다. */
 public final class DriverManagerConnectionFactory implements ConnectionFactory {
 
     private final String url;

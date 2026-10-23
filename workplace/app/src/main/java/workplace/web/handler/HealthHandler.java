@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-/** 서버가 트래픽을 받을 준비가 되었는지 MariaDB 연결까지 확인합니다. */
+/** 서버가 트래픽을 받을 준비가 되었는지 PostgreSQL 연결까지 확인합니다. */
 public final class HealthHandler implements HttpHandler {
 
     private final ConnectionFactory connectionFactory;

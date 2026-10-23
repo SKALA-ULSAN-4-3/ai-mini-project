@@ -37,12 +37,12 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ai-mini-mariadb-auth
-                  key: mariadb-password
+                  name: workplace-backend-secrets
+                  key: db-password
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: workplace-backend-auth
+                  name: workplace-backend-secrets
                   key: jwt-secret
 
           startupProbe:

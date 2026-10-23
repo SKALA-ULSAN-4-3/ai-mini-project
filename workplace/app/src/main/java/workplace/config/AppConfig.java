@@ -20,8 +20,8 @@ public record AppConfig(
     public static AppConfig fromEnvironment() {
         return new AppConfig(
                 integerValue("SERVER_PORT", 8080),
-                value("DB_URL", "jdbc:mariadb://localhost:53301/sql_db"),
-                value("DB_USER", "root"),
+                value("DB_URL", "jdbc:postgresql://localhost:54321/workplace_db"),
+                value("DB_USER", "workplace_app"),
                 required("DB_PASSWORD"),
                 required("JWT_SECRET"),
                 value("JWT_ISSUER", "simple-auth-server"),

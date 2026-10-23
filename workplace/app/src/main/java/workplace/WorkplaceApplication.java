@@ -44,7 +44,7 @@ public final class WorkplaceApplication {
 
     public static void main(String[] args) throws Exception {
         AppConfig config = AppConfig.fromEnvironment();
-        Class.forName("org.mariadb.jdbc.Driver");
+        Class.forName("org.postgresql.Driver");
 
         JsonCodec jsonCodec = new JsonCodec();
         HttpResponses responses = new HttpResponses(jsonCodec.objectMapper());

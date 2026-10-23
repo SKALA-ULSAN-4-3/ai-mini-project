@@ -101,10 +101,10 @@ Authorization: Bearer eyJ...
 
 ## 실행 준비
 
-로컬 개발에서는 Docker Compose로 MariaDB와 테이블을 한 번에 생성할 수 있습니다.
+로컬 개발에서는 Docker Compose로 PostgreSQL과 테이블을 한 번에 생성할 수 있습니다.
 
 ```bash
-docker compose up -d mariadb
+docker compose up -d postgres
 docker compose ps
 ```
 
@@ -120,7 +120,7 @@ set +a
 ./gradlew :app:run --no-configuration-cache
 ```
 
-Java 백엔드와 MariaDB를 모두 Docker로 실행하고 실제 인증 흐름까지 확인하려면
+Java 백엔드와 PostgreSQL을 모두 Docker로 실행하고 실제 인증 흐름까지 확인하려면
 다음 명령을 사용합니다.
 
 ```bash
@@ -135,5 +135,6 @@ docker compose up -d --build
 `id/username` 구조의 테이블을 이미 생성했다면 데이터를 백업한 뒤 별도의
 마이그레이션을 수행하거나 개발용 DB를 새로 만들어야 합니다.
 
-Kubernetes MariaDB 설치 설정과 실행 방법은 `deploy/mariadb/README.md`에
-정리되어 있습니다.
+Aiven PostgreSQL 생성과 연결 방법은 `deploy/postgresql/README.md`에 정리되어
+있습니다. 실제 비밀번호는 저장소 파일이 아닌 로컬 `.env`와 배포 서비스의
+Secret 환경변수로만 관리합니다.

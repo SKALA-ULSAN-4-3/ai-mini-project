@@ -45,11 +45,17 @@ python -m unittest discover -s tests -p "test_*.py"   # 2번 연결 + 3번 로�
 cd .. && python -m unittest discover -s data_pipeline/tests    # 1번 테스트
 ```
 
-## 5. 3번 라우터 연결 (4번 인증이 준비되면)
+## 5. 4번 로그인 연결 (공고 추천 · 점수 · 체크리스트)
 
-`GET /bids`, `/bids/{bid_no}/score`, `/bids/{bid_no}/checklist`는 로그인한 회사 프로필이 필요해 아직 등록하지 않았습니다.
-4번의 "JWT 검증 + 프로필 조회" 의존성 함수가 준비되면 서버 파일 끝에서 한 번 호출합니다.
+`GET /bids`, `/bids/{bid_no}/score`, `/bids/{bid_no}/checklist`는 로그인한 회사의 프로필이 필요합니다.
+루트 `.env`에 4번 Java 백엔드 주소를 넣고 서버를 다시 켜면 자동으로 등록됩니다.
 
-```python
-connect_bid_routes(get_authenticated_profile)
 ```
+BACKEND_URL=http://localhost:8080
+```
+
+- 시작 로그에 `[공고 API 연결] ... ← 프로필: http://localhost:8080/api/profile`이 보이면 연결된 것입니다.
+- 요청에는 4번 `/api/login`에서 받은 토큰을 `Authorization: Bearer <토큰>`으로 붙입니다.
+- Python 서버는 JWT 비밀키를 갖지 않습니다. 토큰을 4번 `/api/profile`에 그대로 전달하고, 검증과 프로필 조회는 4번이 합니다
+  (토큰 없음 · 위조 · 만료 401, 프로필 없음 404, 백엔드 꺼짐 503).
+- 공고 목록은 1번 수집 결과 `data/corpus/bids.csv`를 변환해 씁니다. 이 파일이 없으면 `/bids`가 503입니다.

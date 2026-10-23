@@ -77,7 +77,7 @@ class BidsCsvConversionTest(unittest.TestCase):
             src, dst = Path(tmp) / "src.csv", Path(tmp) / "dst.csv"
             fields = ["bid_no", "bid_order", "title", "agency", "published_at", "deadline", "estimated_price",
                       "allocated_budget", "detail_url", "region_status", "region_restriction", "file_names",
-                      "metadata_needs_review"]
+                      "metadata_needs_review", "downloaded_files"]
             rows = [
                 {"bid_no": "R1", "bid_order": "000", "title": "A", "agency": "기관", "published_at": "2026-10-20 10:00:00",
                  "deadline": "2026-11-03 10:00:00", "estimated_price": "74000000", "allocated_budget": "81,400,000",
@@ -85,7 +85,7 @@ class BidsCsvConversionTest(unittest.TestCase):
                  "file_names": "a.pdf;b.pdf", "metadata_needs_review": "false"},
                 {"bid_no": "R2", "bid_order": "001", "title": "B", "agency": "기관", "published_at": "2026-10-21",
                  "deadline": "2026-11-05", "estimated_price": "", "allocated_budget": "", "detail_url": "",
-                 "region_status": "not_stated", "region_restriction": "", "file_names": "", "metadata_needs_review": ""},
+                 "region_status": "not_stated", "region_restriction": "", "file_names": "", "metadata_needs_review": "", "downloaded_files": "0"},
             ]
             with src.open("w", encoding="utf-8", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=fields)
@@ -99,6 +99,8 @@ class BidsCsvConversionTest(unittest.TestCase):
             self.assertIsNone(loaded["R2"]["regions"])      # 미명시는 제한 없음이 아니라 미확인
             self.assertIsNone(loaded["R2"]["deadline"])     # 시각 없는 마감은 만들지 않음
             self.assertIsNone(loaded["R1"]["industries"])   # 자유 텍스트 조건은 확정하지 않음
+            self.assertEqual(loaded["R1"]["filename"], "a.pdf")
+            self.assertFalse(loaded["R2"]["filename"])      # 받은 파일 개수("0")를 파일명으로 쓰지 않음
 
 
 @unittest.skipIf(kb is None, "FAISS/LangChain 미설치")

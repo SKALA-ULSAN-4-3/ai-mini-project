@@ -1,0 +1,134 @@
+{
+ "bid_no": "R26BK01751385",
+ "documents": {
+  "공고문": "공고서(경기교육 지방공무원 인사관리 플랫폼 구축).pdf"
+ },
+ "note": "실제 나라장터 공고(2026-10 API 검색) 공고문만 적재한 상태(흐름 ③④)의 일반화 평가. 기대답변은 공고문 원문에서 작성.",
+ "questions": [
+  {
+   "id": "C01",
+   "category": "기관",
+   "question": "수요기관이 어디야?",
+   "expected": "경기도교육청",
+   "must_include": [
+    "경기도교육청"
+   ],
+   "sources": [
+    "공고문 p.1",
+    "공고문 p.4"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "C02",
+   "category": "예산",
+   "question": "사업금액은 얼마야?",
+   "expected": "1,304,444,000원(부가세 포함), 추정가격 1,185,858,182원",
+   "must_include": [
+    "1,304,444,000"
+   ],
+   "sources": [
+    "공고문 p.4"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "C03",
+   "category": "기간",
+   "question": "납품기한은?",
+   "expected": "계약 후 300일 이내",
+   "must_include": [
+    "300일"
+   ],
+   "sources": [
+    "공고문 p.4"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "C04",
+   "category": "일정",
+   "question": "제안서와 가격입찰서 접수 마감은 언제야?",
+   "expected": "2026/11/12 10:00",
+   "must_include": [
+    "11/12|11.12|11월12일",
+    "10:00|10시"
+   ],
+   "sources": [
+    "공고문 p.4"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "C05",
+   "category": "자격",
+   "question": "공동계약 구성원 수와 최소 지분율은?",
+   "expected": "대표사 포함 5인 이하, 구성원별 최소지분율 5% 이상",
+   "must_include": [
+    "5인",
+    "5%"
+   ],
+   "sources": [
+    "공고문 p.7"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "C06",
+   "category": "계약",
+   "question": "하자담보책임기간은?",
+   "expected": "1년",
+   "must_include": [
+    "1년"
+   ],
+   "sources": [
+    "공고문 p.4"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "C07",
+   "category": "일정",
+   "question": "제안요청 설명회가 있어?",
+   "expected": "해당사항 없음",
+   "must_include": [
+    "없"
+   ],
+   "sources": [
+    "공고문 p.7"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "C08",
+   "category": "자격",
+   "question": "어떤 업종으로 입찰참가자격을 등록해야 해?",
+   "expected": "소프트웨어사업자(컴퓨터관련서비스사업, 업종코드 1468)",
+   "must_include": [
+    "1468"
+   ],
+   "sources": [
+    "공고문 p.4"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "CE1",
+   "category": "예외",
+   "question": "이 입찰에 몇 개 업체가 참여할 것 같아?",
+   "expected": "(문서에 없음)",
+   "must_include": [],
+   "sources": [],
+   "expect_handoff": true,
+   "expect_needs_review": null
+  }
+ ]
+}

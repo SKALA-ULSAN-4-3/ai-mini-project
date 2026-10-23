@@ -172,7 +172,8 @@ def convert_bids_csv(src: Path = BIDS_SOURCE, dst: Path = BIDS_FOR_BID_LOGIC) ->
         rows = list(csv.DictReader(stream))
     out = []
     for row in rows:
-        files = [f for f in re.split(r"[;|\n]", row.get("file_names") or row.get("downloaded_files") or "") if f.strip()]
+        # downloaded_files는 파일 이름이 아니라 받은 개수(예: "0")이므로 쓰지 않는다
+        files = [f for f in re.split(r"[;|\n]", row.get("file_names") or "") if f.strip()]
         out.append({"bid_no": row["bid_no"].strip(), "revision": (row.get("bid_order") or "").strip(),
                     "title": row.get("title", ""), "agency": row.get("agency", ""),
                     "published_at": _date(row.get("published_at", "")), "budget": _budget(row),

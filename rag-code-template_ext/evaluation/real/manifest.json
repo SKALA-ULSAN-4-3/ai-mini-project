@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "dataset_kind": "real",
+  "from": null,
+  "to": null,
+  "now": null,
+  "ranking_input_kind": "unmeasured",
+  "embedding_model": null,
+  "index_version": null,
+  "targets": {
+    "bids": 20,
+    "profiles": 3,
+    "score_bids": 5
+  }
+}

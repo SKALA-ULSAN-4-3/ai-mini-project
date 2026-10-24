@@ -40,6 +40,11 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+// 소스 인코딩: Windows 기본 문자셋과 관계없이 한글을 UTF-8로 컴파일합니다.
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 // DbExample.java 예제 개별 실행을 위한 추가 설정
 
 tasks.register('runDbExample', JavaExec) {

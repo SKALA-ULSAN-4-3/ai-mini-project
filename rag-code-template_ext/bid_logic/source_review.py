@@ -3,6 +3,7 @@ from copy import deepcopy
 from datetime import datetime
 import hashlib
 import json
+import re
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import zipfile
@@ -26,6 +27,9 @@ def review_sources(dataset, assets):
         if s.get('page') and '제안요청서' not in s['filename']:
             sources[(s['bid_no'],s['page'])]=s
     def source(no,page):return deepcopy(sources[(no,page)])
+    def rfp_source(no,page):
+        return deepcopy(next(b['source'] for b in blocks if b['source']['bid_no']==no and
+            b['source'].get('page')==page and '제안요청서' in b['source']['filename']))
     extra_evidence=[]
     def xml_source(no, phrase):
         a=next(a for a in attachments if a['bid_no']==no and a['file_name'].endswith('.hwpx') and '제안요청서' in a['file_name'])
@@ -48,18 +52,47 @@ def review_sources(dataset, assets):
     fixes=[]
     for checklist in lists:
         no,revision=checklist['bid_no'],checklist['revision']
+        for d in checklist['documents']:
+            d['notes']=[n for n in d.get('notes',[]) if n!='법인/개인/특별법인/신청 증빙 등 해당 조건은 원문 확인 필요']
         def add(name,due,refs,notes):
             if any(d['doc']==name for d in checklist['documents']):return
             checklist['documents'].append({'id':f'doc{len(checklist["documents"])+1:02}', 'bid_no':no,
                 'revision':revision,'doc':name,'due':due,'sources':refs,'notes':notes})
             fixes.append({'bid_no':no,'change':'document_added','doc':name})
+        def event(identifier,name,due,refs,notes):
+            if any(s['id']==identifier for s in checklist['schedule']):return
+            checklist['schedule'].append({'id':identifier,'bid_no':no,'revision':revision,
+                'event':name,'due':due,'sources':refs,'notes':notes})
+            fixes.append({'bid_no':no,'change':'schedule_added','event':name})
+        if no in ('R26BK01667722','R26BK01706837','R26BK01751013'):
+            page=3 if no=='R26BK01751013' else 4
+            start={'R26BK01667722':'2026-08-06T10:00:00+09:00',
+                'R26BK01706837':'2026-09-01T10:00:00+09:00','R26BK01751013':'2026-10-06T10:00:00+09:00'}[no]
+            end={'R26BK01667722':'2026-08-21T10:00:00+09:00',
+                'R26BK01706837':'2026-09-14T10:00:00+09:00','R26BK01751013':'2026-10-14T10:00:00+09:00'}[no]
+            event('submission_start','전자입찰서 제출 시작',start,[source(no,page)],['제출 기간 시작이며 마감이 아님'])
+            event('price_submission','가격입찰서 제출 마감',end,[source(no,page)],['제안서 제출 마감과 각각 확인'])
+        if no=='R26BK01667722':
+            add('신용평가등급 확인서','2026-08-21T10:00:00+09:00',
+                [xml_source(no,'신용평가등급, 등급평가일'),source(no,5),source(no,4)],
+                ['경영상태 평가 증빙. 등급평가일·유효기간 명시 필요'])
+            event('evaluation','제안발표회',None,[xml_source(no,'제안발표회 일시, 장소')],['제안서 제출 마감 후 별도 통보. 확정 일시 없음'])
+            for d in checklist['documents']:
+                if d['doc']=='법인 등기부등본':d['notes']=['해당 법인에 한함. 원본대조필. 공동수급 시 구성원 모두 제출']
+                elif d['doc'] in ('정성제안서','발표자료(제안요약서)'):
+                    d['notes']=['업체정보(회사명·인명·로고 등) 삭제, 익명 작성. 각 1개 파일로 분리 제출']
         if no=='R26BK01751013':
             add('공동수급협정서','2026-10-13T18:00:00+09:00',[source(no,6),source(no,3)],
                 ['공동수급 시에만 제출. 전자입찰 마감일 전일 18시. 나라장터 전자제출'])
             for d in checklist['documents']:
                 if d['doc']=='중·소기업·소상공인확인서 신청 증빙서류':d['notes']=['마감일 전일까지 확인서를 발급받지 못한 업체만 제출']
                 elif d['doc']=='특별법인을 확인할 수 있는 서류':d['notes']=['중소기업으로 간주되는 특별법인에 한하여 제출']
+            event('evaluation','제안서 평가',None,[xml_source(no,'일정 별도 공지')],['일정 별도 공지. 설명회 개최 시 PM 발표 원칙'])
         if no=='R26BK01706837':
+            add('신용평가등급 확인서','2026-09-14T10:00:00+09:00',
+                [xml_source(no,'신용평가 등급 확인서'),source(no,7),source(no,4)],['정량평가 제안서에 포함되는 증빙을 개별 항목으로 표시'])
+            event('registration','입찰참가자격 등록 기한',None,[source(no,6),source(no,4)],
+                ['입찰서 제출 마감일 전일(2026-09-13)까지. 원문 시각 미기재로 임의 시각을 넣지 않음'])
             add('제안서와 제출서류 일체 원본 출력물','2026-09-16T14:00:00+09:00',[source(no,10)],
                 ['제안서 평가회 참석 시 각 1부. 평가회 예정 일시이므로 변경 여부 확인'])
             add('제안서 내용이 수록된 CD/USB 또는 인쇄물',None,[source(no,9)],['우선협상대상자에게 발주기관이 요구할 경우 추가 제출'])
@@ -88,6 +121,13 @@ def review_sources(dataset, assets):
                 elif d['doc']=='제안서':d['notes']=['10부. 9월11일 11시 방문 제출']
                 elif d['doc']=='제안서 파일이 저장된 USB':d['notes']=['USB 1개']
         if no=='R26BK01760198':
+            add('제안서 비교평가 조견표','2026-10-19T10:00:00+09:00',
+                [rfp_source(no,38),source(no,4)],['정성제안서 제일 앞 페이지에 작성'])
+            add('납품실적증명원 또는 계약서 사본','2026-10-19T10:00:00+09:00',
+                [rfp_source(no,47),source(no,4)],['사업실적 증빙으로 둘 중 하나 첨부. 증명원은 발주처·담당관 확인, 사본은 사실과 상위없음 및 사용인감 날인'])
+            add('개인정보 수집 및 활용 동의서',None,[rfp_source(no,66)],
+                ['해당 사업 참여자 각 1부. 대표자·입찰신청자·수임자·상주인력 등 해당 단계별 확인. 서식에 제출 시각 미기재'])
+            event('evaluation','제안서 평가',None,[rfp_source(no,38)],['일정 별도 통지. 확정 일시 없음'])
             for d in checklist['documents']:
                 if d['doc']=='기타서류':d['notes']=['해당사항이 있을 경우에만 제출. 제안요청서 참고']
     # 가격 배점은 기술평가표의 합계에서 추측하지 않고 가격평가 비율이 명시된 출처로 교체.
@@ -116,13 +156,17 @@ def review_sources(dataset, assets):
         for item in g['items']:item['sources']=deepcopy(items[item['id']]['sources'])
     for g in gold['checklists']:
         c=by_list[g['bid_no']];old={d['doc']:d for d in g['documents']}
-        # 추가 서류가 가상 프로필의 보유 목록에 없는지 별도로 확인.
+        # 개별 확인서로 분리한 서류도 공백 차이만 무시하여 보유 목록과 독립 대조.
+        profile=next(p for p in profiles if p['id']==g['profile_id'])
+        owned_names={re.sub(r'\s+','',name) for name in profile['owned_docs']}
         g['documents']=[deepcopy(old[d['doc']]) if d['doc'] in old else {
-            'doc':d['doc'],'owned':False,'due':d['due'],'sources':deepcopy(d['sources'])} for d in c['documents']]
+            'doc':d['doc'],'owned':re.sub(r'\s+','',d['doc']) in owned_names,
+            'due':d['due'],'sources':deepcopy(d['sources'])} for d in c['documents']]
         for d in g['documents']:
             original=next(r for r in c['documents'] if r['doc']==d['doc'])
             d.update(due=original['due'],sources=deepcopy(original['sources']))
         g['schedule']=[{k:deepcopy(s[k]) for k in ('event','due','sources')} for s in c['schedule']]
+    rubric_applied=(dataset/'recommendation-review.json').exists()
     for kind,rows in gold.items():
         for g in rows:g['ai_review']={'status':'source_checked' if kind!='recommendations' else 'needs_relevance_rubric',
             'reviewer':'Codex (AI)','reviewed_at':stamp,'human_verified':False,
@@ -132,8 +176,8 @@ def review_sources(dataset, assets):
         'scope':'평가 정답의 원문 대조. HWPX의 PDF 쪽수 대응 작업은 제외.',
         'source_files_hash_checked':len(attachments),'score_cases':15,'quantitative_checks':checks,
         'checklist_cases':15,'changes':fixes,'recommendation_cases':3,
-        'recommendation_review':'needs_relevance_rubric',
-        'remaining':['주력 키워드와 공통 Axis 실적 중 관련 정답에 반영할 기준 정의 및 사람 승인',
+        'recommendation_review':'rubric_applied' if rubric_applied else 'needs_relevance_rubric',
+        'remaining':['추천 정답은 명시적 기준에 따른 AI 판정. 사람 승인은 별도' if rubric_applied else '주력 키워드와 공통 Axis 실적 중 관련 정답에 반영할 기준 정의 및 사람 승인',
                      '조건부 서류와 증빙의 실제 해당 여부는 가상 프로필만으로 확정하지 않음'],
         'hwpx_page_mapping_changed':False}
     previous_path=dataset/'source-review.json'
@@ -151,15 +195,19 @@ def review_sources(dataset, assets):
         '- 농지 기술평가표의 100점 원점수와 최종 90점 환산을 구분한다. 총점은 산출하지 않는다.','',
         '## 수정한 항목','']
     for change in report['changes']:
-        lines.append(f"- {change['bid_no']}: "+(f"서류 추가 — {change['doc']}" if 'doc' in change else '가격 배점 출처 보정'))
+        lines.append(f"- {change['bid_no']}: "+(f"서류 추가 — {change['doc']}" if 'doc' in change else
+            f"일정 추가 — {change['event']}" if 'event' in change else '가격 배점 출처 보정'))
     lines+=['', '법인/개인, 특별법인, 미발급 확인서 신청 증빙, 평가 참고자료의 제출 조건도 원문에 맞춰 notes에 구분했다.', '',
         '## 확정하지 않은 항목','',
-        '- 추천 정답 3개는 주력 키워드와 세 프로필에 공통으로 기재된 Axis 대학 실적을 어느 정도 반영할지 기준이 모호하다. 기존 관련성 라벨은 유지하고 needs_relevance_rubric으로 기록했다.',
+        '- 추천 60개 판정에 관심 분야 또는 기존 실적의 직접 연결 기준을 적용했다. [추천 정답 재검토](RECOMMENDATION_REVIEW.md) 참조.' if rubric_applied else '- 추천 정답 3개는 주력 키워드와 공통 Axis 실적의 반영 기준이 미확정이다.',
         '- 기존 P@5는 이 잠정 라벨과의 비교이며, 사람이 확정한 추천 정확도가 아니다.',
         '- 실제 증빙 인정 여부와 조건부 제출 해당 여부는 가상 프로필만으로 확정하지 않는다.',
         '- gold.json의 사람 검토 상태는 pending이며, 별도의 ai_review에 이번 원문 대조 결과를 기록했다.','',
         '세부 서류·일정·배점: [REVIEW.md](REVIEW.md). 기계 판독 기록: [source-review.json](source-review.json).']
     (dataset/'SOURCE_REVIEW.md').write_text('\n'.join(lines)+'\n')
+    if rubric_applied:
+        from .label_recommendations import label
+        label(dataset,assets)
     print('Source review: 12 quantitative checks,',len(fixes),'reference changes;',len(attachments),'source hashes checked')
 
 

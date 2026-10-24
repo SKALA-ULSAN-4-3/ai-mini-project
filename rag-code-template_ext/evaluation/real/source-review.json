@@ -1,6 +1,6 @@
 {
   "reviewer": "Codex (AI)",
-  "reviewed_at": "2026-10-23T17:27:36.844317+09:00",
+  "reviewed_at": "2026-10-23T17:42:28.043034+09:00",
   "human_verified": false,
   "scope": "평가 정답의 원문 대조. HWPX의 PDF 쪽수 대응 작업은 제외.",
   "source_files_hash_checked": 74,
@@ -135,12 +135,87 @@
     {
       "bid_no": "R26BK01751013",
       "change": "price_source_corrected"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "document_added",
+      "doc": "신용평가등급 확인서"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "제안발표회"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "신용평가등급 확인서"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "입찰참가자격 등록 기한"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "제안서 평가"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "제안서 비교평가 조견표"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "납품실적증명원 또는 계약서 사본"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "개인정보 수집 및 활용 동의서"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "schedule_added",
+      "event": "제안서 평가"
     }
   ],
   "recommendation_cases": 3,
-  "recommendation_review": "needs_relevance_rubric",
+  "recommendation_review": "rubric_applied",
   "remaining": [
-    "주력 키워드와 공통 Axis 실적 중 관련 정답에 반영할 기준 정의 및 사람 승인",
+    "추천 정답은 명시적 기준에 따른 AI 판정. 사람 승인은 별도",
     "조건부 서류와 증빙의 실제 해당 여부는 가상 프로필만으로 확정하지 않음"
   ],
   "hwpx_page_mapping_changed": false

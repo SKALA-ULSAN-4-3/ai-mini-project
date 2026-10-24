@@ -34,6 +34,10 @@ def review(dataset,assets):
         "agent_cost_mean_usd":sum(c["agent_cost_usd"] for c in cases)/len(cases),
         "input_tokens":sum(c["agent"]["token_usage"]["input_tokens"] for c in cases),
         "output_tokens":sum(c["agent"]["token_usage"]["output_tokens"] for c in cases)}
+    rubric_path=dataset/"recommendation-review.json"
+    if rubric_path.exists():
+        measured["recommendation_rubric_id"]=read("recommendation-review.json")["rubric"]["id"]
+        measured["recommendation_label_change_only"]=True
     raw_models={p.stem:json.loads(p.read_text()) for p in (assets/"model-extractions").glob("*.json")}
     sources={b["id"]:b for b in json.loads((assets/"evidence.json").read_text())}
     audits=[]
@@ -74,8 +78,10 @@ def review(dataset,assets):
       "## 추천 일치율", "", "| 가상 프로필 | ② 공고명 순위 P@5 | 기존 본문 순위 P@5 |", "| --- | ---: | ---: |"]
     for a,b in zip(list_metrics,report["metrics"]["recommendations"]):
         lines.append(f"| {a['profile_id']} | {a['precision_at_5']:.0%} | {b['precision_at_5']:.0%} |")
-    lines += ["", "분모는 항상 5. 정답 초안의 관련 공고 수 자체가 1/3/3건으로 적고, 마감 경과·미확인 조건이 있어",
+    counts="/".join(str(len(g["relevant"])) for g in gold["recommendations"])
+    lines += ["", f"분모는 항상 5. 정답 초안의 관련 공고 수는 프로필 순서대로 {counts}건이고, 마감 경과·미확인 조건이 있어",
               "이 수치를 서비스 전체 정확도로 일반화하거나 임계값을 통과했다고 말하지 않는다.", "",
+              "추천 정답 기준과 60개 판정: [RECOMMENDATION_REVIEW.md](RECOMMENDATION_REVIEW.md). 해당 파일이 있는 경우 최신 수치는 정답 기준 재검토 결과이며, 추천 코드·입력·벡터는 변경하지 않았다. 알고리즘 개선 실적으로 해석하지 않는다.", "",
               "## 점수·체크리스트 코드", "",
               f"- 원문 표에서 별도로 검산한 정량 항목 {measured['quantitative_matches']}/{measured['quantitative_items']} 일치.",
               f"- 정성·가격 포함 전체 항목 {measured['fixed_score_matches']}/{measured['score_items']} 일치.",
@@ -106,8 +112,8 @@ def review(dataset,assets):
       "4. 3번 체크리스트 공급 경계에 원문 보정 함수를 연결했다. 실제 추출 캐시의 발견 문제 5/5를 재생 검증했으며, 운영 RAG·전체 원문 대조는 별도다.", "",
       "정답 검토용 상세 항목: [REVIEW.md](REVIEW.md). 재실행 방법: [README.md](../../bid_logic/README.md)."]
     (dataset/"REPORT.md").write_text("\n".join(lines)+"\n")
-    detail=["# 원문 정답 초안 검토", "", "모든 검토 상태는 pending. 아래 내용과 원문을 사람이 확인한 뒤에만 gold.json의 review를 verified로 바꾼다.","",
-            "AI 원문 재대조·수정 기록은 [SOURCE_REVIEW.md](SOURCE_REVIEW.md)를 참조한다. 추천 관련성 판정 기준은 미확정이며 기존 P@5는 잠정값이다.","",
+    detail=["# 원문 정답 초안 검토", "", "사람 검토 상태는 pending으로 보존한다. AI 최종 원문 대조 결과는 [FINAL_SOURCE_REVIEW.md](FINAL_SOURCE_REVIEW.md)를 참조한다.","",
+            "AI 원문 재대조·수정 기록은 [SOURCE_REVIEW.md](SOURCE_REVIEW.md)를 참조한다. 추천 기준·60개 판정은 [RECOMMENDATION_REVIEW.md](RECOMMENDATION_REVIEW.md)에 기록하며 P@5는 AI 판정 기준의 잠정값이다.","",
             "## 추천 정답 초안", ""]
     for g in gold["recommendations"]:
         detail.append(f"- {g['profile_id']}: "+" / ".join(titles[x["bid_no"]] for x in g["relevant"]))

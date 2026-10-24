@@ -49,7 +49,7 @@ from dotenv import load_dotenv
 
 # 프로젝트 루트 .env(1·3번과 공통)를 먼저 읽고, 옮기는 동안만 이 폴더의 .env도 보조로 읽는다 (이미 있는 값은 덮지 않음)
 from knowledge_bridge import (StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
-                              classify_attachment)
+                              classify_attachment, search_results)
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -948,7 +948,8 @@ def get_extracted_scoring_table(bid_no: str, revision: str) -> dict | None:
         return None
     require_rfp(bid_no, revision, partial_hint=False)  # 409: 3번 라우터는 HTTPException을 그대로 전달한다 (흐름 ⑥ 전에는 점수 불가)
     data = cached(bid_no, revision, "scoring", False, lambda: build_scoring(bid_no, revision))
-    return to_bid_logic_scoring(data, bid_no, revision) if data.get("items") else None
+    table = to_bid_logic_scoring(data, bid_no, revision)
+    return table if table["items"] else None  # 출처가 확인된 항목이 하나도 없으면 404 (빈 점수표를 내지 않음)
 
 def get_extracted_checklist(bid_no: str, revision: str) -> dict | None:
     if (bid_no, revision) not in stored_bids(VECTORSTORE_PDF):
@@ -963,7 +964,9 @@ def get_extracted_checklist(bid_no: str, revision: str) -> dict | None:
     data = reconcile_required_docs(data, texts, refs, labels)
     if not data.get("docs") and not data.get("schedule"):
         return None
-    return to_bid_logic_checklist(data, bid_no, revision)
+    # 3번 원문 대조 뒤에도 출처가 없는 항목은 빠지므로, 남은 항목이 없으면 404 (빈 체크리스트를 내지 않음)
+    payload = to_bid_logic_checklist(data, bid_no, revision)
+    return payload if payload["documents"] or payload["schedule"] else None
 
 def connect_bid_routes(profile_dependency, *, bids_provider=None, search_results_provider=None,
                        title_similarity=None, agent_model=None):
@@ -992,7 +995,8 @@ def connect_bid_routes(profile_dependency, *, bids_provider=None, search_results
 # 4번 백엔드 주소가 있으면 토큰을 백엔드 /api/profile로 확인하는 의존성으로 바로 연결한다 (backend_auth.py)
 from backend_auth import backend_url, get_authenticated_profile
 if backend_url():
-    connect_bid_routes(get_authenticated_profile)
+    # ③ 화면이 보내는 search_id로 1번 검색 결과를 3번 추리기에 넘긴다 (search_id 없는 /bids는 422)
+    connect_bid_routes(get_authenticated_profile, search_results_provider=search_results)
     print(f"[공고 API 연결] /bids · /bids/{{bid_no}}/score · /bids/{{bid_no}}/checklist ← 프로필: {backend_url()}/api/profile")
 
 

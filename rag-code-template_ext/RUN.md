@@ -58,4 +58,6 @@ BACKEND_URL=http://localhost:8080
 - 요청에는 4번 `/api/login`에서 받은 토큰을 `Authorization: Bearer <토큰>`으로 붙입니다.
 - Python 서버는 JWT 비밀키를 갖지 않습니다. 토큰을 4번 `/api/profile`에 그대로 전달하고, 검증과 프로필 조회는 4번이 합니다
   (토큰 없음 · 위조 · 만료 401, 프로필 없음 404, 백엔드 꺼짐 503).
-- 공고 목록은 1번 수집 결과 `data/corpus/bids.csv`를 변환해 씁니다. 이 파일이 없으면 `/bids`가 503입니다.
+- 실시간 흐름: `POST /search-bids`가 돌려준 `search_id`를 `GET /bids?from=…&to=…&limit=20&search_id=…`에 넘기면
+  그 검색 결과에서 20건을 추립니다. 공고문을 받기 전이라 공고명과 회사 키워드의 유사도로 정렬하고, 지역 · 업종 등 제한은 '미확인'으로 둡니다.
+- `search_id` 없이 부르면 예전처럼 1번 `data/corpus/bids.csv`를 씁니다 (없으면 503).

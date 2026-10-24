@@ -118,6 +118,10 @@ def classify_attachment(filename: str) -> set[str]:
     import unicodedata
     name = unicodedata.normalize("NFC", filename or "")  # macOS 파일명(NFD)도 같게 비교
     kinds = {k for k, words in (("rfp", RFP_WORDS), ("notice", NOTICE_WORDS)) if any(w in name for w in words)}
+    # "(최종)제안요청서(재공고)"처럼 "재공고"는 재공고 사실만 붙인 것이다. 제안요청서 이름에서는 공고문으로 보지 않는다
+    # (1번이 공고문만 받을 때 이 함수로 고르므로, 공고문이 HWP뿐이면 제안요청서 PDF를 공고문으로 받게 됨)
+    if "rfp" in kinds and not any(w in name.replace("재공고", "") for w in NOTICE_WORDS):
+        kinds.discard("notice")
     if "취소" in name:
         kinds.add("cancel")
     return kinds or {"other"}
@@ -188,6 +192,21 @@ def convert_bids_csv(src: Path = BIDS_SOURCE, dst: Path = BIDS_FOR_BID_LOGIC) ->
     return len(out)
 
 
+# ---------------------------------------------------------------- 1번 실시간 검색 결과 → 3번 /bids 입력
+def search_results(search_id: str, profile: dict | None = None) -> dict | None:
+    """3번 create_bid_router의 search_results_provider. 1번 /search-bids가 저장한 검색 결과를
+    1번 응답과 같은 공개 항목(최신 차수, 취소 · 철회 제외, 담당자 성명 · 연락처 없음)으로 돌려준다.
+    from/to는 3번이 요청 기간과 같은지 확인하는 데 쓴다. 없는 검색이면 None(→ 3번이 404).
+    검색 결과는 회사별로 저장되지 않으므로 profile로 접근을 제한하지 않는다."""
+    from data_pipeline import search_jobs
+    try:
+        saved = search_jobs._snapshot(search_id)
+    except search_jobs.SearchNotFound:
+        return None
+    public = search_jobs._public_search(saved, True)
+    return {"from": saved["request"]["from"], "to": saved["request"]["to"], "items": public["items"]}
+
+
 def sync_bids_csv() -> bool:
     """1번 산출물이 있고 변환본보다 새로우면 다시 변환. 변환했으면 True."""
     if not BIDS_SOURCE.exists():
@@ -204,7 +223,9 @@ KIND = {"정량": "quantitative", "정성": "qualitative", "가격": "price"}
 
 def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
     items = []
-    for i, it in enumerate(extraction["items"], start=1):
+    # 3번은 출처 없는 항목이 하나라도 있으면 표 전체를 거부한다. 원문 대조에 실패한 항목은 넘기지 않고
+    # 2번 /scoring-table 응답에 source_verified=false로만 남긴다 (번호는 넘기는 항목끼리 이어서 매김)
+    for i, it in enumerate([it for it in extraction["items"] if it.get("source_refs")], start=1):
         kind = KIND.get(it["eval_type"], "qualitative")
         rule = it.get("rule")
         items.append({
@@ -219,16 +240,19 @@ def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
 
 
 def to_bid_logic_checklist(extraction: dict, bid_no: str, revision: str) -> dict:
+    # 점수표와 같은 이유로 원문 대조에 성공한 항목만 넘긴다 (2026-10 실제 공고에서 1개 항목 때문에 체크리스트 전체가 503)
+    docs = [d for d in extraction["docs"] if d.get("source_refs")]
+    events = [s for s in extraction.get("schedule", []) if s.get("source_refs")]
     documents = [{"id": f"doc{i:02d}", "doc": d["doc_name"], "bid_no": bid_no, "revision": revision,
-                  "due": d.get("due_iso"), "sources": d.get("source_refs", []),
+                  "due": d.get("due_iso"), "sources": d["source_refs"],
                   "needs_review": d.get("needs_review", False),
                   "notes": [n for n in (d.get("note"), extraction.get("due_note")) if n]}
-                 for i, d in enumerate(extraction["docs"], start=1)]
+                 for i, d in enumerate(docs, start=1)]
     schedule = [{"id": f"evt{i:02d}", "event": s["event"], "bid_no": bid_no, "revision": revision,
-                 "due": s.get("due_iso"), "sources": s.get("source_refs", []),
+                 "due": s.get("due_iso"), "sources": s["source_refs"],
                  "needs_review": s.get("needs_review", False),
                  "notes": [s["when"]] if s.get("when") else []}
-                for i, s in enumerate(extraction.get("schedule", []), start=1)]
+                for i, s in enumerate(events, start=1)]
     return {"bid_no": bid_no, "revision": revision, "documents": documents, "schedule": schedule,
             "needs_review": extraction.get("needs_review", False),
             "quality_warnings": extraction.get("quality_warnings", [])}

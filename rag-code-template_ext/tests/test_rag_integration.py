@@ -145,6 +145,26 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         events = {e["event"]: e["status"] for e in out["schedule"]}
         self.assertEqual(events, {"개찰": "upcoming", "제안서 평가": "unknown"})
 
+    def test_items_without_verified_source_are_not_passed(self):
+        # 원문 대조에 실패한 항목(source_refs 빈 목록) 하나 때문에 3번이 전체를 거부하지 않도록 빼고 넘긴다
+        extraction = {"docs": [{"doc_name": "제안서", "note": "", "source_refs": [self.REF]},
+                               {"doc_name": "출처 미확인 서류", "note": "", "source_refs": []}],
+                      "due_iso": "2026-11-03T10:00+09:00", "due_note": "",
+                      "schedule": [{"event": "개찰", "when": "2026. 11. 3.(화) 11:00", "due_iso": "2026-11-03T11:00+09:00",
+                                    "source_refs": []}]}
+        payload = kb.to_bid_logic_checklist(extraction, "R1", "000")
+        self.assertEqual([d["doc"] for d in payload["documents"]], ["제안서"])
+        self.assertEqual(payload["schedule"], [])
+        out = build_checklist(payload, {"owned_docs": None}, "R1", "000", now="2026-10-25T09:00+09:00")
+        self.assertIsNone(out["documents"][0]["owned"])      # 프로필 owned_docs null(모름)은 미확인으로 유지
+        table = kb.to_bid_logic_scoring({"items": [
+            {"item": "이해도", "section": "이해", "max_score": 8, "criteria": "", "eval_type": "정성",
+             "source_refs": [], "rule": None},
+            {"item": "수행계획", "section": "계획", "max_score": 10, "criteria": "", "eval_type": "정성",
+             "source_refs": [self.REF], "rule": None}]}, "R1", "000")
+        self.assertEqual([(i["id"], i["item"]) for i in table["items"]], [("item01", "수행계획")])
+        calculate_scores(table, {}, "R1", "000")
+
     def test_attachment_kinds_from_real_api_names(self):
         # 2026-10 실제 API 검색 결과의 파일명
         self.assertEqual(kb.classify_attachment("(공고문) 2027년 용인시보건소 PACS.pdf"), {"notice"})
@@ -153,11 +173,80 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         self.assertEqual(kb.classify_attachment("(과업내용서)2027년 용인시.hwpx"), {"rfp"})
         self.assertEqual(kb.classify_attachment("입찰참가_첨부양식(용역).hwp"), {"other"})
         self.assertIn("cancel", kb.classify_attachment("취소공고서.hwpx"))
+        # 2026-10 실제 검색: 재공고 표시가 붙은 제안요청서는 공고문이 아님, 재공고 공고문은 그대로 공고문
+        self.assertEqual(kb.classify_attachment("(최종)제안요청서(재공고)_설치류 수면 시 글림프시스템.pdf"), {"rfp"})
+        self.assertEqual(kb.classify_attachment("(최종)입찰공고문(재공고)_설치류 수면 시.pdf"), {"notice"})
+        self.assertEqual(kb.classify_attachment("재공고_용역.hwp"), {"notice"})
 
     def test_due_parser(self):
         self.assertEqual(kb.to_iso_due("2026.10.23.(금)09:00~11.3.(화)\n10:00"), "2026-11-03T10:00+09:00")
         self.assertIsNone(kb.to_iso_due("2026. 11. 5.(목) ~ 11. 11.(수)"))
 
+
+
+@unittest.skipIf(kb is None, "FAISS/LangChain 미설치")
+class SearchResultsAdapterTest(unittest.TestCase):
+    """흐름 ③: 1번 /search-bids 스냅샷 → search_results 어댑터 → 3번 /bids?search_id=…"""
+    SID = "a" * 32
+
+    def item(self, no, order, title, kind="등록공고", close="2026-11-20 10:00:00", price="100000000"):
+        return {"bidNtceNo": no, "bidNtceOrd": order, "bidNtceNm": title, "dminsttNm": "기관", "ntceKindNm": kind,
+                "bidNtceDt": "2026-10-20 09:00:00", "bidClseDt": close, "asignBdgtAmt": price,
+                "bidNtceDtlUrl": f"https://example.test/{no}"}
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.saved_root = os.environ.get("BID_SEARCH_ROOT")
+        os.environ["BID_SEARCH_ROOT"] = self.tmp.name
+        folder = Path(self.tmp.name) / self.SID
+        folder.mkdir()
+        items = [self.item("R1", "000", "교육 플랫폼 홈페이지 구축"),
+                 self.item("R2", "000", "보건소 서버 유지관리"),
+                 self.item("R3", "000", "학습관리시스템 플랫폼 고도화(이전 차수)"),
+                 self.item("R3", "001", "학습관리시스템 플랫폼 고도화"),
+                 self.item("R4", "000", "취소된 플랫폼 공고", kind="취소공고"),
+                 self.item("R5", "000", "마감된 플랫폼 구축", close="2026-10-21 10:00:00")]
+        (folder / "search.json").write_text(json.dumps(
+            {"search_id": self.SID, "request": {"from": "2026-10-16", "to": "2026-10-22", "queries": ["플랫폼"],
+                                                "limit": 100},
+             "items": items, "collected_at": "2026-10-23T10:00:00+09:00", "page_limit_reached": False},
+            ensure_ascii=False), encoding="utf-8")
+
+    def tearDown(self):
+        if self.saved_root is None:
+            os.environ.pop("BID_SEARCH_ROOT", None)
+        else:
+            os.environ["BID_SEARCH_ROOT"] = self.saved_root
+        self.tmp.cleanup()
+
+    def test_adapter_returns_public_active_items_with_period(self):
+        out = kb.search_results(self.SID, {})
+        self.assertEqual((out["from"], out["to"]), ("2026-10-16", "2026-10-22"))
+        keys = {(i["bid_no"], i["bid_order"]) for i in out["items"]}
+        self.assertEqual(keys, {("R1", "000"), ("R2", "000"), ("R3", "001"), ("R5", "000")})   # 취소 · 이전 차수 제외
+        self.assertIsNone(kb.search_results("b" * 32, {}))
+
+    def test_bid_logic_router_shortlists_saved_search(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from bid_logic.api import create_bid_router
+
+        app = FastAPI()
+        app.include_router(create_bid_router(
+            profile_dependency=lambda: {"keywords": ["교육 플랫폼 홈페이지"], "region": "울산광역시"},
+            bids_provider=lambda: [], scoring_provider=lambda *a: None, checklist_provider=lambda *a: None,
+            search=lambda q, k: [], search_results_provider=kb.search_results, require_search_id=True,
+            clock=lambda: "2026-10-23T12:00+09:00"))
+        client = TestClient(app)
+        period = {"from": "2026-10-16", "to": "2026-10-22"}
+        body = client.get("/bids", params={**period, "limit": 20, "search_id": self.SID}).json()
+        self.assertEqual(body["bids"][0]["bid_no"], "R1")            # 키워드와 가장 비슷한 공고명이 먼저
+        self.assertEqual({b["bid_no"] for b in body["bids"]}, {"R1", "R2", "R3"})
+        self.assertEqual([e["bid_no"] for e in body["excluded"]], ["R5"])   # 마감 공고는 사유와 함께 제외
+        self.assertEqual(client.get("/bids", params={**period, "search_id": "f" * 32}).status_code, 404)
+        self.assertEqual(client.get("/bids", params={"from": "2026-10-01", "to": "2026-10-22",
+                                                      "search_id": self.SID}).status_code, 422)  # 검색 기간과 다름
+        self.assertEqual(client.get("/bids", params=period).status_code, 422)                  # search_id 필수
 
 if __name__ == "__main__":
     unittest.main()

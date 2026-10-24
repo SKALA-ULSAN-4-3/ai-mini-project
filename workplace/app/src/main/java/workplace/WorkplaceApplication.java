@@ -3,6 +3,9 @@ package workplace;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import workplace.config.AppConfig;
+import workplace.repository.JdbcPipelineRepository;
+import workplace.service.PipelineService;
+import workplace.web.handler.PipelineHandler;
 import workplace.repository.BidDocumentRepository;
 import workplace.repository.BidSummaryRepository;
 import workplace.repository.CompanyProfileRepository;
@@ -100,6 +103,9 @@ public final class WorkplaceApplication {
                 config.jwtExpirationSeconds()
         );
         CurrentUserResolver currentUserResolver = new CurrentUserResolver(jwtProvider);
+
+        PipelineService pipelineService = new PipelineService(
+                new JdbcPipelineRepository(connectionFactory));
 
         HttpServer server = HttpServer.create(
                 new InetSocketAddress(config.serverPort()),
@@ -234,6 +240,9 @@ public final class WorkplaceApplication {
                 responses,
                 config
         );
+
+        register(server, "/api/me/", new PipelineHandler(
+                currentUserResolver, pipelineService, requestBodies, responses), responses, config);
 
         server.start();
         System.out.printf(

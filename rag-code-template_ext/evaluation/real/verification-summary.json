@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-25",
+  "tests": {
+    "run": 184,
+    "passed": 184,
+    "skipped": 0
+  },
+  "evaluation": {
+    "status": "draft_evaluated",
+    "reference_status": "ai_draft_pending_human_review",
+    "human_verified": false,
+    "metrics": {
+      "score_item_accuracy": 1.0,
+      "score_items": 264,
+      "quantitative_item_accuracy": 1.0,
+      "recommendations": [
+        {
+          "profile_id": "seoul_web",
+          "returned": 5,
+          "precision_at_5": 0.4,
+          "precision_returned": 0.4,
+          "recall": 1.0
+        },
+        {
+          "profile_id": "ulsan_data",
+          "returned": 5,
+          "precision_at_5": 1.0,
+          "precision_returned": 1.0,
+          "recall": 1.0
+        },
+        {
+          "profile_id": "jeju_campus",
+          "returned": 5,
+          "precision_at_5": 0.6,
+          "precision_returned": 0.6,
+          "recall": 1.0
+        }
+      ],
+      "checklist_combinations": 15,
+      "checklist_differences": 0
+    },
+    "reproduce": "python -m bid_logic.validation --dataset evaluation/real --draft"
+  },
+  "actual_agent_check": "../live-agent-check.json",
+  "limitations": [
+    "사람 정답 검토 pending",
+    "다른 팀원 PC의 재현 확인 필요",
+    "로컬 인증 백엔드 연결 실패: 로그인·실제 프로필·화면 E2E는 미검증"
+  ]
+}

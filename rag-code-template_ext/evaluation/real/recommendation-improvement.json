@@ -1,0 +1,867 @@
+{
+  "change": "source-backed deadline metadata correction only",
+  "human_verified": false,
+  "now": "2026-10-07T16:00:00+09:00",
+  "cases": [
+    {
+      "profile_id": "seoul_web",
+      "relevant_count": 2,
+      "before": {
+        "precision_at_5": 0.4,
+        "returned": [
+          [
+            "R26BK01753530",
+            "000"
+          ],
+          [
+            "R26BK01663676",
+            "000"
+          ],
+          [
+            "R26BK01754897",
+            "000"
+          ],
+          [
+            "R26BK01753451",
+            "000"
+          ],
+          [
+            "R26BK01757019",
+            "000"
+          ]
+        ],
+        "excluded": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01661818",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707131",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01662752",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707212",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01659989",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01657129",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01664258",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707886",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702784",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702853",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "regions 조건 불일치"
+            ]
+          }
+        ]
+      },
+      "after": {
+        "precision_at_5": 0.4,
+        "returned": [
+          [
+            "R26BK01753530",
+            "000"
+          ],
+          [
+            "R26BK01754897",
+            "000"
+          ],
+          [
+            "R26BK01753451",
+            "000"
+          ],
+          [
+            "R26BK01757019",
+            "000"
+          ],
+          [
+            "R26BK01751013",
+            "000"
+          ]
+        ],
+        "excluded": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01661818",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707131",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01662752",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707212",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01659989",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01657129",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01663676",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01664258",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707886",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702784",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702853",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "regions 조건 불일치"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "profile_id": "ulsan_data",
+      "relevant_count": 5,
+      "before": {
+        "precision_at_5": 0.8,
+        "returned": [
+          [
+            "R26BK01753530",
+            "000"
+          ],
+          [
+            "R26BK01757019",
+            "000"
+          ],
+          [
+            "R26BK01753451",
+            "000"
+          ],
+          [
+            "R26BK01751013",
+            "000"
+          ],
+          [
+            "R26BK01663676",
+            "000"
+          ]
+        ],
+        "excluded": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01661818",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707131",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01662752",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707212",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01659989",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01657129",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01664258",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707886",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702784",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702853",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "regions 조건 불일치"
+            ]
+          }
+        ]
+      },
+      "after": {
+        "precision_at_5": 1.0,
+        "returned": [
+          [
+            "R26BK01753530",
+            "000"
+          ],
+          [
+            "R26BK01757019",
+            "000"
+          ],
+          [
+            "R26BK01753451",
+            "000"
+          ],
+          [
+            "R26BK01751013",
+            "000"
+          ],
+          [
+            "R26BK01754897",
+            "000"
+          ]
+        ],
+        "excluded": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01661818",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707131",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01662752",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707212",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01659989",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01657129",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01663676",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01664258",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707886",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702784",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702853",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01760198",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "regions 조건 불일치"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "profile_id": "jeju_campus",
+      "relevant_count": 3,
+      "before": {
+        "precision_at_5": 0.6,
+        "returned": [
+          [
+            "R26BK01753530",
+            "000"
+          ],
+          [
+            "R26BK01760198",
+            "000"
+          ],
+          [
+            "R26BK01757019",
+            "000"
+          ],
+          [
+            "R26BK01663676",
+            "000"
+          ],
+          [
+            "R26BK01754897",
+            "000"
+          ]
+        ],
+        "excluded": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01661818",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707131",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01662752",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707212",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01659989",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01657129",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01664258",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707886",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702784",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702853",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          }
+        ]
+      },
+      "after": {
+        "precision_at_5": 0.6,
+        "returned": [
+          [
+            "R26BK01753530",
+            "000"
+          ],
+          [
+            "R26BK01760198",
+            "000"
+          ],
+          [
+            "R26BK01757019",
+            "000"
+          ],
+          [
+            "R26BK01754897",
+            "000"
+          ],
+          [
+            "R26BK01751013",
+            "000"
+          ]
+        ],
+        "excluded": [
+          {
+            "bid_no": "R26BK01667722",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706837",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01661818",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01706954",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707131",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01662752",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707212",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01659989",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01657129",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01663676",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01664258",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01707886",
+            "revision": "000",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702784",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          },
+          {
+            "bid_no": "R26BK01702853",
+            "revision": "001",
+            "status": "excluded",
+            "reasons": [
+              "입찰이 마감되었습니다."
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "unchanged_input_sha256": {
+    "manifest.json": "c9a131bb15fcb896a1d110564577ef6a3612d5bd1731b3f5ebb68ad62713d22e",
+    "profiles.json": "720677201693c9765074a725547ebdbbd35c615e4cffac428360a0fc948f8ef2",
+    "gold.json": "c6043ae19fcdd42f76698a70d05827bca945e71bb8d42f4de0a43d7fcf127240",
+    "hits.json": "2cc44b0f8067a5ec4119dfcb5b0f6b538fb6ebcc019f6b6185950f0798e596b2"
+  }
+}

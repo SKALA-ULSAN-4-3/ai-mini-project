@@ -1,0 +1,9 @@
+{
+  "date": "2026-10-25",
+  "cases": 60,
+  "references_checked": 66,
+  "files_checked": 20,
+  "errors": [],
+  "human_verified": false,
+  "scope": "원문 파일 존재·SHA-256·PDF 쪽수 범위·정답 목록 일관성. 관련성 판정 의미 검토 아님."
+}

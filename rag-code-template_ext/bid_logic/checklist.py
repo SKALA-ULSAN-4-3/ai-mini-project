@@ -5,6 +5,7 @@ import unicodedata
 from datetime import datetime
 
 from .common import SEOUL, RequestError, check_scope, deadline_info, require_sources, seoul_time
+from .notice_metadata import add_notice_schedule
 
 
 def document_key(name):
@@ -14,6 +15,7 @@ def document_key(name):
 
 def build_checklist(extracted, profile, bid_no, revision, *, now=None, aliases=None):
     check_scope(extracted, bid_no, revision)
+    extracted = add_notice_schedule(extracted)
     now = seoul_time(now or datetime.now(SEOUL))
     # aliases는 사람이 확인한 별칭 -> 정식명 1단계 대응표.
     aliases = aliases or {}

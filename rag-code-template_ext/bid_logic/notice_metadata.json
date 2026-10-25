@@ -1,0 +1,74 @@
+[
+  {
+    "bid_no": "R26BK01707131",
+    "revision": "000",
+    "sources": [
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "filename": "(제2026-24호)[공고문][혁신BAA10] 학사제도 유연화 및 전문기술석사과정 시스템 개발·고도화 용역.pdf",
+        "page": 1,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707131&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+        "sha256": "e0e86b20d9bb84557cb955298609bb29a36d17846755a8dd54f6f52a64cf324b"
+      }
+    ],
+    "regions": [
+      "경남",
+      "부산"
+    ],
+    "notes": [
+      "공고문 지역제한은 경남 또는 부산. 주된 영업소의 소재지 유지기간 등 세부 자격은 담당자 확인."
+    ]
+  },
+  {
+    "bid_no": "R26BK01753530",
+    "revision": "000",
+    "sources": [
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+        "page": 2,
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+      }
+    ],
+    "deadlines": [
+      {
+        "id": "participation",
+        "event": "입찰참가신청",
+        "due": "2026-10-08T18:00:00+09:00",
+        "aliases": [
+          "입찰참가신청",
+          "입찰참가신청 마감",
+          "참가신청",
+          "참가신청 마감"
+        ]
+      },
+      {
+        "id": "proposal_file",
+        "event": "제안서 파일 제출",
+        "due": "2026-11-11T14:00:00+09:00",
+        "aliases": [
+          "제안서 파일 제출",
+          "제안서 파일 제출 마감",
+          "제안서 전자파일 제출"
+        ]
+      },
+      {
+        "id": "proposal_bound",
+        "event": "제안서 제본 제출",
+        "due": "2026-11-13T13:30:00+09:00",
+        "aliases": [
+          "제안서 제본 제출",
+          "제안서 제본 제출 마감",
+          "제본 제출",
+          "제안서 인쇄본 제출"
+        ]
+      }
+    ],
+    "notes": [
+      "신규 참가 판단 기한은 입찰참가신청 마감. 이미 신청한 업체는 신청 완료 여부를 확인하고 파일·제본 제출 기한을 각각 확인."
+    ]
+  }
+]

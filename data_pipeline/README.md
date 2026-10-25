@@ -34,11 +34,9 @@ data_pipeline/.venv/bin/python data_pipeline/convert_documents.py --setup --soff
 
 macOS 신규 프로필에서는 `unopkg`가 실행하는 보조 프로세스가 `Launch Constraint Violation`으로 종료되는 문제가 재현됐습니다. macOS에서는 LibreOffice 내부의 임시 설치 매크로로 검증된 확장만 등록하고, 완료 후 매크로를 제거하며 원래 매크로 목록을 복원합니다. 앱 서명이나 시스템 보안 설정은 변경하지 않습니다. 설치할 때는 해당 프로필을 쓰는 변환 작업을 종료해야 합니다.
 
-2026-10-23 macOS 26.5.2 arm64에서 가상환경·LibreOffice·확장 프로필이 없는 별도 경로(공백 포함)로 다운로드부터 설치 종료까지 검증했습니다. Python 3.14.6에서 API 로딩·의존성 검사, 실제 HWP 3쪽·HWPX 5쪽의 PDF 변환 및 텍스트 추출, 설치 재실행, 기존 등록 실패 프로필 복구를 통과했습니다. Homebrew·JDK 21은 호스트에 이미 설치되어 있었으므로 이 두 도구의 신규 설치 및 Ubuntu 실행은 검증 범위에 포함되지 않습니다.
 
 ## 화면 연결용 확정 흐름
 
-원격 develop을 실제 pull한 뒤 첨부 MD의 1번 지시만 반영했습니다. [API 계약·저장 구조·검증·제약](MD_DATA_GUIDE.md)을 확인하세요.
 
 1. `POST /search-bids`: 기간·검색어로 목록과 첨부 링크를 조회해 search_id로 저장합니다. 다운로드·회사별 추천은 하지 않습니다.
 2. `POST /fetch-notices`: 검색 결과에서 다른 담당 로직이 고른 최대 20건의 공고문 한 개씩만 받아 변환·누적 적재합니다.
@@ -115,4 +113,86 @@ data_pipeline/.venv/bin/python -m data_pipeline.audit_dataset --run-dir data/cor
 data_pipeline/.venv/bin/python -m unittest discover -s data_pipeline/tests -v
 ```
 
-현재 적용 검증은 단위·모의 검사 24개입니다. 실제 API·다운로드·변환 도구·운영 임베딩·RAG 전체 기동은 실행하지 않았습니다. 테스트 임시 디렉터리는 정리했고 기존 데이터와 인덱스는 변경하지 않았습니다. 기존 코퍼스 통합 검사는 별도이며 고정 20건 평가 완료를 뜻하지 않습니다.
+
+## Render 통합 배포
+
+데이터 API와 기존 RAG를 서비스 하나에서 실행합니다. Java 인증·프로필은 기존 백엔드에 연결합니다.
+
+| 설정 | 값 |
+| --- | --- |
+| 서비스 | `https://ai-mini-datapipeline.onrender.com` |
+| 배포 브랜치 | `develop` |
+| Root Directory / Build Context | 비움 / `.` |
+| Dockerfile | `data_pipeline/Dockerfile.render` |
+| 실행 앱 / worker | `data_pipeline.render_rag_app:app` / 1 |
+| 헬스 | `/health` |
+| BACKEND_URL | `https://ai-service-mini-backend.onrender.com` |
+| 비밀 환경변수 | `DATA_GO_KR_SERVICE_KEY`, `OPENAI_API_KEY` |
+
+Dockerfile의 기본 실행 명령을 사용합니다. LibreOffice·Java·한글 글꼴·H2Orestart는 이미지에서 설치합니다.
+호스트 `.env`, 원문, 인덱스, 가상환경은 이미지에 포함하지 않습니다.
+무료 인스턴스의 저장소는 재배포 시 사라질 수 있습니다. 원문·인덱스를 준비한 뒤 재배포하면 다시 적재해야 합니다.
+영속 디스크를 사용하는 경우 `BID_SEARCH_ROOT`와 `BID_INDEX_ROOT`를 마운트 아래로 지정합니다.
+
+공개 헬스·Swagger와 실제 인증된 검색의 성공은 별도로 확인합니다. 다음 검증기는 프로젝트 루트 `.env`를 읽으며,
+`MINI_TEST_TOKEN` 또는 `MINI_TEST_BUSINESS_NUMBER`·`MINI_TEST_PASSWORD`가 있어야 인증된 흐름을 검사합니다.
+비밀값은 명령행이나 문서에 적지 않습니다. 토큰이 없어도 공개 경로는 점검하지만 전체 성공으로 처리하지 않습니다.
+
+```bash
+data_pipeline/.venv/bin/python -m data_pipeline.verify_render --origin http://localhost:5174
+```
+
+기간·검색어는 `--from`, `--to`, `--query`로 지정합니다. 검증은 실제 목록 검색과 `/bids` 호출을 수행하므로
+등록된 기업 프로필과 검색 가능한 기간을 사용합니다. 첨부 다운로드·임베딩·Q&A는 이 명령으로 검증하지 않습니다.
+결과는 Git에서 제외된 `data/render-verification.json`에 기록합니다.
+`data_pipeline_passed`는 인증된 검색→`search_id`→`/bids`까지, `passed`는 Java 로그인 CORS까지 포함합니다.
+로그인 사전 요청은 상태 코드뿐 아니라 허용 출처·메서드·헤더가 있어야 통과합니다.
+Java의 프론트 출처 허용 설정은 인증 담당자가 관리합니다.
+
+문서가 없는 배포에서는 인증 후 실제 검색의 `search_id`와 선택 공고번호·차수로 `/fetch-notices`를 호출하고
+`/jobs/{job_id}`의 완료 상태를 확인합니다. 사용자 선택 후 전체 첨부는 `/fetch-documents`로 받습니다.
+평가 자료를 운영에 자동 적재하지 않습니다.
+
+## 공식 평가 원문 재현
+
+운영 실시간 검색과 구별하여 아래 공식 평가셋을 사용합니다. 고정 수집 목록 `dataset_selection.json`을 복원하지 않습니다.
+
+- 목록: `rag-code-template_ext/evaluation/real/bids.csv` (20개 공고·차수).
+- 평가 기준: 같은 폴더의 `manifest.json` (3개 기업 프로필, 고정 평가 시각).
+- 원문 기준: 같은 폴더의 `source-manifest.json` (74개 URL·파일명·차수·SHA-256).
+
+해시나 차수가 다르면 공식 기준을 임의로 바꾸지 않고 평가 담당자에게 확인합니다.
+다운로더는 URL 재다운로드를 통해 원문을 공유하며 원본 바이너리를 Git에 넣지 않습니다.
+나라장터 API 키·OpenAI 키·LibreOffice 없이 다운로드·추천 라벨 재현이 가능합니다.
+Python 3.10 이상에서 최소 환경을 준비하거나 기존 데이터 가상환경을 사용합니다.
+
+```bash
+python3 -m venv .venv-evaluation
+.venv-evaluation/bin/python -m pip install 'pypdf>=6.10,<7' tzdata
+.venv-evaluation/bin/python -m data_pipeline.evaluation_sources
+.venv-evaluation/bin/python -m data_pipeline.evaluation_sources --verify-only
+cd rag-code-template_ext
+../.venv-evaluation/bin/python -m unittest discover -s tests -p test_recommendation_labels.py -v
+```
+
+Windows에서는 `.venv-evaluation/bin/python` 대신 `.venv-evaluation\Scripts\python.exe`를 사용합니다.
+테스트 완료 기준은 `Ran 2 tests`, `OK`, 건너뜀 0개입니다. 근거 파일이 없어 건너뛴 검사는 완료가 아닙니다.
+기존 원문을 재사용하려면 수집 시 `--reuse-manifest data/corpus/attachments.csv`를 지정할 수 있습니다.
+
+기본 출력은 `data/evaluation-source-20261023/`입니다.
+
+| 출력 | 용도 |
+| --- | --- |
+| `raw/{공고번호}_{차수}/` | 해시가 일치하는 원문 |
+| `attachments.json` | 검증 성공 첨부의 실제 저장 경로 |
+| `evidence.json` | PDF 페이지·HWPX XML 표의 평가 근거 |
+| `download-failures.json` | 원문·근거 추출 실패 목록 |
+| `verification.json` | 원문 수·공식 목록 해시·성공 여부 |
+
+성공 파일은 재사용하고 실패 파일만 다시 받습니다. 임시 다운로드가 기준 해시와 일치해야 최종 원본으로 이동합니다.
+원문·차수 검증이나 근거 추출에 실패하면 기존 `attachments.json`·`evidence.json`을 제거하여
+오래된 성공 결과가 테스트에 사용되지 않도록 합니다. 원본 파일은 삭제하지 않습니다.
+`--verify-only`는 원본 해시만 확인하며 근거를 재생성하지 않습니다. 근거 생성은 기본 수집 명령으로 수행합니다.
+HWPX 근거는 XML 위치를 유지하며 PDF 쪽수로 바꾸지 않습니다.
+공식 정답·프로필·평가 시각·운영 인덱스는 변경하지 않습니다.
+다른 PC 재현과 정답의 사람 검토는 평가 담당자가 별도로 수행합니다.

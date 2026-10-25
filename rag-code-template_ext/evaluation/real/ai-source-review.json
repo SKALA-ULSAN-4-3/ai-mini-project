@@ -1,0 +1,1191 @@
+{
+  "reviewer": "Codex (AI)",
+  "reviewed_at": "2026-10-25T17:19:25.345079+09:00",
+  "human_verified": false,
+  "scope": "추천 최종 포함/제외 60개를 공고문 일정·지역·명시 사업명과 고정 프로필로 재검토. 의료기술 RFP HWPX의 일부 과업 추가 대조. 전체 HWP RFP·자격·평가 점수 전수 검토 아님.",
+  "summary": {
+    "cases": 60,
+    "exclusion_supported": 44,
+    "provisional_scope_agreement": 16,
+    "gold_changed": false,
+    "human_reviews_completed": 0
+  },
+  "findings": [
+    {
+      "bid_no": "R26BK01707131",
+      "kind": "additional_region_restriction",
+      "evidence": "공고문 p.1 지역제한 경남·부산, p.1~2 주된 영업소 조건. CSV regions는 null.",
+      "impact": "이 재생 시각에는 이미 마감이라 최종 제외·P@5 변화 없음. 다른 시점에서 사용하려면 지역 메타데이터 보완 필요."
+    },
+    {
+      "bid_no": "R26BK01753530",
+      "kind": "multiple_required_deadlines",
+      "evidence": "공고문 p.2 참가신청 10월8일18시, 제안 파일 11월11일14시, 제본 11월13일13시30분. CSV deadline은 빈 값.",
+      "impact": "10월7일 재생 시각에는 모두 미래라 현재 포함과 모순 없음. 이후 시점에서는 가장 이른 필수 참가신청 기한을 별도로 확인해야 함. 단일 제안서 마감만으로 참가 가능성을 판단하지 않음."
+    },
+    {
+      "bid_no": null,
+      "kind": "transferable_experience_assumption",
+      "evidence": "세 프로필 모두 동일한 대학 학사정보시스템 구축 실적을 가짐.",
+      "impact": "서울·울산 프로필에도 학생지원 사업을 포함하는 근거는 평가자의 실적 전이 가정이다. 객관적 자격·인정 실적 확인과 구분하고 사람이 평가 기준을 확인할 것."
+    }
+  ],
+  "cases": [
+    {
+      "bid_no": "R26BK01667722",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-21T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01667722",
+          "revision": "000",
+          "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-21T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01667722",
+          "revision": "000",
+          "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-21T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01667722",
+          "revision": "000",
+          "filename": "★공고문_농지정보시스템 기능개발 및 통합 용역.pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01667722&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "b76f8059e9bccccf15b37055d04c4873b7787ea7edaa420ceb5b14a96503a780"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "revision": "001",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01706837",
+          "revision": "001",
+          "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "revision": "001",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01706837",
+          "revision": "001",
+          "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "revision": "001",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01706837",
+          "revision": "001",
+          "filename": "[공고문]겨레말큰사전 검색 시스템 개발(기반 구축).pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706837&bidPbancOrd=001&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "593448310bdf6f27ae595a0b1c75b3b918b4255350b514c6708adbea35b55918"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "홈페이지/CMS 또는 학사·학생지원과의 직접 연결 근거를 이번에 확인한 공고문에서 찾지 못했다. 현재의 보수적 정답 기준 아래 제외에 잠정 동의한다. 시스템 개발이라는 공통 기술만으로 관련으로 보지 않는다. 제안요청서 전체를 확인하면 판정이 달라질 가능성이 남는다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01751013",
+          "revision": "000",
+          "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+          "page": 3,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "업무 정보시스템 기능개선·집행검증·시스템 연계라는 과업과 정보시스템·데이터 연계·업무 시스템 관심 분야가 연결된다. 현재 기준의 포함 판정에 잠정 동의한다. 의료기술 공고는 HWPX Contents/section0.xml의 통계·DB 검색 개선도 대조했다. 다른 HWP의 세부 요구사항까지 전수 대조한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01751013",
+          "revision": "000",
+          "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+          "page": 3,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "홈페이지/CMS 또는 학사·학생지원과의 직접 연결 근거를 이번에 확인한 공고문에서 찾지 못했다. 현재의 보수적 정답 기준 아래 제외에 잠정 동의한다. 시스템 개발이라는 공통 기술만으로 관련으로 보지 않는다. 제안요청서 전체를 확인하면 판정이 달라질 가능성이 남는다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01751013",
+          "revision": "000",
+          "filename": "(입찰 제2026-011호) 입찰공고문.pdf",
+          "page": 3,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01751013&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "1704ef958773d69ce1a5cd4d4b2f7f1132fb141dfff6fd18efdb5594dde2c454"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01661818",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01661818",
+          "revision": "000",
+          "filename": "입찰공고문_한남대학교 온라인 학습관리시스템(LMS) 고도화 사업.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01661818&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "bb0cd1d85bcc95ce372074f0f49dc8462fa317a82ebab34c9dfafd3de782d4ca"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01661818",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01661818",
+          "revision": "000",
+          "filename": "입찰공고문_한남대학교 온라인 학습관리시스템(LMS) 고도화 사업.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01661818&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "bb0cd1d85bcc95ce372074f0f49dc8462fa317a82ebab34c9dfafd3de782d4ca"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01661818",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01661818",
+          "revision": "000",
+          "filename": "입찰공고문_한남대학교 온라인 학습관리시스템(LMS) 고도화 사업.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01661818&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "bb0cd1d85bcc95ce372074f0f49dc8462fa317a82ebab34c9dfafd3de782d4ca"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T11:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01706954",
+          "revision": "000",
+          "filename": "0. 입찰공고문(2026-0108).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "dd828c3f494b8d4e7fe9bece321bbaee5e881c18b923aa24b4057f5aaf4fb9eb"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T11:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01706954",
+          "revision": "000",
+          "filename": "0. 입찰공고문(2026-0108).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "dd828c3f494b8d4e7fe9bece321bbaee5e881c18b923aa24b4057f5aaf4fb9eb"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T11:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01706954",
+          "revision": "000",
+          "filename": "0. 입찰공고문(2026-0108).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01706954&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "dd828c3f494b8d4e7fe9bece321bbaee5e881c18b923aa24b4057f5aaf4fb9eb"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707131",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707131",
+          "revision": "000",
+          "filename": "(제2026-24호)[공고문][혁신BAA10] 학사제도 유연화 및 전문기술석사과정 시스템 개발·고도화 용역.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707131&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "e0e86b20d9bb84557cb955298609bb29a36d17846755a8dd54f6f52a64cf324b"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707131",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707131",
+          "revision": "000",
+          "filename": "(제2026-24호)[공고문][혁신BAA10] 학사제도 유연화 및 전문기술석사과정 시스템 개발·고도화 용역.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707131&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "e0e86b20d9bb84557cb955298609bb29a36d17846755a8dd54f6f52a64cf324b"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707131",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707131",
+          "revision": "000",
+          "filename": "(제2026-24호)[공고문][혁신BAA10] 학사제도 유연화 및 전문기술석사과정 시스템 개발·고도화 용역.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707131&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "e0e86b20d9bb84557cb955298609bb29a36d17846755a8dd54f6f52a64cf324b"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01753451",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "홈페이지/CMS 또는 학사·학생지원과의 직접 연결 근거를 이번에 확인한 공고문에서 찾지 못했다. 현재의 보수적 정답 기준 아래 제외에 잠정 동의한다. 시스템 개발이라는 공통 기술만으로 관련으로 보지 않는다. 제안요청서 전체를 확인하면 판정이 달라질 가능성이 남는다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01753451",
+          "revision": "000",
+          "filename": "붙임1_입찰공고문.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753451&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "2d51a32853499112ffa82d7b0603b3b888eeba50846a8ca1e70c022e8536262d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01753451",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "집행검증 또는 시스템 연계 과업과 데이터 연계·업무 시스템 관심 분야가 연결돼 포함 판정에 잠정 동의한다. 공고문 명시 과업 기준이며 원본 HWP 제안요청서 세부 요구사항 전수 대조는 남아 있다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01753451",
+          "revision": "000",
+          "filename": "붙임1_입찰공고문.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753451&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "2d51a32853499112ffa82d7b0603b3b888eeba50846a8ca1e70c022e8536262d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01753451",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "홈페이지/CMS 또는 학사·학생지원과의 직접 연결 근거를 이번에 확인한 공고문에서 찾지 못했다. 현재의 보수적 정답 기준 아래 제외에 잠정 동의한다. 시스템 개발이라는 공통 기술만으로 관련으로 보지 않는다. 제안요청서 전체를 확인하면 판정이 달라질 가능성이 남는다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01753451",
+          "revision": "000",
+          "filename": "붙임1_입찰공고문.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753451&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "2d51a32853499112ffa82d7b0603b3b888eeba50846a8ca1e70c022e8536262d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01662752",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T12:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01662752",
+          "revision": "000",
+          "filename": "입찰공고문.pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01662752&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+          "sha256": "ab4e12e7bdb34d64ac1eae69cfe93e577e9d8bbb5aa5eb0a29921b390de7fd7d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01662752",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T12:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01662752",
+          "revision": "000",
+          "filename": "입찰공고문.pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01662752&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+          "sha256": "ab4e12e7bdb34d64ac1eae69cfe93e577e9d8bbb5aa5eb0a29921b390de7fd7d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01662752",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T12:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01662752",
+          "revision": "000",
+          "filename": "입찰공고문.pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01662752&bidPbancOrd=000&fileType=&fileSeq=3&prcmBsneSeCd=03",
+          "sha256": "ab4e12e7bdb34d64ac1eae69cfe93e577e9d8bbb5aa5eb0a29921b390de7fd7d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707212",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707212",
+          "revision": "000",
+          "filename": "공고서_재공고.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707212&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "sha256": "0e4ce8ead460391f16b076f80db3e59cd6caa4049dfa570c81127e5726d3a013"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707212",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707212",
+          "revision": "000",
+          "filename": "공고서_재공고.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707212&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "sha256": "0e4ce8ead460391f16b076f80db3e59cd6caa4049dfa570c81127e5726d3a013"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707212",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T10:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707212",
+          "revision": "000",
+          "filename": "공고서_재공고.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707212&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "sha256": "0e4ce8ead460391f16b076f80db3e59cd6caa4049dfa570c81127e5726d3a013"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01659989",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T11:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01659989",
+          "revision": "000",
+          "filename": "[입찰공고문] [2026 대학혁신지원사업] 학부 학사정보시스템 고도화 사업.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01659989&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "b3057cdceba61aa9414b87748ed1a292e67127d7ed104d4b792397e469b7fd5d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01659989",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T11:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01659989",
+          "revision": "000",
+          "filename": "[입찰공고문] [2026 대학혁신지원사업] 학부 학사정보시스템 고도화 사업.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01659989&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "b3057cdceba61aa9414b87748ed1a292e67127d7ed104d4b792397e469b7fd5d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01659989",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T11:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01659989",
+          "revision": "000",
+          "filename": "[입찰공고문] [2026 대학혁신지원사업] 학부 학사정보시스템 고도화 사업.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01659989&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "b3057cdceba61aa9414b87748ed1a292e67127d7ed104d4b792397e469b7fd5d"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01657129",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-18T15:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01657129",
+          "revision": "000",
+          "filename": "1. 입찰공고문.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01657129&bidPbancOrd=000&fileType=&fileSeq=6&prcmBsneSeCd=03",
+          "sha256": "b391c02f80b07e93c72745a0105825e68a0ec5d4cdafb076f7f0d578e9db30fe"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01657129",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-18T15:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01657129",
+          "revision": "000",
+          "filename": "1. 입찰공고문.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01657129&bidPbancOrd=000&fileType=&fileSeq=6&prcmBsneSeCd=03",
+          "sha256": "b391c02f80b07e93c72745a0105825e68a0ec5d4cdafb076f7f0d578e9db30fe"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01657129",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-18T15:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01657129",
+          "revision": "000",
+          "filename": "1. 입찰공고문.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01657129&bidPbancOrd=000&fileType=&fileSeq=6&prcmBsneSeCd=03",
+          "sha256": "b391c02f80b07e93c72745a0105825e68a0ec5d4cdafb076f7f0d578e9db30fe"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01663676",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01663676",
+          "revision": "000",
+          "filename": "용역 2026-025호 - 통합정보시스템 기능개선 및 이지바로 모듈 전환 사업 - 공고문(협상)_재공고-2차.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01663676&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "d3b12f5396b9f5299fad1523dde9aa9d694f68b9d1d8d0c6ad78cbdb9e1fabf4"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01663676",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01663676",
+          "revision": "000",
+          "filename": "용역 2026-025호 - 통합정보시스템 기능개선 및 이지바로 모듈 전환 사업 - 공고문(협상)_재공고-2차.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01663676&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "d3b12f5396b9f5299fad1523dde9aa9d694f68b9d1d8d0c6ad78cbdb9e1fabf4"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01663676",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01663676",
+          "revision": "000",
+          "filename": "용역 2026-025호 - 통합정보시스템 기능개선 및 이지바로 모듈 전환 사업 - 공고문(협상)_재공고-2차.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01663676&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "d3b12f5396b9f5299fad1523dde9aa9d694f68b9d1d8d0c6ad78cbdb9e1fabf4"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01664258",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-18T10:30:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01664258",
+          "revision": "000",
+          "filename": "입찰공고서_소재 RnD 지원 멀티 에이전트 시스템 세부 기능 개발.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01664258&bidPbancOrd=000&fileType=&fileSeq=9&prcmBsneSeCd=03",
+          "sha256": "477afca853eef1285381ddced9f9ffce6466a4f35d49100d92223bb2bcc7e67a"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01664258",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-18T10:30:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01664258",
+          "revision": "000",
+          "filename": "입찰공고서_소재 RnD 지원 멀티 에이전트 시스템 세부 기능 개발.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01664258&bidPbancOrd=000&fileType=&fileSeq=9&prcmBsneSeCd=03",
+          "sha256": "477afca853eef1285381ddced9f9ffce6466a4f35d49100d92223bb2bcc7e67a"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01664258",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-08-18T10:30:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01664258",
+          "revision": "000",
+          "filename": "입찰공고서_소재 RnD 지원 멀티 에이전트 시스템 세부 기능 개발.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01664258&bidPbancOrd=000&fileType=&fileSeq=9&prcmBsneSeCd=03",
+          "sha256": "477afca853eef1285381ddced9f9ffce6466a4f35d49100d92223bb2bcc7e67a"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707886",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T12:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707886",
+          "revision": "000",
+          "filename": "1.입찰공고문(KDI대학원 차세대 학습관리시스템 및 콘텐츠관리시스템 구축사업).pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707886&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "c13365d9fe7990272c2eea1b0be13ea27d1fc39cf11324d93dc03a3ad0f2699c"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707886",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T12:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707886",
+          "revision": "000",
+          "filename": "1.입찰공고문(KDI대학원 차세대 학습관리시스템 및 콘텐츠관리시스템 구축사업).pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707886&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "c13365d9fe7990272c2eea1b0be13ea27d1fc39cf11324d93dc03a3ad0f2699c"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01707886",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T12:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01707886",
+          "revision": "000",
+          "filename": "1.입찰공고문(KDI대학원 차세대 학습관리시스템 및 콘텐츠관리시스템 구축사업).pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01707886&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "c13365d9fe7990272c2eea1b0be13ea27d1fc39cf11324d93dc03a3ad0f2699c"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01702784",
+      "revision": "001",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01702784",
+          "revision": "001",
+          "filename": "입찰공고문(수정).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01702784&bidPbancOrd=001&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "919b13bf0cd412de9c4df25f4da3063d139330e726e1256d2611af4eaa8e4381"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01702784",
+      "revision": "001",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01702784",
+          "revision": "001",
+          "filename": "입찰공고문(수정).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01702784&bidPbancOrd=001&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "919b13bf0cd412de9c4df25f4da3063d139330e726e1256d2611af4eaa8e4381"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01702784",
+      "revision": "001",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01702784",
+          "revision": "001",
+          "filename": "입찰공고문(수정).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01702784&bidPbancOrd=001&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "919b13bf0cd412de9c4df25f4da3063d139330e726e1256d2611af4eaa8e4381"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01702853",
+      "revision": "001",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01702853",
+          "revision": "001",
+          "filename": "입찰공고문(수정).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01702853&bidPbancOrd=001&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "4336742bf0db65af4e6ecc6749d4266d5961bc8dc265eb02d2dd67b66e10e718"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01702853",
+      "revision": "001",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01702853",
+          "revision": "001",
+          "filename": "입찰공고문(수정).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01702853&bidPbancOrd=001&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "4336742bf0db65af4e6ecc6749d4266d5961bc8dc265eb02d2dd67b66e10e718"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01702853",
+      "revision": "001",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "원문 일정과 CSV 마감 2026-09-14T14:00:00+09:00을 대조했으며, 재생 시각 2026-10-07 16:00 KST 전에 마감됐다. 최종 제외 판정에 동의한다. 이 결론만으로 주제 관련성까지 확인한 것은 아니다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01702853",
+          "revision": "001",
+          "filename": "입찰공고문(수정).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01702853&bidPbancOrd=001&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "4336742bf0db65af4e6ecc6749d4266d5961bc8dc265eb02d2dd67b66e10e718"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01753530",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "학생역량·학생지원·학사행정 과업이라는 공고 내용과 공통 대학 학사정보시스템 실적을 대조했다. 기존 실적의 전이 가능성을 허용하는 현재 평가 기준 아래에서는 포함 판정에 잠정 동의한다. 실제 인정 실적·참가자격 충족을 확인한 것은 아니며 세부 제안요청서와 전이 기준은 추가 확인이 필요하다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01753530",
+          "revision": "000",
+          "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01753530",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "학생역량·학생지원·학사행정 과업이라는 공고 내용과 공통 대학 학사정보시스템 실적을 대조했다. 기존 실적의 전이 가능성을 허용하는 현재 평가 기준 아래에서는 포함 판정에 잠정 동의한다. 실제 인정 실적·참가자격 충족을 확인한 것은 아니며 세부 제안요청서와 전이 기준은 추가 확인이 필요하다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01753530",
+          "revision": "000",
+          "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01753530",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "학생역량·학생지원·학사행정 과업이라는 공고 내용과 공통 대학 학사정보시스템 실적을 대조했다. 기존 실적의 전이 가능성을 허용하는 현재 평가 기준 아래에서는 포함 판정에 잠정 동의한다. 실제 인정 실적·참가자격 충족을 확인한 것은 아니며 세부 제안요청서와 전이 기준은 추가 확인이 필요하다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01753530",
+          "revision": "000",
+          "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+          "page": 2,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01754897",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "홈페이지/CMS 또는 학사·학생지원과의 직접 연결 근거를 이번에 확인한 공고문에서 찾지 못했다. 현재의 보수적 정답 기준 아래 제외에 잠정 동의한다. 시스템 개발이라는 공통 기술만으로 관련으로 보지 않는다. 제안요청서 전체를 확인하면 판정이 달라질 가능성이 남는다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01754897",
+          "revision": "000",
+          "filename": "2-1. 입찰공고문(사본).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01754897&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "41a7fc6a497b6c8b9c35ababd68796c167efac5ea9f133bdb2e411ab9ae3521e"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01754897",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "집행검증 또는 시스템 연계 과업과 데이터 연계·업무 시스템 관심 분야가 연결돼 포함 판정에 잠정 동의한다. 공고문 명시 과업 기준이며 원본 HWP 제안요청서 세부 요구사항 전수 대조는 남아 있다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01754897",
+          "revision": "000",
+          "filename": "2-1. 입찰공고문(사본).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01754897&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "41a7fc6a497b6c8b9c35ababd68796c167efac5ea9f133bdb2e411ab9ae3521e"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01754897",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": false,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "홈페이지/CMS 또는 학사·학생지원과의 직접 연결 근거를 이번에 확인한 공고문에서 찾지 못했다. 현재의 보수적 정답 기준 아래 제외에 잠정 동의한다. 시스템 개발이라는 공통 기술만으로 관련으로 보지 않는다. 제안요청서 전체를 확인하면 판정이 달라질 가능성이 남는다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01754897",
+          "revision": "000",
+          "filename": "2-1. 입찰공고문(사본).pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01754897&bidPbancOrd=000&fileType=&fileSeq=1&prcmBsneSeCd=03",
+          "sha256": "41a7fc6a497b6c8b9c35ababd68796c167efac5ea9f133bdb2e411ab9ae3521e"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01757019",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "학생역량·학생지원·학사행정 과업이라는 공고 내용과 공통 대학 학사정보시스템 실적을 대조했다. 기존 실적의 전이 가능성을 허용하는 현재 평가 기준 아래에서는 포함 판정에 잠정 동의한다. 실제 인정 실적·참가자격 충족을 확인한 것은 아니며 세부 제안요청서와 전이 기준은 추가 확인이 필요하다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01757019",
+          "revision": "000",
+          "filename": "1. 입찰공고문.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01757019&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "sha256": "420f28235b22994b7d6b830aaae892da8c3e9da1fa73182e78cd88ea634965d9"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01757019",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "학생역량·학생지원·학사행정 과업이라는 공고 내용과 공통 대학 학사정보시스템 실적을 대조했다. 기존 실적의 전이 가능성을 허용하는 현재 평가 기준 아래에서는 포함 판정에 잠정 동의한다. 실제 인정 실적·참가자격 충족을 확인한 것은 아니며 세부 제안요청서와 전이 기준은 추가 확인이 필요하다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01757019",
+          "revision": "000",
+          "filename": "1. 입찰공고문.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01757019&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "sha256": "420f28235b22994b7d6b830aaae892da8c3e9da1fa73182e78cd88ea634965d9"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01757019",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "학생역량·학생지원·학사행정 과업이라는 공고 내용과 공통 대학 학사정보시스템 실적을 대조했다. 기존 실적의 전이 가능성을 허용하는 현재 평가 기준 아래에서는 포함 판정에 잠정 동의한다. 실제 인정 실적·참가자격 충족을 확인한 것은 아니며 세부 제안요청서와 전이 기준은 추가 확인이 필요하다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01757019",
+          "revision": "000",
+          "filename": "1. 입찰공고문.pdf",
+          "page": 1,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01757019&bidPbancOrd=000&fileType=&fileSeq=4&prcmBsneSeCd=03",
+          "sha256": "420f28235b22994b7d6b830aaae892da8c3e9da1fa73182e78cd88ea634965d9"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "revision": "000",
+      "profile_id": "seoul_web",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "공고문 p.2~3의 제주 지역제한과 주된 영업소 소재지 조건을 확인했다. 서울 소재 가상 프로필이므로 제외 판정에 동의한다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b"
+        },
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+          "page": 3,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "revision": "000",
+      "profile_id": "ulsan_data",
+      "gold_included": false,
+      "ai_conclusion": "exclusion_supported",
+      "explanation": "공고문 p.2~3의 제주 지역제한과 주된 영업소 소재지 조건을 확인했다. 울산 소재 가상 프로필이므로 제외 판정에 동의한다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b"
+        },
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+          "page": 3,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b"
+        }
+      ],
+      "human_verified": false
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "revision": "000",
+      "profile_id": "jeju_campus",
+      "gold_included": true,
+      "ai_conclusion": "provisional_scope_agreement",
+      "explanation": "학생역량·학생지원·학사행정 과업이라는 공고 내용과 공통 대학 학사정보시스템 실적을 대조했다. 기존 실적의 전이 가능성을 허용하는 현재 평가 기준 아래에서는 포함 판정에 잠정 동의한다. 실제 인정 실적·참가자격 충족을 확인한 것은 아니며 세부 제안요청서와 전이 기준은 추가 확인이 필요하다.",
+      "sources": [
+        {
+          "bid_no": "R26BK01760198",
+          "revision": "000",
+          "filename": "공고서(2026-7)_2026 통합정보시스템 기능개선 사업(최종).pdf",
+          "page": 4,
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01760198&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+          "sha256": "ad1331b220677a910886c796ea735e8af1fa29f793aaab62850cef32b5abfa3b"
+        }
+      ],
+      "human_verified": false
+    }
+  ]
+}

@@ -1,0 +1,314 @@
+{
+  "checked_at": "2026-10-25T17:28:01.547625+09:00",
+  "real_java_backend": true,
+  "real_postgresql": true,
+  "actual_llm_called": false,
+  "rag_http_transport": "uvicorn_loopback",
+  "document_extraction": "cached real evaluation tables + synthetic fixture",
+  "checks": [
+    {
+      "name": "agent_enabled",
+      "passed": true
+    },
+    {
+      "name": "rag_http_started",
+      "passed": true
+    },
+    {
+      "name": "java_postgres_ready",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "signup",
+      "passed": true,
+      "http_status": 201
+    },
+    {
+      "name": "login",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "missing_token_401",
+      "passed": true,
+      "http_status": 401
+    },
+    {
+      "name": "cors_on_401",
+      "passed": true
+    },
+    {
+      "name": "tampered_token_401",
+      "passed": true,
+      "http_status": 401
+    },
+    {
+      "name": "profile_not_created_404",
+      "passed": true,
+      "http_status": 404
+    },
+    {
+      "name": "profile_save",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "profile_read",
+      "passed": true
+    },
+    {
+      "name": "rfp_pending_409",
+      "passed": true,
+      "http_status": 409
+    },
+    {
+      "name": "unknown_bid_404",
+      "passed": true,
+      "http_status": 404
+    },
+    {
+      "name": "missing_revision_422",
+      "passed": true,
+      "http_status": 422
+    },
+    {
+      "name": "complete_profile_saved",
+      "passed": true
+    },
+    {
+      "name": "complete_fixed_score",
+      "passed": true
+    },
+    {
+      "name": "complete_agent_http",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "complete_status",
+      "passed": true,
+      "status": "complete"
+    },
+    {
+      "name": "complete_matches_fixed",
+      "passed": true
+    },
+    {
+      "name": "needs_input_profile_saved",
+      "passed": true
+    },
+    {
+      "name": "needs_input_fixed_score",
+      "passed": true
+    },
+    {
+      "name": "needs_input_agent_http",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "needs_input_status",
+      "passed": true,
+      "status": "needs_input"
+    },
+    {
+      "name": "needs_input_matches_fixed",
+      "passed": true
+    },
+    {
+      "name": "missing_credit_question",
+      "passed": true
+    },
+    {
+      "name": "complete_after_profile_update_profile_saved",
+      "passed": true
+    },
+    {
+      "name": "complete_after_profile_update_fixed_score",
+      "passed": true
+    },
+    {
+      "name": "complete_after_profile_update_agent_http",
+      "passed": true,
+      "http_status": 200
+    },
+    {
+      "name": "complete_after_profile_update_status",
+      "passed": true,
+      "status": "complete"
+    },
+    {
+      "name": "complete_after_profile_update_matches_fixed",
+      "passed": true
+    },
+    {
+      "name": "real_profile_seoul_web",
+      "passed": true
+    },
+    {
+      "name": "real_score_seoul_web_R26BK01667722",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_seoul_web_R26BK01667722",
+      "passed": true
+    },
+    {
+      "name": "real_score_seoul_web_R26BK01706837",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_seoul_web_R26BK01706837",
+      "passed": true
+    },
+    {
+      "name": "real_score_seoul_web_R26BK01751013",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_seoul_web_R26BK01751013",
+      "passed": true
+    },
+    {
+      "name": "real_score_seoul_web_R26BK01706954",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_seoul_web_R26BK01706954",
+      "passed": true
+    },
+    {
+      "name": "real_score_seoul_web_R26BK01760198",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_seoul_web_R26BK01760198",
+      "passed": true
+    },
+    {
+      "name": "real_profile_ulsan_data",
+      "passed": true
+    },
+    {
+      "name": "real_score_ulsan_data_R26BK01667722",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_ulsan_data_R26BK01667722",
+      "passed": true
+    },
+    {
+      "name": "real_score_ulsan_data_R26BK01706837",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_ulsan_data_R26BK01706837",
+      "passed": true
+    },
+    {
+      "name": "real_score_ulsan_data_R26BK01751013",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_ulsan_data_R26BK01751013",
+      "passed": true
+    },
+    {
+      "name": "real_score_ulsan_data_R26BK01706954",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_ulsan_data_R26BK01706954",
+      "passed": true
+    },
+    {
+      "name": "real_score_ulsan_data_R26BK01760198",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_ulsan_data_R26BK01760198",
+      "passed": true
+    },
+    {
+      "name": "real_profile_jeju_campus",
+      "passed": true
+    },
+    {
+      "name": "real_score_jeju_campus_R26BK01667722",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_jeju_campus_R26BK01667722",
+      "passed": true
+    },
+    {
+      "name": "real_score_jeju_campus_R26BK01706837",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_jeju_campus_R26BK01706837",
+      "passed": true
+    },
+    {
+      "name": "real_score_jeju_campus_R26BK01751013",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_jeju_campus_R26BK01751013",
+      "passed": true
+    },
+    {
+      "name": "real_score_jeju_campus_R26BK01706954",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_jeju_campus_R26BK01706954",
+      "passed": true
+    },
+    {
+      "name": "real_score_jeju_campus_R26BK01760198",
+      "passed": true
+    },
+    {
+      "name": "real_score_match_jeju_campus_R26BK01760198",
+      "passed": true
+    }
+  ],
+  "agent_cases": [
+    {
+      "case": "complete",
+      "status": "complete",
+      "latency_ms": 0.6164999795146286,
+      "model_calls": 2,
+      "missing_fields": [],
+      "questions": [],
+      "token_usage": null
+    },
+    {
+      "case": "needs_input",
+      "status": "needs_input",
+      "latency_ms": 0.5612079985439777,
+      "model_calls": 2,
+      "missing_fields": [
+        "credit_rating"
+      ],
+      "questions": [
+        "credit_rating 정보를 입력해 주세요."
+      ],
+      "token_usage": null
+    },
+    {
+      "case": "complete_after_profile_update",
+      "status": "complete",
+      "latency_ms": 0.5830840091221035,
+      "model_calls": 2,
+      "missing_fields": [],
+      "questions": [],
+      "token_usage": null
+    }
+  ],
+  "real_score_items_checked": 264,
+  "browser_e2e": false,
+  "passed": true
+}

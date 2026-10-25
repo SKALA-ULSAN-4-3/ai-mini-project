@@ -1,0 +1,233 @@
+{
+  "checked_at": "2026-10-25T17:38:17.570457+09:00",
+  "tests": {
+    "total": 194,
+    "passed": 194,
+    "skipped": 0,
+    "new_tests": 10
+  },
+  "changes": [
+    "마산 경남 또는 부산 지역제한",
+    "영진 참가신청·파일·제본 기한 분리"
+  ],
+  "before_participation_cutoff": {
+    "bids": [
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "title": "혁신사업 학생역량 통합관리시스템(디지털 포트폴리오) 구축 용역",
+        "agency": "영진전문대학교 산학협력단",
+        "published_at": "2026-10-01",
+        "budget": "471000000",
+        "deadline": "2026-10-08T18:00:00+09:00",
+        "regions": null,
+        "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+        "metadata_sources": [
+          {
+            "bid_no": "R26BK01753530",
+            "revision": "000",
+            "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+            "page": 2,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+          }
+        ],
+        "metadata_notes": [
+          "신규 참가 판단 기한은 입찰참가신청 마감. 이미 신청한 업체는 신청 완료 여부를 확인하고 파일·제본 제출 기한을 각각 확인."
+        ],
+        "deadlines": [
+          {
+            "id": "participation",
+            "event": "입찰참가신청",
+            "due": "2026-10-08T18:00:00+09:00",
+            "sources": [
+              {
+                "bid_no": "R26BK01753530",
+                "revision": "000",
+                "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+                "page": 2,
+                "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+                "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+              }
+            ]
+          },
+          {
+            "id": "proposal_file",
+            "event": "제안서 파일 제출",
+            "due": "2026-11-11T14:00:00+09:00",
+            "sources": [
+              {
+                "bid_no": "R26BK01753530",
+                "revision": "000",
+                "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+                "page": 2,
+                "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+                "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+              }
+            ]
+          },
+          {
+            "id": "proposal_bound",
+            "event": "제안서 제본 제출",
+            "due": "2026-11-13T13:30:00+09:00",
+            "sources": [
+              {
+                "bid_no": "R26BK01753530",
+                "revision": "000",
+                "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+                "page": 2,
+                "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+                "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+              }
+            ]
+          }
+        ],
+        "deadline_kind": "participation",
+        "deadline_event": "입찰참가신청",
+        "unknown": [
+          "지역 제한 미확인",
+          "업종 제한 미확인",
+          "프로필 키워드 미확인"
+        ],
+        "score": null,
+        "needs_review": true,
+        "reason": "목록 정보에서 제외 사유 없음; 유사도 미확인"
+      }
+    ],
+    "excluded": [],
+    "candidate_count": 1,
+    "needs_review": true,
+    "ranking_kind": "none",
+    "stage": "list_only"
+  },
+  "at_participation_cutoff": {
+    "bids": [],
+    "excluded": [
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "status": "excluded",
+        "reasons": [
+          "신규 참가신청 기한이 지났습니다. 이미 신청한 업체의 후속 제출 기한은 별도로 확인해야 합니다."
+        ]
+      }
+    ],
+    "candidate_count": 0,
+    "needs_review": true,
+    "ranking_kind": "none",
+    "stage": "list_only"
+  },
+  "example_checklist_at_2026_10_25": {
+    "bid_no": "R26BK01753530",
+    "revision": "000",
+    "documents": [],
+    "schedule": [
+      {
+        "id": "notice_participation",
+        "sources": [
+          {
+            "bid_no": "R26BK01753530",
+            "revision": "000",
+            "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+            "page": 2,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+          }
+        ],
+        "notes": [
+          "신규 참가 판단 기한은 입찰참가신청 마감. 이미 신청한 업체는 신청 완료 여부를 확인하고 파일·제본 제출 기한을 각각 확인."
+        ],
+        "due": "2026-10-08T18:00:00+09:00",
+        "d_day": -17,
+        "remaining_seconds": 0,
+        "status": "expired",
+        "event": "입찰참가신청",
+        "needs_review": true
+      },
+      {
+        "id": "notice_proposal_file",
+        "sources": [
+          {
+            "bid_no": "R26BK01753530",
+            "revision": "000",
+            "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+            "page": 2,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+          }
+        ],
+        "notes": [
+          "신규 참가 판단 기한은 입찰참가신청 마감. 이미 신청한 업체는 신청 완료 여부를 확인하고 파일·제본 제출 기한을 각각 확인."
+        ],
+        "due": "2026-11-11T14:00:00+09:00",
+        "d_day": 17,
+        "remaining_seconds": 1476000.0,
+        "status": "upcoming",
+        "event": "제안서 파일 제출",
+        "needs_review": true
+      },
+      {
+        "id": "notice_proposal_bound",
+        "sources": [
+          {
+            "bid_no": "R26BK01753530",
+            "revision": "000",
+            "filename": "2. 입찰공고문-디지털포트폴리오.pdf",
+            "page": 2,
+            "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01753530&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+            "sha256": "26c9f225ca6145625695f773e74c5ef63ce25e00acf3aa2613b72746cc147654"
+          }
+        ],
+        "notes": [
+          "신규 참가 판단 기한은 입찰참가신청 마감. 이미 신청한 업체는 신청 완료 여부를 확인하고 파일·제본 제출 기한을 각각 확인."
+        ],
+        "due": "2026-11-13T13:30:00+09:00",
+        "d_day": 19,
+        "remaining_seconds": 1647000.0,
+        "status": "upcoming",
+        "event": "제안서 제본 제출",
+        "needs_review": true
+      }
+    ],
+    "needs_review": true
+  },
+  "evaluation": {
+    "status": "draft_evaluated",
+    "reference_status": "ai_draft_pending_human_review",
+    "human_verified": false,
+    "metrics": {
+      "score_item_accuracy": 1.0,
+      "score_items": 264,
+      "quantitative_item_accuracy": 1.0,
+      "recommendations": [
+        {
+          "profile_id": "seoul_web",
+          "returned": 5,
+          "precision_at_5": 0.4,
+          "precision_returned": 0.4,
+          "recall": 1.0
+        },
+        {
+          "profile_id": "ulsan_data",
+          "returned": 5,
+          "precision_at_5": 1.0,
+          "precision_returned": 1.0,
+          "recall": 1.0
+        },
+        {
+          "profile_id": "jeju_campus",
+          "returned": 5,
+          "precision_at_5": 0.6,
+          "precision_returned": 0.6,
+          "recall": 1.0
+        }
+      ],
+      "checklist_combinations": 15,
+      "checklist_differences": 0
+    },
+    "reproduce": "python -m bid_logic.validation --dataset evaluation/real --draft"
+  },
+  "gold_changed": false,
+  "human_review_status_changed": false
+}

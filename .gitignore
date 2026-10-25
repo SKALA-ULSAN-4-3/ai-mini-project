@@ -33,3 +33,31 @@ AI서비스개발_Mini-project_교재_*.pdf
 
 # 3번 형식으로 변환한 bids.csv (1번 산출물에서 자동 생성)
 rag-code-template_ext/data/
+
+# 팀 공유 제외: 로컬 설정 · 캐시 · 실행 산출물
+.env.*
+!.env.example
+!.env.*.example
+.venv*/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.vite/
+/tmp/
+/temp/
+.idea/
+
+# 개인 원문 검토 기록지: 팀 공용 AI 검토 근거·평가 결과는 추적 유지
+/rag-code-template_ext/evaluation/real/PERSONAL_REVIEW.md

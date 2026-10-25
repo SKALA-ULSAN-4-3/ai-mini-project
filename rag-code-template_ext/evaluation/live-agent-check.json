@@ -1,0 +1,41 @@
+{
+  "actual_llm_called": true,
+  "input": "synthetic fixture; no real company profile",
+  "cases": [
+    {
+      "case": "complete_profile",
+      "status": "complete",
+      "matches_fixed": true,
+      "missing_fields": [],
+      "questions": [],
+      "unresolved_items": [],
+      "latency_ms": 8283.994958008407,
+      "model_calls": 3,
+      "token_usage": {
+        "input_tokens": 3158,
+        "output_tokens": 333,
+        "complete": true
+      }
+    },
+    {
+      "case": "missing_credit_rating",
+      "status": "needs_input",
+      "matches_fixed": true,
+      "missing_fields": [
+        "credit_rating"
+      ],
+      "questions": [
+        "credit_rating 정보를 입력해 주세요."
+      ],
+      "unresolved_items": [],
+      "latency_ms": 6303.039666992845,
+      "model_calls": 3,
+      "token_usage": {
+        "input_tokens": 3139,
+        "output_tokens": 358,
+        "complete": true
+      }
+    }
+  ],
+  "backend_error_type": "ConnectError"
+}

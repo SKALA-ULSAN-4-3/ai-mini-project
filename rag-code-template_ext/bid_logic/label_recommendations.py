@@ -99,7 +99,7 @@ def label(dataset,assets):
             if no=='R26BK01663676':
                 page=next(b for b in candidates if b['source']['page']==1)
                 refs.append(deepcopy(page['source']))
-                timing_note='공고문 p.1 제안서 제출 마감 2026-08-14 14:00. CSV 마감은 비어 있지만 원문상 마감 경과.'
+                timing_note='공고문 p.1 제안서 제출 마감 2026-08-14 14:00. 원문상 마감 경과. CSV 보정 여부는 metadata-corrections.json 참조.'
             elif no=='R26BK01753530':
                 page=next(b for b in candidates if b['source']['page']==2)
                 refs.append(deepcopy(page['source']))
@@ -119,7 +119,7 @@ def label(dataset,assets):
     write(dataset/'gold.json',gold)
     result={'rubric':rubric,'reviewed_at':stamp,'human_verified':False,'cases':cases,
         'input_change':'정답 라벨만 갱신. 추천 코드, profiles, bids.csv, hits, 저장 공고명 순위, 재생 시각은 변경하지 않음.',
-        'input_findings':['R26BK01663676은 CSV 마감이 비어 원문상 마감 경과 공고가 추천 후보에 남을 수 있음. 이번 평가는 이를 오추천으로 계산.'],
+        'input_findings':['R26BK01663676 마감 누락 보정 여부와 영향은 metadata-corrections.json 및 recommendation-improvement.json 참조.'],
         'previous_relevant':read(before)['gold']}
     write(dataset/'recommendation-review.json',result)
     lines=['# 추천 정답 재검토 — 관심 분야 또는 기존 실적','',

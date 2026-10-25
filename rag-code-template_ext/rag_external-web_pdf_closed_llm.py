@@ -994,9 +994,11 @@ def connect_bid_routes(profile_dependency, *, bids_provider=None, search_results
 
 # 4번 백엔드 주소가 있으면 토큰을 백엔드 /api/profile로 확인하는 의존성으로 바로 연결한다 (backend_auth.py)
 from backend_auth import backend_url, get_authenticated_profile
+from bid_logic.agent_config import configured_agent_model
 if backend_url():
     # ③ 화면이 보내는 search_id로 1번 검색 결과를 3번 추리기에 넘긴다 (search_id 없는 /bids는 422)
-    connect_bid_routes(get_authenticated_profile, search_results_provider=search_results)
+    connect_bid_routes(get_authenticated_profile, search_results_provider=search_results,
+                       agent_model=configured_agent_model())
     print(f"[공고 API 연결] /bids · /bids/{{bid_no}}/score · /bids/{{bid_no}}/checklist ← 프로필: {backend_url()}/api/profile")
 
 

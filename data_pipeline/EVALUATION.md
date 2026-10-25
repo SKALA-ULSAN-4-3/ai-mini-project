@@ -24,6 +24,9 @@
 
 ## 받는 방법
 
+배포 브랜치 develop에 아직 병합 전이면 [PR #18](https://github.com/SKALA-ULSAN-4-3/ai-mini-project/pull/18)의
+`feat/data-evaluation-reproduction` 브랜치를 받아 실행한다.
+
 저장소 루트에서 Python 3.10 이상과 기존 데이터 환경을 사용한다. 원문 다운로드와 추천 라벨 테스트에는
 나라장터 API 키·OpenAI 키·LibreOffice·Java가 필요 없다. 최소 Python 의존성은 `pypdf>=6.10,<7`이며,
 Windows 등 시스템 시간대 데이터가 없는 환경은 `tzdata`도 설치한다.

@@ -1,5 +1,9 @@
 # 1번 데이터 담당 작업·인계 기록 (2026-10-25)
 
+코드·문서 공유: [초안 PR #18](https://github.com/SKALA-ULSAN-4-3/ai-mini-project/pull/18),
+브랜치 `feat/data-evaluation-reproduction`. develop에는 아직 병합하지 않았다.
+운영 배포 커밋 `1cbc6e3`과 이 브랜치의 평가 도구 커밋은 구별한다.
+
 ## 완료
 
 - 로컬 develop을 원격 최신 `1cbc6e3`으로 fast-forward. 기존 미추적 Render 파일 6개는 원격과 동일함을 확인하고 별도 백업 후 반영.

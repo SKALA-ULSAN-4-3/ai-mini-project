@@ -14,6 +14,7 @@ from datetime import datetime
 
 from .common import SEOUL, REGION_NAMES, RequestError, calendar_date, identity, number, region, seoul_time
 from .recommendation import _profile_conditions, profile_query, recommend_bids
+from .notice_metadata import apply_notice_metadata, expired_deadline_reason
 
 # 1번 검색 응답은 정규화 이름과 나라장터 API 원문 이름이 섞여 올 수 있어 둘 다 받는다.
 ALIASES = {
@@ -35,7 +36,8 @@ INDUSTRY_LIMIT_FIELD = "indstrytyLmtYn"
 PUBLIC_LIST_FIELDS = {key for keys in ALIASES.values() for key in keys} | set(BUDGET_FIELDS) | set(
     REGION_FIELDS) | {REGION_BASIS_FIELD, INDUSTRY_LIMIT_FIELD, "regions", "attachments",
                      "cmmnSpldmdMethdNm", "cntrctCnclsMthdNm", "detail_url", "url",
-                     "bidNtceDtlUrl", "bidNtceUrl", "filename", "file_names"}
+                     "bidNtceDtlUrl", "bidNtceUrl", "filename", "file_names",
+                     "deadlines", "deadline_kind", "deadline_event", "metadata_sources", "metadata_notes"}
 
 
 def _pick(row, name):
@@ -153,6 +155,7 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
     for row in rows:
         if not isinstance(row, dict):
             raise ValueError("검색 결과 항목은 객체여야 합니다.")
+        row = apply_notice_metadata(row)
         bid_no, revision = _pick(row, "bid_no"), _pick(row, "revision")
         if not bid_no or not revision:
             raise ValueError("검색 결과에 공고번호 또는 차수가 없습니다.")
@@ -180,7 +183,7 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
         if deadline is None:
             unknown.append("입찰마감 일시 미확인")
         elif deadline <= now:
-            reasons.append("입찰이 마감되었습니다.")
+            reasons.append(expired_deadline_reason(row))
 
         budget = _budget(row)
         if budget is None:
@@ -258,6 +261,7 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
 
 def recheck_metadata(row):
     """새 검색의 목록 필드를 본문 재확인 입력으로 변환. 자격 미확인은 null 보존."""
+    row = apply_notice_metadata(row)
     published = _pick(row, "published_at")
     deadline = _deadline(row)
     regions, hinted = _regions(row)
@@ -265,7 +269,8 @@ def recheck_metadata(row):
             "title": _pick(row, "title"), "published_at": published[:10] if published else None,
             "deadline": deadline.isoformat() if deadline else None, "budget": _budget(row),
             "regions": regions if (regions or isinstance(row.get("regions"), list)) and not hinted else None,
-            **{field: row.get(field) for field in ("industries", "licenses", "company_sizes", "certs")}}
+            **{field: row.get(field) for field in ("industries", "licenses", "company_sizes", "certs")},
+            **{field: row[field] for field in ("deadlines", "deadline_kind", "deadline_event", "metadata_sources", "metadata_notes") if field in row}}
 
 
 def recheck_after_ingest(shortlisted, bids, profile, start, end, **kwargs):

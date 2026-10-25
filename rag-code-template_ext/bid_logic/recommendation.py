@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .common import SEOUL, RequestError, calendar_date, identity, number, region, seoul_time
+from .notice_metadata import apply_notice_metadata, expired_deadline_reason
 
 # []는 명시적으로 제한 없음, None은 미확인. 배열 원소는 OR, 필드 사이는 AND.
 RESTRICTIONS = {
@@ -49,7 +50,7 @@ def load_bids_csv(path):
         if budget is not None and budget < 0:
             raise ValueError("budget: 공고 금액은 음수일 수 없습니다.")
         row["budget"] = str(budget) if budget is not None else None
-    return rows
+    return [apply_notice_metadata(row) for row in rows]
 
 
 def profile_query(profile):
@@ -134,6 +135,7 @@ def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=Non
     conditions = _profile_conditions(profile)
     candidates, excluded, seen = [], [], set()
     for bid in bids:
+        bid = apply_notice_metadata(bid)
         key = identity(bid)
         if key in seen:
             raise ValueError("동일 공고번호·차수의 메타데이터가 중복되었습니다.")
@@ -149,7 +151,7 @@ def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=Non
             continue
         try:
             if seoul_time(bid.get("deadline")) <= now:
-                reasons.append("입찰이 마감되었습니다.")
+                reasons.append(expired_deadline_reason(bid))
         except (ValueError, TypeError):
             unknown.append("입찰마감 일시 미확인")
         for field, (profile_field,) in RESTRICTIONS.items():

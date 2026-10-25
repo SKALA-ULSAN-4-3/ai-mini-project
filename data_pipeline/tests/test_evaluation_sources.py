@@ -66,6 +66,43 @@ class EvaluationSourcesTests(unittest.TestCase):
         self.assertEqual(len(json.loads((self.assets/'download-failures.json').read_text())), 73)
         self.assertFalse((self.assets/'evidence.json').exists())
 
+    def test_invalid_raw_files_remove_stale_success_outputs(self):
+        self.assets.mkdir()
+        for name in ('attachments.json', 'evidence.json'):
+            (self.assets/name).write_text('[{"stale":true}]')
+        with patch('data_pipeline.evaluation_sources.download_file') as download:
+            report = collect(self.dataset, self.assets, verify_only=True)
+        download.assert_not_called()
+        self.assertFalse(report['passed'])
+        self.assertFalse((self.assets/'evidence.json').exists())
+        self.assertFalse((self.assets/'attachments.json').exists())
+
+    def test_extraction_failure_is_recorded_and_invalidates_evidence(self):
+        row = dict(self.sources[0], sha256=hashlib.sha256(b'valid').hexdigest())
+        target = self.assets/'raw'/f"{row['bid_no']}_{row['bid_order']}"/safe_name(row['file_name'])
+        target.parent.mkdir(parents=True)
+        target.write_bytes(b'valid')
+        (self.assets/'evidence.json').write_text('[{"stale":true}]')
+        with patch('data_pipeline.evaluation_sources.official_sources', return_value=[row]), \
+             patch('data_pipeline.evaluation_sources.build_evidence', side_effect=ValueError('bad document')), \
+             patch('data_pipeline.evaluation_sources.download_file') as download:
+            report = collect(self.dataset, self.assets)
+        download.assert_not_called()
+        self.assertEqual(report['verified_files'], 1)
+        self.assertFalse(report['passed'])
+        self.assertEqual(report['failures'], [{'stage': 'evidence', 'error': 'ValueError'}])
+        self.assertFalse((self.assets/'evidence.json').exists())
+        self.assertEqual(json.loads((self.assets/'verification.json').read_text())['passed'], False)
+
+    def test_invalid_manifest_removes_stale_evidence_before_aborting(self):
+        self.assets.mkdir()
+        (self.assets/'evidence.json').write_text('[{"stale":true}]')
+        self.sources[0]['bid_order'] = '999'
+        (self.dataset/'source-manifest.json').write_text(json.dumps(self.sources))
+        with self.assertRaises(ValueError):
+            collect(self.dataset, self.assets)
+        self.assertFalse((self.assets/'evidence.json').exists())
+
 
 if __name__ == '__main__':
     unittest.main()

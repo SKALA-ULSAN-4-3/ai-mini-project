@@ -33,6 +33,12 @@ def write_json(path, data):
     temporary.replace(path)
 
 
+def invalidate_evidence(assets):
+    """실패한 원문에 과거 성공 근거가 남아 재현 테스트를 통과하지 않게 한다."""
+    for name in ("attachments.json", "evidence.json"):
+        (assets / name).unlink(missing_ok=True)
+
+
 def official_sources(dataset):
     with (dataset / "bids.csv").open(encoding="utf-8-sig") as stream:
         bids = list(csv.DictReader(stream))
@@ -103,7 +109,12 @@ def build_evidence(attachments):
 
 
 def collect(dataset=DATASET, assets=ASSETS, *, verify_only=False, reuse_manifest=None):
-    sources = official_sources(dataset)
+    dataset, assets = Path(dataset), Path(assets)
+    try:
+        sources = official_sources(dataset)
+    except (ValueError, KeyError, OSError):
+        invalidate_evidence(assets)
+        raise
     reusable = {}
     if reuse_manifest:
         with reuse_manifest.open(encoding="utf-8-sig") as stream:
@@ -141,13 +152,21 @@ def collect(dataset=DATASET, assets=ASSETS, *, verify_only=False, reuse_manifest
               "dataset_sha256": {n: digest(dataset/n) for n in
                                  ("bids.csv", "manifest.json", "source-manifest.json")}}
     if not failures and not verify_only:
-        evidence = build_evidence(attachments)
-        covered = {b['source']['bid_no'] for b in evidence if b['source'].get('page') and b['text'].strip()}
-        if covered != {a['bid_no'] for a in sources}:
-            raise ValueError("PDF 텍스트를 확보하지 못한 평가 공고가 있습니다.")
-        write_json(assets / "attachments.json", attachments)
-        write_json(assets / "evidence.json", evidence)
-        report["evidence_blocks"] = len(evidence)
+        try:
+            evidence = build_evidence(attachments)
+            covered = {(b['source']['bid_no'], b['source']['revision']) for b in evidence
+                       if b['source'].get('page') and b['text'].strip()}
+            if covered != {(a['bid_no'], a['bid_order']) for a in sources}:
+                raise ValueError("PDF 텍스트를 확보하지 못한 평가 공고가 있습니다.")
+            write_json(assets / "attachments.json", attachments)
+            write_json(assets / "evidence.json", evidence)
+            report["evidence_blocks"] = len(evidence)
+            report["evidence_sha256"] = digest(assets / "evidence.json")
+        except Exception as exc:
+            failures.append({"stage": "evidence", "error": type(exc).__name__})
+    if failures:
+        invalidate_evidence(assets)
+    report["passed"] = not failures
     write_json(assets / "download-failures.json", failures)
     write_json(assets / "verification.json", report)
     print(json.dumps({k: v for k, v in report.items() if k not in ("failures", "dataset_sha256")}, ensure_ascii=False))

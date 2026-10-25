@@ -165,4 +165,90 @@ class CorpusIntegrationTests(unittest.TestCase):
             self.assertTrue(all(r.get(k) for k in ('bid_no','bid_order','file_name','page','source_url','collected_at')))
 
 
+class RenderVerificationTests(unittest.TestCase):
+    def run_verification(self, *, credentials=True, cors=True, profile=True, offline=False):
+        import contextlib
+        import os
+        from argparse import Namespace
+        import httpx
+        from data_pipeline.verify_render import verify
+        requests = []
+        def handle(request):
+            requests.append(request)
+            path = request.url.path
+            headers = {'access-control-allow-origin': 'https://frontend.example'}
+            if offline:
+                raise httpx.ConnectError('private connection details', request=request)
+            if request.method == 'OPTIONS':
+                return httpx.Response(204, headers={**headers,
+                    'access-control-allow-methods': 'POST',
+                    'access-control-allow-headers': 'content-type'} if cors else {})
+            if path == '/health':
+                return httpx.Response(200, json={})
+            if path == '/openapi.json':
+                return httpx.Response(200, json={'paths': {p: {} for p in (
+                    '/search-bids', '/fetch-notices', '/fetch-documents', '/jobs/{job_id}', '/bids', '/rag-query')}})
+            if path == '/api/auth/check' or (path in ('/bids', '/search-bids') and 'authorization' not in request.headers):
+                return httpx.Response(401, headers=headers)
+            if path == '/api/login':
+                return httpx.Response(200, json={'access_token': 'test-private-token'})
+            if path == '/api/profile':
+                return httpx.Response(200, json={'industry': 'software'} if profile else {})
+            if path == '/search-bids':
+                return httpx.Response(200, json={'search_id': 'search-example', 'items': [{'bid_no': 'sample'}]})
+            if path == '/bids':
+                return httpx.Response(200, json={'bids': [{'bid_no': 'sample'}], 'excluded': [], 'candidate_count': 1})
+            raise AssertionError(f'Unexpected path: {path}')
+        original_client = httpx.Client
+        env = {'MINI_TEST_TOKEN': '', 'MINI_TEST_BUSINESS_NUMBER': '1234567890' if credentials else '',
+               'MINI_TEST_PASSWORD': 'test-private-password' if credentials else ''}
+        with tempfile.TemporaryDirectory() as temp:
+            args = Namespace(rag_url='https://rag.example', backend_url='https://backend.example',
+                             origin='https://frontend.example', start='2026-10-01', end='2026-10-25',
+                             query=['software'], output=Path(temp)/'verification.json')
+            stdout = io.StringIO()
+            with patch.dict(os.environ, env), \
+                 patch('data_pipeline.verify_render.httpx.Client',
+                       side_effect=lambda **kwargs: original_client(transport=httpx.MockTransport(handle), **kwargs)), \
+                 contextlib.redirect_stdout(stdout):
+                result = verify(args)
+            report = json.loads(args.output.read_text())
+            saved = args.output.read_text() + stdout.getvalue()
+            self.assertNotIn('test-private-password', saved)
+            self.assertNotIn('test-private-token', saved)
+            self.assertNotIn('private connection details', saved)
+            return result, report, requests
+
+    def test_login_schema_and_authenticated_search_id_flow(self):
+        result, report, requests = self.run_verification()
+        self.assertFalse(result)
+        self.assertTrue(report['passed'])
+        self.assertTrue(report['data_pipeline_passed'])
+        login = next(r for r in requests if r.url.path == '/api/login' and r.method == 'POST')
+        self.assertEqual(json.loads(login.content), {
+            'business_registration_number': '1234567890', 'password': 'test-private-password'})
+        bids = next(r for r in requests if r.url.path == '/bids' and 'authorization' in r.headers)
+        self.assertEqual(bids.url.params['search_id'], 'search-example')
+
+    def test_java_cors_failure_is_separate_from_data_pipeline(self):
+        result, report, _ = self.run_verification(cors=False)
+        self.assertTrue(result)
+        self.assertFalse(report['passed'])
+        self.assertTrue(report['data_pipeline_passed'])
+
+    def test_missing_credentials_or_profile_never_passes(self):
+        for options in ({'credentials': False}, {'profile': False}):
+            with self.subTest(options=options):
+                result, report, requests = self.run_verification(**options)
+                self.assertTrue(result)
+                self.assertFalse(report['data_pipeline_passed'])
+                self.assertFalse(any(r.url.path == '/search-bids' and 'authorization' in r.headers for r in requests))
+
+    def test_connection_failure_is_saved_without_private_details(self):
+        result, report, _ = self.run_verification(offline=True)
+        self.assertEqual(result, 1)
+        self.assertFalse(report['passed'])
+        self.assertEqual(report['checks'][0]['error'], 'ConnectError')
+
+
 if __name__=="__main__":unittest.main()

@@ -1,0 +1,33 @@
+{
+  "bids": 20,
+  "expected_files": 74,
+  "verified_files": 74,
+  "failures": [],
+  "mode": "collect",
+  "dataset_sha256": {
+    "bids.csv": "0d261a0d90f5894b524324782c1621f3b3976d3398c78d1671eb4f7ca18c4a67",
+    "manifest.json": "c9a131bb15fcb896a1d110564577ef6a3612d5bd1731b3f5ebb68ad62713d22e",
+    "source-manifest.json": "910d1b167aa479b37051a688801047212ae920bceeb56a3bae7680e37688606a"
+  },
+  "evidence_blocks": 258,
+  "checked_on": "2026-10-25",
+  "environment": "Same PC, separate clean checkout, all originals freshly downloaded from official URLs",
+  "recommendation_labels": {
+    "tests": 2,
+    "passed": 2,
+    "skipped": 0
+  },
+  "evidence_matches_local_reuse": true,
+  "evidence_sha256": "db99c53508bd973b6d3c110fc358393ca7c2b39ad2b8dfbe2e0df32f409efae5",
+  "other_teammate_pc": "pending",
+  "minimal_environment": {
+    "python": "3.14.6",
+    "packages": {
+      "pypdf": "6.21.2",
+      "tzdata": "2026.5"
+    },
+    "evidence_blocks": 258,
+    "recommendation_tests": 2,
+    "skipped": 0
+  }
+}

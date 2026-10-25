@@ -1,0 +1,42 @@
+{
+  "checked_at": "2026-10-25T07:55:12.184259+00:00",
+  "rag_url": "https://ai-mini-datapipeline.onrender.com",
+  "backend_url": "https://ai-service-mini-backend.onrender.com",
+  "origin": "http://localhost:5174",
+  "checks": [
+    {
+      "name": "health",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "name": "unauthenticated_bids",
+      "status": 401,
+      "passed": true,
+      "cors_origin": "http://localhost:5174"
+    },
+    {
+      "name": "unauthenticated_search",
+      "status": 401,
+      "passed": true,
+      "cors_origin": "http://localhost:5174"
+    },
+    {
+      "name": "backend_reachable_unauthenticated",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "name": "backend_login_preflight",
+      "status": 204,
+      "passed": false,
+      "cors_origin": null
+    },
+    {
+      "name": "authenticated_search_to_bids",
+      "passed": false,
+      "status": "pending_credentials"
+    }
+  ],
+  "passed": false
+}

@@ -42,7 +42,21 @@ export function handlePipeline({ config, url, method, body, ok, fail }) {
     })
     return ok(config, { status: done >= j.bids.length ? (bids.every((x) => x.status === 'failed') ? 'failed' : bids.some((x) => x.status === 'failed') ? 'partial_failed' : 'completed') : 'running', done, total: j.bids.length, bids })
   }
-  if (['/me/selections', '/me/approvals'].includes(url) && method === 'post') return ok(config, { saved: (body.bids || []).length })
+  // 4번 선택·승인 (가짜): 브라우저 localStorage에 계정별로 보관
+  if (['/me/selections', '/me/approvals', '/me/pipeline'].includes(url)) {
+    const key = 'mock_pipeline'
+    const rows = JSON.parse(localStorage.getItem(key) || '[]')
+    if (method === 'get') return ok(config, rows)
+    let row = rows.find((r) => r.bid_no === body.bid_no && r.revision === body.revision)
+    if (url === '/me/selections') {
+      if (!row) { row = { ...body, status: 'selected', selected_at: new Date().toISOString(), approved_at: null }; rows.push(row) }
+    } else {
+      if (!row) throw fail(config, 409, '선택하지 않은 공고는 승인할 수 없습니다.')
+      if (row.status !== 'approved') { row.status = 'approved'; row.approved_at = new Date().toISOString() }
+    }
+    localStorage.setItem(key, JSON.stringify(rows))
+    return ok(config, row)
+  }
   return null
 }
 

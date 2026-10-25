@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useFlowStore } from '../stores/flow'
-import { fetchSummaries, saveSummaries, fetchDocuments, SUMMARY_LABELS, isFailed, isOk } from '../api/flow'
+import { fetchSummaries, saveSummaries, fetchDocuments, saveSelections, SUMMARY_LABELS, isFailed, isOk } from '../api/flow'
 import { errorMessage } from '../api/client'
 import { keyOf } from '../utils'
 import RecheckBadge from '../components/RecheckBadge.vue'
@@ -65,6 +65,7 @@ async function prepare() {
       bid_no: r.bid_no, revision: r.revision, title: meta(r).title || r.summary?.title?.value || r.bid_no,
     }))
     flow.approved = []
+    await saveSelections(picked) // 내 계정(DB)에 선택 저장 (공고별 1건씩)
     jobId.value = await fetchDocuments(flow.searchId, picked)
   } catch (e) {
     error.value = errorMessage(e)

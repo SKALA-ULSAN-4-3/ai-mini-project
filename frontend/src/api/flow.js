@@ -67,10 +67,18 @@ export async function fetchSummaries(bids) {
   const d = (await rag.post('/bids/summaries', { bids: refs(bids) })).data
   return (d.results || []).map((r, i) => ({ ...r, bid_no: r.bid_no ?? bids[i]?.bid_no, revision: rev({ ...bids[i], ...r }) }))
 }
-// ⑤⑧ 선택·승인: 팀 결정에 따라 서버(DB)에는 저장하지 않습니다. (DB에는 공고문 원본과 요약만 저장)
-//   선택·승인 목록은 화면 상태(flow 보관소, 브라우저 sessionStorage)로만 유지합니다.
-export async function saveSelections() {}
-export async function saveApprovals() {}
+// ⑤⑧ 선택·승인 (4번 Java: POST /api/me/selections, /api/me/approvals, GET /api/me/pipeline)
+//   서버는 공고 1건씩 받고({bid_no, revision}, 차수는 "000" 같은 문자열 그대로), 누적 저장합니다. 승인은 선택 저장 뒤에만 가능(아니면 409).
+export async function saveSelections(bids) {
+  for (const b of bids) await client.post('/me/selections', { bid_no: b.bid_no, revision: String(b.revision) })
+}
+export async function saveApprovals(bids) {
+  for (const b of bids) await client.post('/me/approvals', { bid_no: b.bid_no, revision: String(b.revision) })
+}
+// 로그인 직후: 서버에 저장된 선택·승인 목록 [{bid_no, revision, status:'selected'|'approved', ...}]
+export async function fetchPipeline() {
+  return (await client.get('/me/pipeline')).data || []
+}
 
 // ④ 요약 저장 (4번 Java: PUT /api/bids/{bid_no}/summary). 로그인한 회사 계정에 저장되고, 같은 공고·차수는 덮어씁니다.
 // 요청: 2번이 만든 요약 결과를 그대로 { revision, summary, missing, needs_review, handoff, latency_ms }

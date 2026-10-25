@@ -109,3 +109,20 @@ export async function askQuestion(prompt, bid) {
   if (bid?.bid_no) { body.bid_no = bid.bid_no; body.revision = bid.revision }
   return (await rag.post('/rag-query', body)).data
 }
+
+// X2 채점 에이전트 (3번): POST /agent/score {bid_no, revision}. 서버에 켜져 있지 않으면 404.
+// 응답: 고정 경로 점수와 같은 items 에 status(complete|needs_input|…), questions, tool_calls, latency_ms, token_usage 가 더해집니다.
+export async function fetchAgentScore(b) {
+  return (await rag.post('/agent/score', { bid_no: b.bid_no, revision: String(b.revision) }, { timeout: 90000 })).data
+}
+
+// X3 음성 질의 (2번): 음성→텍스트 POST /stt (multipart, 필드 audio) → {text}, 텍스트→음성 POST /tts {text} → 오디오.
+//   ※ 요청·응답 형식은 아직 서버와 확정 전인 가정입니다. 확정되면 이 두 함수만 고치면 됩니다.
+export async function transcribe(blob) {
+  const fd = new FormData()
+  fd.append('audio', blob, 'question.webm')
+  return (await rag.post('/stt', fd)).data.text
+}
+export async function synthesize(text) {
+  return (await rag.post('/tts', { text }, { responseType: 'blob' })).data
+}

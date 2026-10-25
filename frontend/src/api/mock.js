@@ -55,7 +55,7 @@ export function installMock(client, mode = 'true') {
 
     config.mocked = true // 콘솔 로그에 "가짜"로 표시하기 위한 꼬리표
     await delay(300) // 실제 서버처럼 약간 기다리기 (로딩 표시 확인용)
-    const body = config.data ? JSON.parse(config.data) : {}
+    const body = typeof config.data === 'string' ? JSON.parse(config.data) : {} // 음성(FormData)은 본문 없이 처리
 
     if (isPipeline) {
       const hit = handlePipeline({ config, url, method, body, ok, fail })

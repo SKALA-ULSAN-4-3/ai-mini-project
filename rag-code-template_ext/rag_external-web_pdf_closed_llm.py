@@ -12,6 +12,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from pypdf import PdfReader
 from langchain_core.messages import HumanMessage
+from langchain_community.callbacks import get_openai_callback
 
 # 담당 기능의 구현은 bid_logic의 기능별 파일에서 관리합니다.
 from bid_logic import load_bids_csv, faiss_hits, embedding_title_similarity
@@ -54,6 +55,9 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# ✅ 모델 선택: 질문 답변과 추출(요약 · 채점표 · 제출서류)을 따로 고를 수 있다. 값이 없으면 평가로 검증한 gpt-4o
+RAG_LLM_MODEL = os.getenv("RAG_LLM_MODEL", "gpt-4o")
+EXTRACT_LLM_MODEL = os.getenv("EXTRACT_LLM_MODEL", "gpt-4o")
 
 if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY가 설정되지 않았습니다.")
@@ -343,6 +347,7 @@ class AnswerResponse(BaseModel):
     needs_review: bool = Field(default=False, description="자격 · 배점 등 담당자 확인이 필요한 답변")
     handoff: bool = Field(default=False, description="문서에서 근거를 찾지 못해 담당자에게 넘김")
     latency_ms: int = 0
+    usage: Optional[dict] = Field(default=None, description="사용 모델과 입 · 출력 토큰 수 (PDF 질의)")
 
 # ✅ RAG 기반 질의 응답 처리
 from fastapi import Body
@@ -410,7 +415,7 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
                 detail="❗ 외부 WEB 벡터값이 로딩되지 않았습니다. 먼저 외부 정보를 수집해서 벡터화를 진행해주세요.",
             )
         vectorstore = VECTORSTORE_WEB
-        llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
+        llm = ChatOpenAI(model=RAG_LLM_MODEL, temperature=0.3)
         llm_type = "openai" # huggingface
 
     elif rag_request.source == "pdf":
@@ -423,7 +428,7 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
         # [설계 판단] 사용자가 source="pdf"를 선택하면 웹 저장소가 아니라 PDF 저장소를 검색하도록 연결하세요.
         # [TODO Q03] 아래 ... 부분을 적절한 코드로 교체하세요.
         vectorstore = VECTORSTORE_PDF
-        llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
+        llm = ChatOpenAI(model=RAG_LLM_MODEL, temperature=0.3)
         llm_type = "openai"
 
         # 없는 공고번호 · 차수로 검색하면 "문서에 답이 없음"과 구분되지 않으므로 오류로 알린다
@@ -500,8 +505,12 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
             # [설계 판단] 검색한 PDF 내용이 포함된 full_prompt를 LLM에 전달하여 응답을 받아오세요.
             # [TODO Q05] 아래 ... 부분을 적절한 코드로 교체하세요.
             # 답 · 근거 유무 · 인용 번호를 정해진 칸으로 받는다 (문장 속 표시를 해석하지 않음)
-            result = llm.with_structured_output(RagAnswer, method="function_calling").invoke(
-                [HumanMessage(content=full_prompt)])
+            # 요청당 원가 기록 (기획서: 입 · 출력 토큰을 로그로). 질문 원문은 남기지 않는다
+            with get_openai_callback() as cb:
+                result = llm.with_structured_output(RagAnswer, method="function_calling").invoke(
+                    [HumanMessage(content=full_prompt)])
+            usage = {"model": RAG_LLM_MODEL, "input_tokens": cb.prompt_tokens, "output_tokens": cb.completion_tokens}
+            print(f"[토큰] {usage}")
             print(f"[PDF LLM 응답] found={result.found} cited={result.cited} answer={result.answer[:1500]}")
             final = strip_doc_refs(result.answer or "")
             if not result.found:
@@ -518,7 +527,7 @@ async def rag_query(rag_request: RAGRequest = Body(...)):
                 cited = sources
             return AnswerResponse(prompt=rag_request.prompt, response=final, sources=cited,
                                   needs_review=review or not result.found, handoff=not result.found,
-                                  latency_ms=elapsed_ms(t0))
+                                  latency_ms=elapsed_ms(t0), usage=usage)
 
         # -------------------- WEB 검색 --------------------
         elif source == "web":
@@ -671,7 +680,7 @@ def verified_source(name: str, doc_no: int | None, texts: dict[int, str],
     return (doc_no if doc_no in candidates else candidates[0]), True
 
 def run_extraction(schema, instruction: str, context: str):
-    llm = ChatOpenAI(model="gpt-4o", temperature=0).with_structured_output(schema, method="function_calling")
+    llm = ChatOpenAI(model=EXTRACT_LLM_MODEL, temperature=0).with_structured_output(schema, method="function_calling")
     return llm.invoke([HumanMessage(content=f"{instruction}\n\n{context}")])
 
 def cached(bid_no: str, revision: str, kind: str, refresh: bool, build) -> dict:

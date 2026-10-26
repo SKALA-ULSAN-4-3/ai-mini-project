@@ -71,7 +71,8 @@ BACKEND_URL=http://localhost:18080
 | `POST /stt` | multipart, 필드 `audio` (webm · mp3 · wav 등, 10MB 이하) | `{"text": "인식된 질문"}` |
 | `POST /tts` | `{"text": "읽을 답변"}` (1,500자 넘으면 잘라 읽음) | `audio/mpeg` (mp3) |
 
-- OpenAI `whisper-1`(받아쓰기) · `tts-1`(읽기, 목소리 `nova`)을 씁니다. 바꾸려면 `.env`에 `STT_MODEL`, `TTS_MODEL`, `TTS_VOICE`.
+- OpenAI `gpt-4o-mini-transcribe`(받아쓰기) · `tts-1`(읽기, 목소리 `nova`)을 씁니다. 바꾸려면 `.env`에 `STT_MODEL`, `TTS_MODEL`, `TTS_VOICE`.
+- 질문 답변 · 추출 모델은 `RAG_LLM_MODEL`, `EXTRACT_LLM_MODEL` (기본 gpt-4o). 고른 근거는 `eval/MODEL_COMPARISON.md`.
 - 올린 음성은 파일로 저장하지 않고 메모리에서만 처리합니다.
 
 ## 주의: OpenAI 키가 두 군데 있으면

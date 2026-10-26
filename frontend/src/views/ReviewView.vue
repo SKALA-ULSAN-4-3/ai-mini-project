@@ -14,6 +14,7 @@ const saving = ref(false)
 
 // ⑧ 승인 (여러 건 가능). AI는 추천만 하고 결정은 사람이 합니다.
 async function approve() {
+  if (saving.value) return // 저장 중이면 무시
   error.value = ''
   const bids = flow.selected.filter((b) => picked.value.includes(keyOf(b)))
   if (!bids.length) { error.value = '승인할 공고를 한 건 이상 선택해 주세요.'; return }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, onUnmounted } from 'vue'
 import { useFlowStore } from '../stores/flow'
 import { searchBids, fetchCandidates, fetchNotices, recheckBids, isOk } from '../api/flow'
 import { errorMessage } from '../api/client'
@@ -13,13 +13,17 @@ const flow = useFlowStore()
 // ① 검색 조건
 const today = iso(new Date())
 const to = ref(flow.period?.to >= today ? flow.period.to : iso(addDays(new Date(), 30)))
-const from = ref(flow.period?.from <= today ? flow.period.from : today)
+const monthStart = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) } // 이번 달 1일
+const from = ref(flow.period?.from && flow.period.from <= today ? flow.period.from : iso(monthStart()))
 const queries = ref(flow.period?.queries || '')
 const queryList = computed(() => queries.value.split(',').map((s) => s.trim()).filter(Boolean))
 const loading = ref(false)
 const error = ref('')
 const searchNotice = ref('')
 const noProfile = ref(false)
+// 검색 조건 칸: 결과가 있으면 한 줄 요약으로 접어 두고, 필요할 때만 펼칩니다. (결과가 나왔는데 또 검색을 누르는 실수를 막음)
+const formOpen = ref(!flow.candidates.length)
+const resultsTop = ref(null)
 const searchFinished = ref(false)
 const searchCount = ref(0)
 const progressExcluded = ref([])
@@ -39,7 +43,43 @@ function addKeyword(k) {
   queries.value = list.join(', ')
 }
 
+// 검색 진행 표시: 서버는 퍼센트를 알려 주지 않으므로 "단계"와 경과 시간으로 보여 줍니다.
+// 게이지는 단계 안에서 천천히 차오르다가, 다음 단계로 넘어가는 실제 신호(응답 도착)가 오면 그 위치로 올라갑니다.
+const STAGE_LABELS = [
+  '나라장터에서 공고 목록 조회',
+  '회사 프로필 조건으로 공고 추리기',
+  '결과 정리',
+]
+const stage = ref(0) // 1~3: 지금 하는 단계
+const pct = ref(0)
+const elapsed = ref(0)
+let progressTimer = null
+const STAGE_CAP = { 1: 55, 2: 92, 3: 99 } // 단계 안에서 게이지가 올라갈 수 있는 한계
+const STAGE_START = { 1: 3, 2: 58, 3: 95 } // 단계가 시작될 때 게이지 위치
+
+function setStage(n) {
+  stage.value = n
+  pct.value = Math.max(pct.value, STAGE_START[n])
+}
+function startProgress() {
+  stopProgress()
+  elapsed.value = 0
+  pct.value = 0
+  setStage(1)
+  const t0 = Date.now()
+  progressTimer = setInterval(() => {
+    elapsed.value = Math.floor((Date.now() - t0) / 1000)
+    const cap = STAGE_CAP[stage.value]
+    pct.value = Math.min(cap, pct.value + (cap - pct.value) * 0.03 + 0.05) // 한계에 가까워질수록 천천히
+  }, 400)
+}
+function stopProgress() {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null }
+}
+onUnmounted(stopProgress)
+
 async function search() {
+  if (loading.value) return // 이미 검색 중이면 무시 (연타·엔터 중복 방지)
   error.value = ''; noProfile.value = false
   searchNotice.value = ''
   const list = queries.value.split(',').map((s) => s.trim()).filter(Boolean)
@@ -48,12 +88,14 @@ async function search() {
   if (from.value > today) { error.value = '게시 시작일은 오늘 이전 또는 오늘이어야 합니다.'; return }
   if (to.value < today) { error.value = '마감 종료일은 오늘 이후 또는 오늘이어야 합니다.'; return }
   loading.value = true
+  startProgress()
   searchFinished.value = false
   progressExcluded.value = []
   jobId.value = ''; noticeJob.value = null
   try {
     // ① 나라장터 검색 (1번 API)
     const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 100 })
+    setStage(2)
     searchCount.value = (d.items || []).length
     progressExcluded.value = d.progress_excluded || []
     if (d.page_limit_reached) {
@@ -68,8 +110,13 @@ async function search() {
       const r = await fetchCandidates(flow.period.deadline_from, flow.period.deadline_to, d.search_id)
       flow.candidates = r.bids
       flow.excluded = r.excluded
+      setStage(3)
       searchFinished.value = true
       checked.value = flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf)
+      if (flow.candidates.length) {
+        formOpen.value = false // 검색이 끝나면 조건 칸을 접고 결과 목록을 바로 보여 줌
+        nextTick(() => resultsTop.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }))
+      }
     } catch (e) {
       if (e.response?.status === 404) noProfile.value = true
       else throw e
@@ -77,19 +124,43 @@ async function search() {
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
+    stopProgress()
     loading.value = false
   }
 }
 
 // ③ 공고문 준비 시작
+// 전체 선택·해제: 한 번에 받을 수 있는 건수(최대 20건) 안에서, 공고문만 있는 공고는 뺀 앞쪽부터 고릅니다.
+// 마감일 색: 3일 이내 빨강, 7일 이내 주황, 그 외 초록, 마감·미확인은 회색
+const ddayTone = (deadline) => {
+  const t = dday(deadline)
+  if (t === '미확인') return 'na'
+  if (t === '마감') return 'over'
+  const n = t === 'D-day' ? 0 : Number(/^D-(\d+)$/.exec(t)?.[1])
+  return n <= 3 ? 'hot' : n <= 7 ? 'warn' : 'ok'
+}
+// 결과 위쪽 요약 숫자
+const kpi = computed(() => ({
+  total: flow.candidates.length,
+  soon: flow.candidates.filter((b) => ['hot', 'warn'].includes(ddayTone(b.deadline))).length,
+  review: flow.candidates.filter((b) => b.unknown?.length || b.warnings?.length || b.recheck?.status === 'disqualified').length,
+}))
+const MAX_PICK = 20
+const selectAll = () => { checked.value = flow.candidates.filter((b) => !b.notice_only).slice(0, MAX_PICK).map(keyOf) }
+const clearAll = () => { checked.value = [] }
+const preparing = ref(false) // 요청을 보내는 동안 true: 버튼을 누르는 즉시 막아 같은 요청이 여러 번 가지 않게 함
 async function prepare() {
+  if (preparing.value) return
+  preparing.value = true // 가장 먼저 잠급니다. (await 앞에서 바로 잠가야 연타가 막힘)
   error.value = ''; noticeJob.value = null
   const bids = flow.candidates.filter((b) => checked.value.includes(keyOf(b))).slice(0, 20)
-  if (!bids.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; return }
+  if (!bids.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; preparing.value = false; return }
   try {
     jobId.value = await fetchNotices(flow.searchId, bids)
   } catch (e) {
     error.value = errorMessage(e)
+  } finally {
+    preparing.value = false
   }
 }
 const recheckError = ref('')
@@ -118,7 +189,16 @@ async function onDone(job) {
     <h1>공고 검색</h1>
     <p class="sub">게시 시작일부터 오늘까지 게시된 공고 중, 마감일이 오늘~마감 종료일에 포함되는 공고를 검색합니다. 공고문만 있는 공고는 추천 순위를 낮추고 기본 선택에서 제외합니다.</p>
 
-    <form @submit.prevent="search">
+    <div v-if="!formOpen" class="search-summary">
+      <div class="ss-text">
+        <strong>검색 조건</strong>
+        <span>기간 {{ from }} ~ {{ to }}</span>
+        <span>검색어 {{ queryList.join(', ') }}</span>
+      </div>
+      <button type="button" class="small" @click="formOpen = true">조건 바꿔 다시 검색</button>
+    </div>
+
+    <form v-show="formOpen" @submit.prevent="search">
       <div class="row">
         <div><label for="from">게시 시작일</label><input id="from" v-model="from" type="date" :max="today" /></div>
         <div><label for="to">마감 종료일</label><input id="to" v-model="to" type="date" :min="today" /></div>
@@ -127,6 +207,25 @@ async function onDone(job) {
       <input id="q" v-model="queries" />
       <button class="primary" :disabled="loading">{{ loading ? '검색 중…' : '공고 검색' }}</button>
     </form>
+
+    <div v-if="loading" class="search-progress" role="status" aria-live="polite">
+      <div class="sp-head">
+        <strong>공고를 찾는 중입니다</strong>
+        <span class="sp-time">{{ elapsed }}초 경과</span>
+      </div>
+      <p class="sp-cond">기간 {{ from }} ~ {{ to }} · 검색어 {{ queryList.join(', ') }}</p>
+      <ol class="sp-steps">
+        <li v-for="(label, i) in STAGE_LABELS" :key="label" :class="{ done: stage > i + 1, now: stage === i + 1 }">
+          <span class="sp-mark">{{ stage > i + 1 ? '✓' : i + 1 }}</span>
+          <span>{{ label }}<template v-if="stage === i + 1">…</template></span>
+        </li>
+      </ol>
+      <div class="sp-bar"><i :style="{ width: Math.round(pct) + '%' }"></i></div>
+      <p class="sp-note">
+        진행률은 단계 기준의 예상치예요.
+        <template v-if="elapsed >= 20">서버가 잠들어 있으면 처음 한 번은 1분 가까이 걸릴 수 있어요.</template>
+      </p>
+    </div>
 
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="searchNotice" class="notice">{{ searchNotice }}</p>
@@ -146,12 +245,26 @@ async function onDone(job) {
     </p>
 
     <template v-if="flow.candidates.length">
-      <h2 style="font-size: 1.1rem; margin-top: 26px">추린 공고 {{ flow.candidates.length }}건</h2>
+      <div ref="resultsTop" class="kpis">
+        <div class="kpi"><span class="kpi-label">추린 공고</span><b class="kpi-num">{{ kpi.total }}<small>건</small></b></div>
+        <div class="kpi hot"><span class="kpi-label">마감 임박 (7일 이내)</span><b class="kpi-num">{{ kpi.soon }}<small>건</small></b></div>
+        <div class="kpi warn"><span class="kpi-label">확인 필요</span><b class="kpi-num">{{ kpi.review }}<small>건</small></b></div>
+        <div class="kpi accent"><span class="kpi-label">내가 선택</span><b class="kpi-num">{{ checked.length }}<small>건</small></b></div>
+      </div>
+      <h2 style="font-size: 1.1rem; margin-top: 6px; scroll-margin-top: 16px">추린 공고 {{ flow.candidates.length }}건</h2>
       <p class="sub">공고문을 받아 요약할 공고를 고르세요. (최대 20건)</p>
+      <div class="pick-bar">
+        <span class="pick-count" :class="{ over: checked.length > 20 }">선택 {{ checked.length }}건<template v-if="checked.length > 20"> · 20건까지만 준비돼요</template></span>
+        <span class="pick-actions">
+          <button type="button" class="small" @click="selectAll">전체 선택</button>
+          <button type="button" class="small" :disabled="!checked.length" @click="clearAll">전체 해제</button>
+        </span>
+      </div>
       <label v-for="b in flow.candidates" :key="keyOf(b)" class="item" style="cursor: pointer">
         <input v-model="checked" type="checkbox" :value="keyOf(b)" style="width: auto; margin-right: 8px" />
         <strong>{{ b.title }}</strong>
-        <p class="meta">{{ b.agency }} · {{ won(b.budget) }} · <span v-if="dday(b.deadline) !== '미확인'">마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</span><span v-else>기한 미확인</span></p>
+        <span class="dday" :class="ddayTone(b.deadline)">{{ dday(b.deadline) }}</span>
+        <p class="meta">{{ b.agency }} · <span class="amt">{{ won(b.budget) }}</span> · <span v-if="dday(b.deadline) !== '미확인'">마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</span><span v-else>기한 미확인</span></p>
         <p v-for="warning in b.warnings" :key="warning" class="notice">{{ warning }}</p>
         <p v-if="b.region_restriction" class="meta">{{ b.region_restriction.summary }}</p>
         <p v-if="b.industry_restriction" class="meta">{{ b.industry_restriction.summary }}</p>
@@ -163,21 +276,26 @@ async function onDone(job) {
         <RecheckBadge :recheck="b.recheck" />
       </label>
 
-      <button class="primary" type="button" :disabled="!!jobId && !noticeJob" @click="prepare">
-        선택한 {{ checked.length }}건 공고문 준비
-      </button>
+      <div class="action-bar">
+        <span><strong>{{ checked.length }}건</strong> 선택됨<span class="meta"> · 한 번에 최대 20건</span></span>
+        <button class="primary" type="button" :disabled="preparing || (!!jobId && !noticeJob)" @click="prepare">
+          {{ preparing ? '요청 중…' : `선택한 ${checked.length}건 공고문 준비` }}
+        </button>
+        <div v-if="jobId || noticeJob" class="action-status">
+      <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="공고문을 받는 중" @done="onDone" />
+      <div v-if="noticeJob">
+        <p v-if="flow.readyKeys.length" class="ok">공고문 {{ flow.readyKeys.length }}건 준비 완료.</p>
+        <p v-if="recheckError" class="notice">{{ recheckError }}</p>
+        <p v-if="flow.candidates.some((b) => b.recheck?.status === 'disqualified')" class="notice">
+          공고문을 보니 부적격일 수 있는 공고가 있습니다. 위 목록의 이유를 확인해 주세요. (자동으로 지우지 않았습니다)
+        </p>
+        <router-link v-if="flow.readyKeys.length" to="/summaries" class="back">요약 보러 가기 →</router-link>
+        <p v-else class="error">준비된 공고가 없습니다. 다른 공고를 선택해 다시 시도해 주세요.</p>
+      </div>
+        </div>
+      </div>
     </template>
 
-    <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="공고문을 받는 중" @done="onDone" />
-    <div v-if="noticeJob">
-      <p v-if="flow.readyKeys.length" class="ok">공고문 {{ flow.readyKeys.length }}건 준비 완료.</p>
-      <p v-if="recheckError" class="notice">{{ recheckError }}</p>
-      <p v-if="flow.candidates.some((b) => b.recheck?.status === 'disqualified')" class="notice">
-        공고문을 보니 부적격일 수 있는 공고가 있습니다. 위 목록의 이유를 확인해 주세요. (자동으로 지우지 않았습니다)
-      </p>
-      <router-link v-if="flow.readyKeys.length" to="/summaries" class="back">요약 보러 가기 →</router-link>
-      <p v-else class="error">준비된 공고가 없습니다. 다른 공고를 선택해 다시 시도해 주세요.</p>
-    </div>
   </div>
   <ProfileSummary :active="queryList" @loaded="onProfile" @pick="addKeyword" />
   </div>

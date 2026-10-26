@@ -1,18 +1,22 @@
 # Workplace Java 백엔드
 
-`workplace`는 사업자 회원가입·로그인, Bearer JWT 발급·검증, 회사 프로필
-API와 공통 오류 처리를 담당합니다. PDF 청킹, FAISS 검색, 프롬프트와 LLM
-호출은 RAG 담당 영역이므로 이 모듈에 포함하지 않습니다.
+`workplace`는 사업자 회원가입·로그인, Bearer JWT 발급·검증, 회사 프로필,
+공고 요약·원본 문서, 공고 선택·승인 상태와 공통 오류 처리를 담당합니다.
+PDF 청킹, FAISS 검색, 프롬프트와 LLM 호출은 RAG 담당 영역이므로 이 모듈에
+포함하지 않습니다.
+
+- 배포 주소: <https://ai-service-mini-backend.onrender.com>
 
 ## 패키지 책임
 
 - `config`: 환경 설정
-- `domain`: 요청·응답과 사용자·프로필 데이터
+- `domain`: 요청·응답과 사용자·프로필·공고 데이터
 - `repository`: JDBC 데이터 접근
-- `service`: 인증과 프로필 업무 규칙
+- `service`: 인증, 프로필, 공고 요약·문서, 선택·승인 업무 규칙
 - `security`: JWT 생성·검증
 - `web.handler`: 엔드포인트별 HTTP 처리
-- `web`: JSON, Bearer 인증, CORS, 오류 처리와 요청 로그
+- `storage`: Supabase Storage를 통한 공고 원본 PDF 보관
+- `web`: JSON, Bearer·서비스 키 인증, CORS, 오류 처리와 요청 로그
 - `WorkplaceApplication`: 객체 조립과 엔드포인트 등록
 
 ## 회원 테이블
@@ -31,6 +35,20 @@ API와 공통 오류 처리를 담당합니다. PDF 청킹, FAISS 검색, 프롬
 
 사업자등록번호 `123-45-67890`과 `1234567890`은 같은 값으로 정규화합니다.
 
+## 데이터 테이블
+
+| 테이블 | 역할 | 사용자 분리 기준 |
+| --- | --- | --- |
+| `users` | 회원 인증과 필수 법인 정보 | 사업자등록번호 PK |
+| `company_profiles` | 추천에 사용하는 회사 프로필 | 사업자등록번호 UNIQUE·FK |
+| `bid_summaries` | 사용자별 공고 요약 | 사업자번호·공고번호·차수 복합 PK |
+| `bid_documents` | 공고 원본 PDF의 Storage 메타데이터 | 공고번호·차수·파일명 UNIQUE |
+| `user_bid_pipeline` | 사용자별 공고 선택·승인 상태 | 사업자번호·공고번호·차수 복합 PK |
+
+회원가입의 `head_office_address`는 `울산광역시 남구`와 같은 상세 소재지 자유
+입력입니다. 추천 조건에 사용하는 회사 프로필의 `region`은 별도 필드이며,
+프론트엔드의 대한민국 17개 시·도 드롭다운 값만 저장합니다.
+
 ## API
 
 | 메서드 | 경로 | 설명 | 인증 |
@@ -40,7 +58,17 @@ API와 공통 오류 처리를 담당합니다. PDF 청킹, FAISS 검색, 프롬
 | GET | `/api/auth/check` | 현재 JWT 확인 | Bearer JWT |
 | GET | `/api/profile` | 회사 프로필 조회 | Bearer JWT |
 | PUT | `/api/profile` | 회사 프로필 생성·수정 | Bearer JWT |
-| GET | `/api/health` | API·DB 상태 확인 | 불필요 |
+| POST | `/api/me/selections` | 공고 선택 상태 저장 | Bearer JWT |
+| POST | `/api/me/approvals` | 선택된 공고 승인 | Bearer JWT |
+| GET | `/api/me/pipeline` | 내 선택·승인 목록 | Bearer JWT |
+| GET | `/api/bids` | 내 공고 요약 목록 | Bearer JWT |
+| GET | `/api/bids/{bid_no}/summary` | 공고 요약 상세·PDF 링크 | Bearer JWT |
+| PUT | `/api/bids/{bid_no}/summary` | 공고 요약 저장·수정 | Bearer JWT |
+| GET | `/api/bids/{bid_no}/documents` | 원본 PDF 목록·임시 링크 | JWT 또는 서비스 키 |
+| POST | `/api/bids/{bid_no}/documents` | 원본 PDF 업로드 | 서비스 키 |
+| GET | `/api/health` | API·DB 준비 상태 | 불필요 |
+| GET | `/api/health/ready` | API·DB 준비 상태 | 불필요 |
+| GET | `/api/health/live` | Java 프로세스 생존 상태 | 불필요 |
 
 ### 회원가입
 
@@ -99,6 +127,33 @@ Authorization: Bearer eyJ...
 보안 정책을 함께 정해야 하며, 예제 로그인 화면은 개발 확인용으로
 `sessionStorage`만 사용합니다.
 
+## 인증과 공통 응답
+
+- 사용자 보호 API: `Authorization: Bearer <access_token>`
+- PDF 업로드 서버 간 인증: `X-Service-Key: <service_api_key>`
+- JWT 알고리즘: HMAC-SHA256
+- JWT 기본 만료 시간: 3,600초
+- 비밀번호: BCrypt cost 12 해시만 저장
+- JSON 필드명: `snake_case`
+- 오류 본문: `code`, `message`, `request_id`
+- 요청 로그: 메서드·경로·상태·처리 시간만 기록하고 JWT와 본문은 제외
+
+## 현재 연동 상태
+
+Java 백엔드의 선택·승인 API와 `user_bid_pipeline` 테이블은 Vue 프론트엔드에
+연결되어 있습니다. 프론트엔드는 공고별로 선택·승인을 서버에 저장하고, 로그인 후
+`GET /api/me/pipeline`으로 사용자 상태를 복원합니다. 선택 취소와 승인 철회 API는
+아직 없습니다.
+
+공고 요약은 프론트엔드가 사용자의 Bearer JWT로
+`PUT /api/bids/{bid_no}/summary`를 호출해 저장하고, 요약 상세 화면은 원본 PDF
+목록을 조회합니다. 원본 PDF 업로드 엔드포인트는 데이터 파이프라인의 서버 간 호출용으로
+구현되어 있지만, 최신 `develop`에서 실제 업로드 호출 연결은 확인되지 않습니다.
+
+FastAPI RAG 서버는 `BACKEND_URL`이 설정된 경우 프론트에서 받은 Bearer Token을
+Java 백엔드의 `/api/auth/check` 또는 `/api/profile`로 전달합니다. JWT 비밀키를
+RAG 서버에 중복 보관하지 않고 Java 백엔드가 토큰 검증과 프로필 원본 조회를 담당합니다.
+
 ## 실행 준비
 
 로컬 개발에서는 Docker Compose로 PostgreSQL과 테이블을 한 번에 생성할 수 있습니다.
@@ -130,6 +185,10 @@ docker compose up -d --build
 
 통합 테스트는 회원가입, 로그인, JWT 검증, 회사 프로필 저장·조회를 확인하고
 자신이 만든 테스트 데이터만 종료 시 삭제합니다.
+
+현재 Java 테스트 소스는 JWT, 인증 서비스, 회사 프로필 서비스와 공고 API를
+검증합니다. `scripts/local-smoke-test.sh`는 실제 HTTP 서버와 PostgreSQL을 연결해
+회원가입, 중복 가입, 로그인, JWT 확인과 프로필 저장·조회를 점검합니다.
 
 `CREATE TABLE IF NOT EXISTS`는 기존 테이블 구조를 변경하지 않습니다. 예전
 `id/username` 구조의 테이블을 이미 생성했다면 데이터를 백업한 뒤 별도의

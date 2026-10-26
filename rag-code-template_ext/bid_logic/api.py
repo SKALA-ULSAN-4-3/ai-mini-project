@@ -66,6 +66,18 @@ class ScoreResponse(BaseModel):
     questions: list[str]
 
 
+class ScoreInputs(BaseModel):
+    """현재 프로필에 없는 증빙·인력 정보의 요청 단위 보완. DB에는 저장하지 않는다."""
+    model_config = {"extra": "forbid"}
+    personnel: list[dict[str, Any]] | None = None
+    track_records: list[dict[str, Any]] | None = None
+    notice_date: date | None = None
+    credit_rating: str | None = None
+    credit_rating_issued_at: date | None = None
+    credit_rating_valid_until: date | None = None
+    owned_docs: list[str] | None = None
+
+
 class ChecklistResponse(BaseModel):
     bid_no: str
     revision: str
@@ -177,6 +189,14 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
               profile: dict = Depends(profile_dependency)):
         return invoke(lambda: calculate_scores(selected_payload(scoring_provider, bid_no, revision),
                                               profile, bid_no, revision))
+
+    @router.post("/bids/{bid_no}/score", response_model=ScoreResponse)
+    def score_with_inputs(bid_no: str, payload: ScoreInputs,
+                          revision: str = Query(..., min_length=1),
+                          profile: dict = Depends(profile_dependency)):
+        supplied = payload.model_dump(mode="json", exclude_none=True)
+        return invoke(lambda: calculate_scores(selected_payload(scoring_provider, bid_no, revision),
+                                              {**profile, **supplied}, bid_no, revision))
 
     @router.get("/bids/{bid_no}/checklist", response_model=ChecklistResponse)
     def checklist(bid_no: str, revision: str = Query(..., min_length=1),

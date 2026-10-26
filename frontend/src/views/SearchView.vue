@@ -148,6 +148,18 @@ const kpi = computed(() => ({
 const MAX_PICK = 20
 const selectAll = () => { checked.value = flow.candidates.filter((b) => !b.notice_only).slice(0, MAX_PICK).map(keyOf) }
 const clearAll = () => { checked.value = [] }
+const allPicked = computed(() => {
+  const want = Math.min(MAX_PICK, flow.candidates.filter((b) => !b.notice_only).length)
+  return want > 0 && checked.value.length === want
+})
+// 행의 빈 곳을 눌러도 선택이 바뀌게 합니다. (링크·버튼·체크칸을 누른 경우는 제외)
+function toggleRow(b, e) {
+  if (e.target.closest('a, button, input, summary, label')) return
+  const k = keyOf(b)
+  checked.value = checked.value.includes(k) ? checked.value.filter((x) => x !== k) : [...checked.value, k]
+}
+// 공고문 준비가 끝나 요약으로 갈 수 있는 상태: 이때는 "요약 보러 가기"를 눈에 띄는 버튼으로 둡니다.
+const ready = computed(() => !!noticeJob.value && flow.readyKeys.length > 0)
 const preparing = ref(false) // 요청을 보내는 동안 true: 버튼을 누르는 즉시 막아 같은 요청이 여러 번 가지 않게 함
 async function prepare() {
   if (preparing.value) return
@@ -255,48 +267,71 @@ async function onDone(job) {
       <p class="sub">공고문을 받아 요약할 공고를 고르세요. (최대 20건)</p>
       <div class="pick-bar">
         <span class="pick-count" :class="{ over: checked.length > 20 }">선택 {{ checked.length }}건<template v-if="checked.length > 20"> · 20건까지만 준비돼요</template></span>
-        <span class="pick-actions">
-          <button type="button" class="small" @click="selectAll">전체 선택</button>
-          <button type="button" class="small" :disabled="!checked.length" @click="clearAll">전체 해제</button>
-        </span>
       </div>
-      <label v-for="b in flow.candidates" :key="keyOf(b)" class="item" style="cursor: pointer">
-        <input v-model="checked" type="checkbox" :value="keyOf(b)" style="width: auto; margin-right: 8px" />
-        <strong>{{ b.title }}</strong>
-        <span class="dday" :class="ddayTone(b.deadline)">{{ dday(b.deadline) }}</span>
-        <p class="meta">{{ b.agency }} · <span class="amt">{{ won(b.budget) }}</span> · <span v-if="dday(b.deadline) !== '미확인'">마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</span><span v-else>기한 미확인</span></p>
-        <p v-for="warning in b.warnings" :key="warning" class="notice">{{ warning }}</p>
-        <p v-if="b.region_restriction" class="meta">{{ b.region_restriction.summary }}</p>
-        <p v-if="b.industry_restriction" class="meta">{{ b.industry_restriction.summary }}</p>
-        <p v-if="b.industry_restriction?.note" class="meta">{{ b.industry_restriction.note }}</p>
-        <p v-if="b.unknown.length" class="chips">
-          <span v-for="u in b.unknown" :key="u" class="badge warn">미확인: {{ unknownLabel(u) }}</span>
-        </p>
-        <p v-if="b.reason" class="meta">추천 이유: {{ b.reason }}</p>
-        <RecheckBadge :recheck="b.recheck" />
-      </label>
+      <div class="table-wrap">
+        <table class="bid-table">
+          <thead>
+            <tr>
+              <th class="c-check"><input type="checkbox" aria-label="전체 선택" :checked="allPicked" @change="$event.target.checked ? selectAll() : clearAll()" /></th>
+              <th>공고명</th>
+              <th>발주기관</th>
+              <th class="num">금액</th>
+              <th>마감일</th>
+              <th>구분</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="b in flow.candidates" :key="keyOf(b)" :class="{ on: checked.includes(keyOf(b)) }" @click="toggleRow(b, $event)">
+              <td class="c-check"><input v-model="checked" type="checkbox" :value="keyOf(b)" :aria-label="b.title + ' 선택'" /></td>
+              <td class="c-title">
+                <strong>{{ b.title }}</strong>
+                <span class="sub-line">{{ b.bid_no }}-{{ b.revision }}</span>
+                <span v-for="warning in b.warnings" :key="warning" class="sub-line warn-line">{{ warning }}</span>
+                <span v-if="b.region_restriction" class="sub-line">{{ b.region_restriction.summary }}</span>
+                <span v-if="b.industry_restriction" class="sub-line">{{ b.industry_restriction.summary }}</span>
+                <span v-if="b.industry_restriction?.note" class="sub-line">{{ b.industry_restriction.note }}</span>
+                <span v-if="b.reason" class="sub-line">추천 이유: {{ b.reason }}</span>
+                <span v-if="b.unknown.length" class="chips">
+                  <span v-for="u in b.unknown" :key="u" class="badge warn">미확인: {{ unknownLabel(u) }}</span>
+                </span>
+                <RecheckBadge :recheck="b.recheck" />
+              </td>
+              <td>{{ b.agency }}</td>
+              <td class="num">{{ won(b.budget) }}</td>
+              <td class="nowrap">
+                <template v-if="dday(b.deadline) !== '미확인'">{{ ymd(b.deadline) }}<span class="dday" :class="ddayTone(b.deadline)">{{ dday(b.deadline) }}</span></template>
+                <span v-else class="meta">기한 미확인</span>
+              </td>
+              <td class="nowrap"><span class="badge" :class="{ neutral: b.notice_only }">{{ b.notice_only ? '공고문만' : '선택 가능' }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div class="action-bar">
         <span><strong>{{ checked.length }}건</strong> 선택됨<span class="meta"> · 한 번에 최대 20건</span></span>
-        <button class="primary" type="button" :disabled="preparing || (!!jobId && !noticeJob)" @click="prepare">
+        <router-link v-if="ready" to="/summaries" class="cta">요약 보러 가기 →</router-link>
+        <button v-else class="primary" type="button" :disabled="preparing || (!!jobId && !noticeJob)" @click="prepare">
           {{ preparing ? '요청 중…' : `선택한 ${checked.length}건 공고문 준비` }}
         </button>
         <div v-if="jobId || noticeJob" class="action-status">
-      <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="공고문을 받는 중" @done="onDone" />
-      <div v-if="noticeJob">
-        <p v-if="flow.readyKeys.length" class="ok">공고문 {{ flow.readyKeys.length }}건 준비 완료.</p>
-        <p v-if="recheckError" class="notice">{{ recheckError }}</p>
-        <p v-if="flow.candidates.some((b) => b.recheck?.status === 'disqualified')" class="notice">
-          공고문을 보니 부적격일 수 있는 공고가 있습니다. 위 목록의 이유를 확인해 주세요. (자동으로 지우지 않았습니다)
-        </p>
-        <router-link v-if="flow.readyKeys.length" to="/summaries" class="back">요약 보러 가기 →</router-link>
-        <p v-else class="error">준비된 공고가 없습니다. 다른 공고를 선택해 다시 시도해 주세요.</p>
-      </div>
+          <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="공고문을 받는 중" @done="onDone" />
+          <div v-if="noticeJob">
+            <p v-if="flow.readyKeys.length" class="ok">공고문 {{ flow.readyKeys.length }}건 준비 완료.</p>
+            <p v-if="recheckError" class="notice">{{ recheckError }}</p>
+            <p v-if="flow.candidates.some((b) => b.recheck?.status === 'disqualified')" class="notice">
+              공고문을 보니 부적격일 수 있는 공고가 있습니다. 위 목록의 이유를 확인해 주세요. (자동으로 지우지 않았습니다)
+            </p>
+            <p v-if="!flow.readyKeys.length" class="error">준비된 공고가 없습니다. 다른 공고를 선택해 다시 시도해 주세요.</p>
+          </div>
+          <button v-if="ready" class="small" type="button" :disabled="preparing" @click="prepare">
+            {{ preparing ? '요청 중…' : `선택한 ${checked.length}건 공고문 다시 준비` }}
+          </button>
         </div>
       </div>
     </template>
 
   </div>
-  <ProfileSummary :active="queryList" @loaded="onProfile" @pick="addKeyword" />
+  <Teleport defer to="#side-slot"><ProfileSummary :active="queryList" @loaded="onProfile" @pick="addKeyword" /></Teleport>
   </div>
 </template>

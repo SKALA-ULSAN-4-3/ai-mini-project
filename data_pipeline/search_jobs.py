@@ -41,33 +41,67 @@ RESTRICTION_FIELDS = (
 ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name", "source", "document_type"]
 
 
-def _enrich_restrictions(item, key):
-    """공고·차수별 공개 제한 정보를 잠시 재사용한다. 실패 결과는 캐시하지 않는다."""
+def _enrich_restrictions(item, key, deadline=None):
+    """지역·업종 성공 결과를 각각 재사용하고 같은 공고의 동시 조회를 합친다."""
     bid_no, order = str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000")
     folder = root_dir() / "restriction-cache"
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / (collector.safe_name(f"{bid_no}_{order}") + ".json")
-    details = None
-    if path.is_file():
-        try:
-            cached = read_json(path)
-            if (cached.get("bid_no"), cached.get("bid_order"), cached.get("industry_flag")) == (
-                    bid_no, order, item.get("indstrytyLmtYn")) and time.time() - cached["created_epoch"] < CACHE_SECONDS:
-                details = cached["details"]
-        except (OSError, ValueError, KeyError, TypeError):
-            pass
-    if details is None:
-        details = restrictions.lookup_restrictions(item, key)
-        if all(d.get("lookup_status") == "complete" for d in details.values()):
-            write_json(path, {"bid_no": bid_no, "bid_order": order,
-                              "industry_flag": item.get("indstrytyLmtYn"),
-                              "created_epoch": time.time(), "details": details})
+    with directory_lock(folder, path.stem + ".lock"):
+        details = {name: item[name] for name in ("region_restriction", "industry_restriction")
+                   if isinstance(item.get(name), dict) and item[name].get("lookup_status") == "complete"}
+        times = {name: 0 for name in details}
+        if path.is_file():
+            try:
+                cached = read_json(path)
+                if (cached.get("bid_no"), cached.get("bid_order"), cached.get("industry_flag")) == (
+                        bid_no, order, item.get("indstrytyLmtYn")):
+                    for name, value in cached["details"].items():
+                        created = cached.get("field_epochs", {}).get(name, cached.get("created_epoch", 0))
+                        if value.get("lookup_status") == "complete" and time.time() - created < CACHE_SECONDS:
+                            details[name], times[name] = value, created
+            except (OSError, ValueError, KeyError, TypeError, AttributeError):
+                pass
+        if len(details) < 2:
+            details = restrictions.lookup_restrictions(item, key, existing=details, deadline=deadline)
+            successful = {name: value for name, value in details.items()
+                          if value.get("lookup_status") == "complete"}
+            if successful:
+                write_json(path, {"bid_no": bid_no, "bid_order": order,
+                                  "industry_flag": item.get("indstrytyLmtYn"),
+                                  "created_epoch": time.time(), "details": successful,
+                                  "field_epochs": {name: times.get(name, time.time()) for name in successful}})
     return {**item, **details}
 
 
-def _enrich_candidate(item, key):
+def _enrich_candidate(item, key, deadline=None):
     # 검색에서는 자격 제한과 공고문 목록만 확인한다. e발주 전체 첨부는 사용자 선택 후 조회한다.
-    return _enrich_restrictions(item, key)
+    return _enrich_restrictions(item, key, deadline)
+
+
+def _refresh_failed_restrictions(snapshot, key, refs=None):
+    """기존 검색의 실패·누락 상세만 보완하고 오래된 추천은 무효화한다."""
+    selected = None if refs is None else {(r["bid_no"], r["bid_order"]) for r in refs}
+    latest = latest_notices(snapshot["items"])
+    positions = [i for i, item in enumerate(snapshot["items"])
+                 if is_active_notice(item, latest)
+                 and (selected is None or (str(item.get("bidNtceNo")), str(item.get("bidNtceOrd") or "000")) in selected)
+                 and any(not isinstance(item.get(name), dict) or item[name].get("lookup_status") != "complete"
+                         for name in ("region_restriction", "industry_restriction"))]
+    if not positions:
+        return False
+    if not key:
+        raise RuntimeError("지역·업종 상세 재조회에 필요한 DATA_GO_KR_SERVICE_KEY가 없습니다.")
+    deadline = time.monotonic() + 90
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        enriched = executor.map(lambda i: _enrich_candidate(snapshot["items"][i], key, deadline), positions)
+        for i, item in zip(positions, enriched):
+            snapshot["items"][i] = item
+    snapshot.pop("cached_recommendation", None)
+    snapshot["recommendation_status"] = "pending"
+    snapshot["cache_saved"] = False
+    write_json(root_dir() / snapshot["search_id"] / "search.json", snapshot)
+    return True
 
 
 def _enrich_eorder(item, key):
@@ -202,9 +236,11 @@ def _public_search(saved, cached, now=None):
             "page_limit_reached": saved["page_limit_reached"]}
 
 
-def _restore_cached_search(payload, request, current_time):
+def _restore_cached_search(payload, request, current_time, key=None, authorization=None):
     """DB 캐시의 원본 공고와 첨부 메타데이터로 새 로컬 search_id를 만든다."""
-    snapshot = payload.get("snapshot") if isinstance(payload, dict) else None
+    if not isinstance(payload, dict) or payload.get("schema") != 1:
+        return None
+    snapshot = payload.get("snapshot")
     if not isinstance(snapshot, dict) or not isinstance(snapshot.get("items"), list):
         return None
     cached_request = snapshot.get("request")
@@ -218,6 +254,7 @@ def _restore_cached_search(payload, request, current_time):
     saved = dict(snapshot)
     saved["search_id"] = uuid.uuid4().hex
     saved["cached_recommendation"] = payload.get("recommendation")
+    saved["recommendation_status"] = payload.get("recommendation_status", "pending")
     saved["cache_saved"] = True
     saved["cache_auth_failed"] = False
     saved["cache_source"] = "database"
@@ -225,9 +262,30 @@ def _restore_cached_search(payload, request, current_time):
     folder = root / saved["search_id"]
     folder.mkdir(parents=True, exist_ok=False)
     write_json(folder / "search.json", saved)
+    sync = {"status": "reused"}
+    if key and _refresh_failed_restrictions(saved, key):
+        sync = _save_search_cache(saved, authorization)
     response = _public_search(saved, True, current_time)
     response["cache_source"] = "database"
+    response["cache_sync"] = sync
     return response
+
+
+def _save_search_cache(snapshot, authorization, recommendation=None, recommendation_status="pending", force=False):
+    request = snapshot["request"]
+    payload = {"schema": 1, "snapshot": snapshot, "recommendation": recommendation,
+               "recommendation_status": recommendation_status}
+    if snapshot.get("cache_auth_failed") and not force:
+        result = {"status": "failed", "auth_failed": True,
+                  "error": "검색 캐시 인증 실패가 확인되어 저장 요청을 생략했습니다."}
+    else:
+        result = cache_api.save_search(request["from"], request["to"], request["queries"],
+                                       request["limit"], payload, authorization)
+    snapshot["cache_saved"] = result.get("status") == "saved"
+    snapshot["cache_auth_failed"] = bool(snapshot.get("cache_auth_failed") or result.get("auth_failed"))
+    snapshot["recommendation_status"] = recommendation_status
+    write_json(root_dir() / snapshot["search_id"] / "search.json", snapshot)
+    return result
 
 
 def search_bids(start, end, queries, limit, key, authorization=None):
@@ -251,9 +309,8 @@ def search_bids(start, end, queries, limit, key, authorization=None):
     digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
     remote_cache = cache_api.lookup_search(start, end, queries, limit, authorization)
     if remote_cache.get("cached"):
-        restored = _restore_cached_search(remote_cache.get("result"), request, current_time)
+        restored = _restore_cached_search(remote_cache.get("result"), request, current_time, key, authorization)
         if restored is not None:
-            restored["cache_sync"] = {"status": "reused"}
             return restored
     with directory_lock(root_dir(), ".search.lock") as root:
         cache = root / f"cache-{digest}.json"
@@ -261,12 +318,13 @@ def search_bids(start, end, queries, limit, key, authorization=None):
             cached = read_json(cache)
             if time.time() - cached["created_epoch"] < CACHE_SECONDS:
                 local_snapshot = _snapshot(cached["search_id"])
+                if key:
+                    _refresh_failed_restrictions(local_snapshot, key)
                 local = _public_search(local_snapshot, True, current_time)
-                local["cache_sync"] = {"status": remote_cache.get("status", "miss"),
-                                        "auth_failed": bool(remote_cache.get("auth_failed"))}
                 if remote_cache.get("auth_failed"):
                     local_snapshot["cache_auth_failed"] = True
-                    write_json(root / cached["search_id"] / "search.json", local_snapshot)
+                sync = _save_search_cache(local_snapshot, authorization)
+                local["cache_sync"] = sync
                 return local
         if not key:
             raise RuntimeError("DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.")
@@ -300,8 +358,9 @@ def search_bids(start, end, queries, limit, key, authorization=None):
         latest = latest_notices(items)
         # 상세 제한을 조회하고, 일반 첨부에 RFP가 없으면 e발주 목록도 보완한다.
         positions = [i for i, item in enumerate(items) if is_active_notice(item, latest)]
+        detail_deadline = time.monotonic() + 90
         with ThreadPoolExecutor(max_workers=4) as executor:
-            enriched = executor.map(lambda i: _enrich_candidate(items[i], key), positions)
+            enriched = executor.map(lambda i: _enrich_candidate(items[i], key, detail_deadline), positions)
             for i, item in zip(positions, enriched):
                 items[i] = item
         search_id = uuid.uuid4().hex
@@ -326,6 +385,7 @@ def search_bids(start, end, queries, limit, key, authorization=None):
             for item in items if is_active_notice(item, latest))
         if details_complete:
             write_json(cache, {"created_epoch": time.time(), "search_id": search_id})
+        response["cache_sync"] = _save_search_cache(saved, authorization)
         return response
 
 
@@ -889,7 +949,7 @@ def run_job(job_id, key=None):
                     job["done"] += 1
                     write_json(path, job)
                     continue
-                if job["mode"] == "documents" or (job["mode"] == "notices" and key):
+                if job["mode"] == "documents":
                     # 전체 검색을 재실행하지 않고 선택된 공고번호만 조회한다.
                     progress("checking_attachments")
                     current = collector.lookup_notice(key, bid["bid_no"])

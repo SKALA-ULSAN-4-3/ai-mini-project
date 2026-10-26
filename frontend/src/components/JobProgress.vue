@@ -28,7 +28,8 @@ const pct = computed(() => Math.round(((job.value.done || 0) / (job.value.total 
 const preparedCount = computed(() => (job.value.bids || []).filter((b) => b.preparation_status === 'ready').length)
 const dbSavedCount = computed(() => (job.value.bids || []).filter((b) => ['saved', 'reused'].includes(b.db_sync?.status)).length)
 const dbFailedBids = computed(() => (job.value.bids || []).filter((b) => b.preparation_status === 'ready'
-  && ['failed', 'not_configured'].includes(b.db_sync?.status)))
+  && (['failed', 'not_configured'].includes(b.db_sync?.status)
+    || ['failed', 'not_configured'].includes(b.rfp_cache?.status))))
 let timer = null
 let stopped = false
 let lastState = ''
@@ -114,7 +115,7 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
     </details>
     <div v-if="!running && ['notices', 'documents', 'db_retry'].includes(job.mode)" class="jp-detail">
       <p>공고문 준비 완료 {{ preparedCount }}건 · DB 저장 성공 {{ dbSavedCount }}건 · DB 저장 실패 {{ dbFailedBids.length }}건</p>
-      <button v-if="dbFailedBids.length" type="button" class="small" @click="emit('retry-db', job)">DB 저장만 다시 시도</button>
+      <button v-if="dbFailedBids.length" type="button" class="small" @click="emit('retry-db', job)">DB 파일·제안요청서 캐시 저장 다시 시도</button>
     </div>
     <p v-if="slow && running" class="notice">같은 단계에서 2분 이상 처리 중입니다. 서버가 느리거나 멈췄을 수 있습니다. 아직 실패로 확정된 것은 아닙니다.</p>
     <p v-if="job.error" class="error">{{ job.error }}</p>

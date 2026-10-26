@@ -41,6 +41,10 @@ class FetchBidsRequest(BaseModel):
     bids: list[SearchBidReference] = Field(min_length=1, max_length=20)
 
 
+class RetrySearchCacheRequest(BaseModel):
+    search_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+
+
 @router.post("/search-bids")
 def search_bid_list(request: SearchBidsRequest, authorization: str | None = Header(default=None)):
     try:
@@ -59,7 +63,7 @@ def enqueue_fetch(request, background_tasks, mode):
     try:
         load_env()
         key = os.environ.get("DATA_GO_KR_SERVICE_KEY", "")
-        if mode in {"notices", "documents"} and not key:
+        if mode == "documents" and not key:
             raise HTTPException(503, "선택 공고의 최신 차수와 입찰 진행 상태 확인에 필요한 API 키가 없습니다.")
         job = search_jobs.create_job(request.search_id, [b.model_dump() for b in request.bids], mode)
     except search_jobs.SearchNotFound as exc:
@@ -86,6 +90,41 @@ def fetch_documents(request: FetchBidsRequest, background_tasks: BackgroundTasks
 def retry_db_save(request: FetchBidsRequest, background_tasks: BackgroundTasks):
     """이미 로컬에 준비된 파일·전처리 결과의 DB 저장만 다시 시도합니다."""
     return enqueue_fetch(request, background_tasks, "db_retry")
+
+
+@router.post("/retry-search-cache")
+def retry_search_cache(request: RetrySearchCacheRequest,
+                       authorization: str | None = Header(default=None)):
+    """검색·추천 캐시 저장 단계만 다시 시도합니다."""
+    try:
+        snapshot = search_jobs._snapshot(request.search_id)
+    except search_jobs.SearchNotFound as exc:
+        raise HTTPException(404, str(exc)) from None
+    recommendation = snapshot.get("cached_recommendation")
+    status = "completed" if isinstance(recommendation, dict) else snapshot.get("recommendation_status", "pending")
+    return search_jobs._save_search_cache(snapshot, authorization, recommendation, status, force=True)
+
+
+@router.post("/retry-restrictions")
+def retry_restrictions(request: FetchBidsRequest,
+                       authorization: str | None = Header(default=None)):
+    """선택 공고의 실패한 지역·업종 상세만 보완한다. 문서는 처리하지 않는다."""
+    try:
+        load_env()
+        snapshot = search_jobs._snapshot(request.search_id)
+        refs = [bid.model_dump() for bid in request.bids]
+        search_jobs.select_items(request.search_id, refs)
+        changed = search_jobs._refresh_failed_restrictions(
+            snapshot, os.environ.get("DATA_GO_KR_SERVICE_KEY", ""), refs)
+        sync = (search_jobs._save_search_cache(snapshot, authorization) if changed else {"status": "reused"})
+        return {**search_jobs._public_search(snapshot, False), "cache_sync": sync,
+                "restrictions_refreshed": changed}
+    except search_jobs.SearchNotFound as exc:
+        raise HTTPException(404, str(exc)) from None
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+    except RuntimeError as exc:
+        raise HTTPException(503, str(exc)) from None
 
 
 @router.get("/jobs/{job_id}")

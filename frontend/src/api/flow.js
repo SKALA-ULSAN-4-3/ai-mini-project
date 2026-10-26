@@ -41,9 +41,17 @@ export async function searchBids({ from, to, queries, limit = 100 }) {
     (await rag.post('/search-bids', { from, to, queries, limit })).data, 0)
 }
 // ② 추린 공고: 저장된 search_id로 검색 원본·회사별 추천 캐시를 연결합니다.
-export async function fetchCandidates(from, to, searchId) {
-  const d = (await rag.get('/bids', { params: { from, to, limit: 20, search_id: searchId } })).data
-  return { bids: (d.bids || []).map(toBid), excluded: d.excluded || [], cacheSync: d.cache_sync || null }
+export async function fetchCandidates(from, to, searchId, { prepareNotices = true } = {}) {
+  const d = (await rag.get('/bids', { params: { from, to, limit: 20, search_id: searchId, prepare_notices: prepareNotices } })).data
+  return { bids: (d.bids || []).map(toBid), excluded: d.excluded || [], cacheSync: d.cache_sync || null,
+    noticeJobId: d.notice_job_id || null, noticeJobStatus: d.notice_job_status || null,
+    noticeJobError: d.notice_job_error || null }
+}
+export async function retrySearchCache(searchId) {
+  return (await rag.post('/retry-search-cache', { search_id: searchId }, { timeout: 30000 })).data
+}
+export async function retryRestrictions(searchId, bids) {
+  return (await rag.post('/retry-restrictions', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 120000 })).data
 }
 // ③' 공고문 준비가 끝난 뒤 재확인 (3번): 본문까지 보고 부적격인 공고를 표시합니다. (삭제하지 않고 표시만)
 // 응답: { bids:[{...공고, recheck:{status: confirmed|disqualified|unknown|not_evaluated, reasons, unknown}}], disqualified, not_evaluated }

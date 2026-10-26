@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, nextTick, onUnmounted } from 'vue'
 import { useFlowStore } from '../stores/flow'
-import { searchBids, fetchCandidates, fetchNotices, recheckBids, retryDbSave, isOk } from '../api/flow'
+import { searchBids, fetchCandidates, fetchNotices, fetchDocuments, recheckBids, retryDbSave, retrySearchCache, retryRestrictions, isOk } from '../api/flow'
 import { errorMessage } from '../api/client'
 import { addDays, iso, won, dday, keyOf, ymd, unknownLabel } from '../utils'
 import JobProgress from '../components/JobProgress.vue'
@@ -20,6 +20,36 @@ const queryList = computed(() => queries.value.split(',').map((s) => s.trim()).f
 const loading = ref(false)
 const error = ref('')
 const searchNotice = ref('')
+const cacheRetryNeeded = ref(false)
+const retryingRestriction = ref('')
+const restrictionError = ref('')
+const needsRestrictionRetry = (bid) => [bid.region_restriction, bid.industry_restriction]
+  .some((detail) => !detail || detail.lookup_status === 'unavailable' || detail.status === 'unavailable')
+
+async function retryRestrictionDetails(bid) {
+  if (retryingRestriction.value || loading.value) return
+  retryingRestriction.value = keyOf(bid)
+  restrictionError.value = ''
+  try {
+    const updated = await retryRestrictions(flow.searchId, [bid])
+    const result = await fetchCandidates(flow.period.deadline_from, flow.period.deadline_to,
+      flow.searchId, { prepareNotices: false })
+    flow.candidates = result.bids
+    flow.excluded = result.excluded
+    checked.value = checked.value.filter((key) => flow.candidates.some((row) => keyOf(row) === key))
+    cacheRetryNeeded.value = ['failed', 'not_configured'].includes(result.cacheSync?.status)
+    const current = updated.items?.find((row) => row.bid_no === bid.bid_no
+      && String(row.bid_order ?? row.revision) === String(bid.revision))
+    if (current && needsRestrictionRetry(current)) {
+      restrictionError.value = '일부 제한 정보를 아직 확인하지 못했습니다. 공고별 오류 안내를 확인한 뒤 다시 시도해 주세요.'
+    }
+  } catch (e) {
+    restrictionError.value = '제한 상세 정보를 다시 조회하지 못했습니다. ' + errorMessage(e)
+  } finally {
+    retryingRestriction.value = ''
+  }
+}
+const retryingSearchCache = ref(false)
 const noProfile = ref(false)
 // 검색 조건 칸: 결과가 있으면 한 줄 요약으로 접어 두고, 필요할 때만 펼칩니다. (결과가 나왔는데 또 검색을 누르는 실수를 막음)
 const formOpen = ref(!flow.candidates.length)
@@ -33,6 +63,7 @@ const cancelledWithdrawn = ref([])
 const checked = ref(flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf))
 const jobId = ref('')
 const noticeJob = ref(null)
+const noticeJobError = ref('')
 
 // 프로필 키워드: 처음 열었을 때 검색어가 비어 있으면 채워 주고, 칩을 누르면 검색어에 추가
 function onProfile(p) {
@@ -83,6 +114,7 @@ async function search() {
   if (loading.value) return // 이미 검색 중이면 무시 (연타·엔터 중복 방지)
   error.value = ''; noProfile.value = false
   searchNotice.value = ''
+  cacheRetryNeeded.value = false
   const list = queries.value.split(',').map((s) => s.trim()).filter(Boolean)
   if (!list.length) { error.value = '검색어를 한 개 이상 입력해 주세요.'; return }
   if (from.value > to.value) { error.value = '시작일이 종료일보다 늦을 수 없습니다.'; return }
@@ -93,12 +125,13 @@ async function search() {
   searchFinished.value = false
   deadlineUnknown.value = []
   cancelledWithdrawn.value = []
-  jobId.value = ''; noticeJob.value = null
+  jobId.value = ''; noticeJob.value = null; noticeJobError.value = ''
   try {
     // ① 나라장터 검색 (1번 API)
     const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 100 })
     setStage(2)
     if (d.cache_sync?.status === 'failed') {
+      cacheRetryNeeded.value = true
       searchNotice.value = d.cache_sync.auth_failed
         ? '검색 캐시 인증에 실패했습니다. 파이프라인 SERVICE_API_KEY와 Java SERVICE_API_KEY, 로그인 토큰 전달을 확인해 주세요.'
         : '검색 결과 DB 캐시를 확인하지 못했습니다. 검색은 계속 진행하며, 백엔드 캐시 설정을 확인해 주세요.'
@@ -117,13 +150,22 @@ async function search() {
     try {
       const r = await fetchCandidates(flow.period.deadline_from, flow.period.deadline_to, d.search_id)
       if (r.cacheSync?.status === 'failed') {
+        cacheRetryNeeded.value = true
         const cacheMessage = r.cacheSync.auth_failed
           ? '검색 캐시 인증이 거부되어 저장하지 못했습니다. 서비스 키와 로그인 토큰 전달을 확인해 주세요.'
           : '추천 결과 DB 저장에 실패했습니다. 캐시 저장 설정을 확인해 주세요.'
         searchNotice.value = [searchNotice.value, cacheMessage].filter(Boolean).join(' ')
+      } else if (['saved', 'reused', 'not_configured'].includes(r.cacheSync?.status)) {
+        cacheRetryNeeded.value = false
+        if (!d.page_limit_reached) searchNotice.value = ''
       }
       flow.candidates = r.bids
       flow.excluded = r.excluded
+      jobId.value = r.noticeJobId || ''
+      noticeJobError.value = r.noticeJobError || ''
+      if (r.noticeJobError) {
+        searchNotice.value = [searchNotice.value, r.noticeJobError].filter(Boolean).join(' ')
+      }
       setStage(3)
       searchFinished.value = true
       checked.value = flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf)
@@ -174,26 +216,72 @@ function toggleRow(b, e) {
 }
 // 공고문 준비가 끝나 요약으로 갈 수 있는 상태: 이때는 "요약 보러 가기"를 눈에 띄는 버튼으로 둡니다.
 const ready = computed(() => !!noticeJob.value && flow.readyKeys.length > 0)
+const preparedSelectionCount = computed(() => flow.candidates.filter((b) => checked.value.includes(keyOf(b))
+  && flow.readyKeys.includes(keyOf(b))).length)
+const noticeFailedBids = computed(() => (noticeJob.value?.bids || [])
+  .filter((b) => ['failed', 'partial_failed'].includes(b.status) && b.preparation_status !== 'ready'))
 const preparing = ref(false) // 요청을 보내는 동안 true: 버튼을 누르는 즉시 막아 같은 요청이 여러 번 가지 않게 함
 async function prepare() {
   if (preparing.value) return
   preparing.value = true // 가장 먼저 잠급니다. (await 앞에서 바로 잠가야 연타가 막힘)
   error.value = ''; noticeJob.value = null
-  const bids = flow.candidates.filter((b) => checked.value.includes(keyOf(b))).slice(0, 20)
+  const bids = flow.candidates.filter((b) => checked.value.includes(keyOf(b))
+    && flow.readyKeys.includes(keyOf(b))).slice(0, 20)
   if (!bids.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; preparing.value = false; return }
   try {
-    jobId.value = await fetchNotices(flow.searchId, bids)
+    jobId.value = await fetchDocuments(flow.searchId, bids)
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
     preparing.value = false
   }
 }
+async function retryFailedPreparation() {
+  if (preparing.value) return
+  const failed = noticeFailedBids.value
+  const previousMode = noticeJob.value?.mode
+  preparing.value = true
+  error.value = ''; noticeJob.value = null
+  const bids = failed.length ? failed : flow.candidates.slice(0, 20)
+  try {
+    jobId.value = previousMode === 'documents'
+      ? await fetchDocuments(flow.searchId, bids)
+      : await fetchNotices(flow.searchId, bids)
+    noticeJobError.value = ''
+  } catch (e) {
+    error.value = '공고문 준비를 다시 시작하지 못했습니다. ' + errorMessage(e)
+  } finally {
+    preparing.value = false
+  }
+}
+async function retrySearchCacheSave() {
+  if (retryingSearchCache.value || !flow.searchId) return
+  retryingSearchCache.value = true
+  try {
+    const result = await retrySearchCache(flow.searchId)
+    if (result.status === 'saved') {
+      cacheRetryNeeded.value = false
+      searchNotice.value = [searchNotice.value.includes('조회 한도')
+        ? '조회 한도에 도달해 일부 공고가 누락될 수 있습니다.' : '', '검색·추천 DB 캐시 저장 완료.']
+        .filter(Boolean).join(' ')
+    } else {
+      error.value = result.error || '검색 캐시 저장에 실패했습니다.'
+    }
+  } catch (e) {
+    error.value = '검색·추천 캐시 저장을 다시 시도하지 못했습니다. ' + errorMessage(e)
+  } finally {
+    retryingSearchCache.value = false
+  }
+}
 const recheckError = ref('')
 async function onDone(job) {
   if (job.mode === 'db_retry') return
   noticeJob.value = job
-  flow.readyKeys = job.bids.filter((b) => isOk(b.status)).map(keyOf)
+  const preparedKeys = job.bids.filter((b) => isOk(b.status)
+    && (b.preparation_status === 'ready' || !b.preparation_status)).map(keyOf)
+  flow.readyKeys = job.mode === 'notices'
+    ? [...new Set([...flow.readyKeys, ...preparedKeys])]
+    : preparedKeys
   flow.resetFrom(4)
   // ③' 공고문이 적재됐으니 본문까지 보고 다시 확인 (부적격은 지우지 않고 표시만)
   recheckError.value = ''
@@ -213,7 +301,8 @@ async function retryDatabaseSave(job) {
   if (retryingDb.value) return
   error.value = ''
   const bids = (job.bids || []).filter((b) => b.preparation_status === 'ready'
-    && ['failed', 'not_configured'].includes(b.db_sync?.status))
+    && (['failed', 'not_configured'].includes(b.db_sync?.status)
+      || ['failed', 'not_configured'].includes(b.rfp_cache?.status)))
   if (!bids.length) return
   retryingDb.value = true
   try {
@@ -274,6 +363,13 @@ async function retryDatabaseSave(job) {
 
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="searchNotice" class="notice">{{ searchNotice }}</p>
+    <p v-if="restrictionError" class="error" role="alert">{{ restrictionError }}</p>
+    <button v-if="cacheRetryNeeded && flow.searchId" class="small" type="button" :disabled="retryingSearchCache" @click="retrySearchCacheSave">
+      {{ retryingSearchCache ? 'DB 캐시 저장 중…' : '검색·추천 캐시 저장 다시 시도' }}
+    </button>
+      <button v-if="noticeJobError && !jobId && flow.candidates.length" class="small" type="button" :disabled="preparing" @click="retryFailedPreparation">
+      {{ preparing ? '요청 중…' : '추천 공고문 준비 다시 시작' }}
+    </button>
     <p v-if="searchFinished && !loading && !flow.candidates.length" class="notice" role="status">
       {{ searchCount ? `검색된 공고 ${searchCount}건이 회사 조건에 맞지 않아 추천 공고가 없습니다. 아래 제외 사유를 확인해 주세요.` : '선택한 게시기간·마감기간·검색어에 맞는 공고가 없습니다. 마감일 확인 필요 목록을 보거나 검색 조건을 조정해 주세요.' }}
     </p>
@@ -325,7 +421,13 @@ async function retryDatabaseSave(job) {
                 <span class="sub-line">{{ b.bid_no }}-{{ b.revision }}</span>
                 <span v-for="warning in b.warnings" :key="warning" class="sub-line warn-line">{{ warning }}</span>
                 <span v-if="b.region_restriction" class="sub-line">{{ b.region_restriction.summary }}</span>
+                <span v-if="b.region_restriction?.error" class="sub-line">{{ b.region_restriction.error }}</span>
                 <span v-if="b.industry_restriction" class="sub-line">{{ b.industry_restriction.summary }}</span>
+                <span v-if="b.industry_restriction?.error" class="sub-line">{{ b.industry_restriction.error }}</span>
+                <button v-if="needsRestrictionRetry(b)" class="small" type="button"
+                  :disabled="!!retryingRestriction || loading" @click.stop="retryRestrictionDetails(b)">
+                  {{ retryingRestriction === keyOf(b) ? '제한 정보 확인 중…' : '지역·업종 상세 재조회' }}
+                </button>
                 <span v-if="b.industry_restriction?.note" class="sub-line">{{ b.industry_restriction.note }}</span>
                 <span v-if="b.reason" class="sub-line">추천 이유: {{ b.reason }}</span>
                 <span v-if="b.unknown.length" class="chips">
@@ -348,8 +450,8 @@ async function retryDatabaseSave(job) {
       <div class="action-bar">
         <span><strong>{{ checked.length }}건</strong> 선택됨<span class="meta"> · 한 번에 최대 20건</span></span>
         <router-link v-if="ready" to="/summaries" class="cta">요약 보러 가기 →</router-link>
-        <button v-else class="primary" type="button" :disabled="preparing || (!!jobId && !noticeJob)" @click="prepare">
-          {{ preparing ? '요청 중…' : `선택한 ${checked.length}건 공고문 준비` }}
+        <button v-else class="primary" type="button" :disabled="preparing || !ready || !preparedSelectionCount" @click="prepare">
+          {{ preparing ? '요청 중…' : !noticeJob ? '추천 공고문 자동 준비 중…' : `선택한 ${preparedSelectionCount}건 전체 첨부 준비` }}
         </button>
         <div v-if="jobId || noticeJob" class="action-status">
           <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" :label="retryingDb ? 'DB 저장만 다시 시도하는 중' : '공고문을 받는 중'" @done="onDone" @retry-db="retryDatabaseSave" />
@@ -360,9 +462,12 @@ async function retryDatabaseSave(job) {
               공고문을 보니 부적격일 수 있는 공고가 있습니다. 위 목록의 이유를 확인해 주세요. (자동으로 지우지 않았습니다)
             </p>
             <p v-if="!flow.readyKeys.length" class="error">준비된 공고가 없습니다. 다른 공고를 선택해 다시 시도해 주세요.</p>
+            <button v-if="noticeFailedBids.length || !flow.readyKeys.length" class="small" type="button" :disabled="preparing" @click="retryFailedPreparation">
+              {{ preparing ? '요청 중…' : noticeJob.mode === 'documents' ? '실패한 첨부 준비 다시 시도' : '실패한 공고문 준비 다시 시도' }}
+            </button>
           </div>
-          <button v-if="ready" class="small" type="button" :disabled="preparing" @click="prepare">
-            {{ preparing ? '요청 중…' : `선택한 ${checked.length}건 공고문 다시 준비` }}
+          <button v-if="ready" class="small" type="button" :disabled="preparing || !preparedSelectionCount" @click="prepare">
+            {{ preparing ? '요청 중…' : `선택한 ${preparedSelectionCount}건 전체 첨부 다시 준비` }}
           </button>
         </div>
       </div>

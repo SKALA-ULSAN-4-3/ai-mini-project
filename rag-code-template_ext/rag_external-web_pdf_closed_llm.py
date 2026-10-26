@@ -3,6 +3,7 @@
 from fastapi import Header, FastAPI, UploadFile, File, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import create_async_engine
 from fastapi.responses import JSONResponse
+from starlette.background import BackgroundTask
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
@@ -132,6 +133,31 @@ async def keep_stores_current(request, call_next):
     return await call_next(request)
 
 
+def ensure_notice_job(search_jobs, search_id, recommendation):
+    """추천된 공고문 준비를 최대 20건 자동 시작하고 중복 작업은 재사용한다."""
+    rows = recommendation.get("bids") if isinstance(recommendation, dict) else None
+    if not isinstance(rows, list) or not rows:
+        return None, False
+    old_id = recommendation.get("notice_job_id")
+    if old_id:
+        try:
+            old = search_jobs.get_job(old_id)
+            if old.get("status") in {"completed", "partial_failed"} or old_id in search_jobs.ACTIVE_JOBS:
+                return old, False
+        except search_jobs.SearchNotFound:
+            pass
+    refs = [{"bid_no": str(row.get("bid_no") or ""),
+             "bid_order": str(row.get("revision") or row.get("bid_order") or "000")}
+            for row in rows[:20] if row.get("bid_no")]
+    if not refs:
+        return None, False
+    try:
+        job = search_jobs.create_job(search_id, refs, "notices")
+    except (search_jobs.SearchNotFound, ValueError, OSError):
+        return None, False
+    return job, not bool(job.get("reused"))
+
+
 @app.middleware("http")
 async def use_bid_search_cache(request, call_next):
     """추천 응답 캐시를 재사용하고, 새 추천 결과는 DB에 저장한다."""
@@ -139,6 +165,7 @@ async def use_bid_search_cache(request, call_next):
     from starlette.concurrency import run_in_threadpool
 
     authorization = request.headers.get("authorization")
+    prepare_notices = request.query_params.get("prepare_notices", "true").lower() != "false"
     if request.url.path == "/bids" and request.method == "GET":
         search_id = request.query_params.get("search_id", "")
         try:
@@ -165,7 +192,16 @@ async def use_bid_search_cache(request, call_next):
                     # 회사 프로필/JWT를 확인한 추천 결과만 재사용한다.
                     result = {k: v for k, v in cached.items() if not k.startswith("_")}
                     result["search_id"] = search_id
-                    if snapshot.get("cache_saved"):
+                    job, start_job = (ensure_notice_job(search_jobs, search_id, result)
+                                      if prepare_notices else (None, False))
+                    if job:
+                        result["notice_job_id"] = job["job_id"]
+                        result["notice_job_status"] = job.get("status")
+                    elif result.get("bids") and prepare_notices:
+                        result["notice_job_error"] = ("DATA_GO_KR_SERVICE_KEY 설정을 확인해 주세요."
+                            if not os.environ.get("DATA_GO_KR_SERVICE_KEY", "").strip() else
+                            "추천 공고문 자동 준비 작업을 시작하지 못했습니다. 목록을 확인한 뒤 다시 시도하세요.")
+                    if snapshot.get("cache_saved") and not start_job:
                         result["cache_sync"] = {"status": "reused"}
                     elif snapshot.get("cache_auth_failed"):
                         result["cache_sync"] = {"status": "failed", "auth_failed": True,
@@ -175,17 +211,57 @@ async def use_bid_search_cache(request, call_next):
                         sync = await run_in_threadpool(cache_api.save_search,
                             search_request["from"], search_request["to"], search_request["queries"],
                             search_request["limit"],
-                            {"snapshot": snapshot, "recommendation": cached}, authorization)
+                            {"schema": 1, "snapshot": snapshot, "recommendation": cached,
+                             "recommendation_status": "completed"}, authorization)
                         snapshot["cache_saved"] = sync.get("status") == "saved"
                         snapshot["cache_auth_failed"] = bool(sync.get("auth_failed"))
-                        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
                         result["cache_sync"] = sync
-                    return JSONResponse(result)
+                    snapshot["cached_recommendation"] = {
+                        **cached,
+                        "notice_job_id": result.get("notice_job_id"),
+                        "notice_job_status": result.get("notice_job_status"),
+                        "notice_job_error": result.get("notice_job_error"),
+                    }
+                    if start_job or snapshot.get("cached_recommendation") != cached:
+                        snapshot["cache_saved"] = False
+                        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+                        if not snapshot.get("cache_auth_failed"):
+                            sync = await run_in_threadpool(cache_api.save_search,
+                                snapshot["request"]["from"], snapshot["request"]["to"],
+                                snapshot["request"]["queries"], snapshot["request"]["limit"],
+                                {"schema": 1, "snapshot": snapshot,
+                                 "recommendation": snapshot["cached_recommendation"],
+                                 "recommendation_status": "completed"}, authorization)
+                            snapshot["cache_saved"] = sync.get("status") == "saved"
+                            snapshot["cache_auth_failed"] = bool(sync.get("auth_failed"))
+                            search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+                            result["cache_sync"] = sync
+                    background = (BackgroundTask(search_jobs.run_job, job["job_id"],
+                                   os.environ.get("DATA_GO_KR_SERVICE_KEY", ""))
+                                  if start_job and job else None)
+                    return JSONResponse(result, background=background)
                 except HTTPException as exc:
                     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code,
                                         headers=exc.headers)
 
     response = await call_next(request)
+    if (request.url.path == "/bids" and request.method == "GET"
+            and response.status_code >= 400 and response.status_code not in (401, 403, 404)):
+        try:
+            snapshot = search_jobs._snapshot(request.query_params.get("search_id", ""))
+            profile = await run_in_threadpool(get_authenticated_profile, authorization)
+            recommendation = {"status": "failed", "http_status": response.status_code}
+            sync = await run_in_threadpool(cache_api.save_search,
+                snapshot["request"]["from"], snapshot["request"]["to"],
+                snapshot["request"]["queries"], snapshot["request"]["limit"],
+                {"schema": 1, "snapshot": snapshot, "recommendation": None,
+                 "recommendation_status": recommendation}, authorization)
+            snapshot["recommendation_status"] = recommendation
+            snapshot["cache_saved"] = sync.get("status") == "saved"
+            search_jobs.write_json(search_jobs.root_dir() / snapshot["search_id"] / "search.json", snapshot)
+        except (search_jobs.SearchNotFound, KeyError, TypeError, ValueError, HTTPException):
+            pass
+        return response
     if request.url.path != "/bids" or request.method != "GET" or response.status_code != 200:
         return response
     search_id = request.query_params.get("search_id", "")
@@ -196,13 +272,24 @@ async def use_bid_search_cache(request, call_next):
         recommendation = json.loads(body)
         search_request = snapshot["request"]
         profile = await run_in_threadpool(get_authenticated_profile, authorization)
+        job, start_job = (ensure_notice_job(search_jobs, search_id, recommendation)
+                          if prepare_notices else (None, False))
+        if job:
+            recommendation["notice_job_id"] = job["job_id"]
+            recommendation["notice_job_status"] = job.get("status")
+        elif recommendation.get("bids") and prepare_notices:
+            recommendation["notice_job_error"] = ("DATA_GO_KR_SERVICE_KEY 설정을 확인해 주세요."
+                if not os.environ.get("DATA_GO_KR_SERVICE_KEY", "").strip() else
+                "추천 공고문 자동 준비 작업을 시작하지 못했습니다. 목록을 확인한 뒤 다시 시도하세요.")
         recommendation_to_cache = {**recommendation,
                                    "_cache_profile": hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest(),
                                    "_cache_limit": int(request.query_params.get("limit", "20"))}
         snapshot["cached_recommendation"] = recommendation_to_cache
         snapshot["cache_saved"] = False
         search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
-        result = {"snapshot": snapshot, "recommendation": recommendation_to_cache}
+        result = {"schema": 1, "snapshot": snapshot,
+                  "recommendation": recommendation_to_cache,
+                  "recommendation_status": "completed"}
         if snapshot.get("cache_auth_failed"):
             sync = {"status": "failed", "auth_failed": True,
                     "error": "검색 캐시 인증 실패가 확인되어 저장 요청을 생략했습니다."}
@@ -214,7 +301,10 @@ async def use_bid_search_cache(request, call_next):
         snapshot["cache_auth_failed"] = bool(snapshot.get("cache_auth_failed") or sync.get("auth_failed"))
         search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
         recommendation["cache_sync"] = sync
-        return JSONResponse(recommendation, status_code=response.status_code,
+        background = (BackgroundTask(search_jobs.run_job, job["job_id"],
+                       os.environ.get("DATA_GO_KR_SERVICE_KEY", ""))
+                      if start_job and job else None)
+        return JSONResponse(recommendation, status_code=response.status_code, background=background,
                             headers={k: v for k, v in response.headers.items()
                                      if k.lower() not in {"content-length", "content-type"}})
     except (search_jobs.SearchNotFound, KeyError, TypeError, ValueError):

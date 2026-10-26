@@ -134,11 +134,16 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
         if payload is None:
             raise HTTPException(404, "검색 결과가 없거나 접근할 수 없습니다.")
         if isinstance(payload, dict):
-            if ((payload.get("from") and payload["from"] != str(start)) or
-                    (payload.get("to") and payload["to"] != str(end))):
+            stored_period = (payload.get("from") or str(start), payload.get("to") or str(end))
+            allowed_periods = {stored_period}
+            if payload.get("request_from") and payload.get("request_to"):
+                # 이전 프론트는 게시 시작일을 전송한다. 같은 스냅샷의 원래 검색조건만 허용한다.
+                allowed_periods.add((payload["request_from"], payload["request_to"]))
+            if (str(start), str(end)) not in allowed_periods:
                 raise RequestError("저장된 검색 기간과 요청 기간이 다릅니다. 새로 검색해 주세요.")
-            return payload.get("bids", payload.get("items", payload.get("results")))
-        return payload
+            return (payload.get("bids", payload.get("items", payload.get("results"))),
+                    date.fromisoformat(stored_period[0]), date.fromisoformat(stored_period[1]))
+        return payload, start, end
 
     @router.get("/bids", response_model=BidListResponse)
     def bids(start: date = Query(..., alias="from"), end: date = Query(..., alias="to"),
@@ -146,17 +151,18 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
              search_id: str | None = Query(None, min_length=1),
              profile: dict = Depends(profile_dependency)):
         def run():
+            effective_start, effective_end = start, end
             if start > end:
                 raise RequestError("공고 기간이 뒤집혔습니다.")
             if search_results_provider is not None or require_search_id:
-                rows = saved_rows(search_id, profile, start, end)
+                rows, effective_start, effective_end = saved_rows(search_id, profile, start, end)
             elif search_id is not None:
                 raise HTTPException(status_code=503, detail="검색 결과 공급 함수를 연결해 주세요.")
             else:
                 rows = bids_provider()  # 고정 CSV 평가·개발 호환. 본문 검색은 하지 않는다.
             if not isinstance(rows, (list, tuple)):
                 raise ValueError("검색 결과 공고 배열이 필요합니다.")
-            result = shortlist_bids(rows, profile, start=start, end=end, now=clock(),
+            result = shortlist_bids(rows, profile, start=effective_start, end=effective_end, now=clock(),
                                     limit=limit, similarity=title_similarity)
             return {**result, "search_id": search_id}
         return invoke(run)
@@ -164,6 +170,7 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
     @router.post("/bids/recheck", response_model=RecheckResponse)
     def recheck(payload: RecheckRequest, profile: dict = Depends(profile_dependency)):
         def run():
+            effective_start, effective_end = payload.start, payload.end
             if payload.start > payload.end:
                 raise RequestError("공고 기간이 뒤집혔습니다.")
             if require_search_id and not payload.search_id:
@@ -172,7 +179,8 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
                 # CSV에는 아직 없는 새 공고도 저장 검색의 메타데이터로 재확인한다.
                 # 자격 제약은 추정하지 않고 미확인 보존. 실제 적재 여부는 아래에서 검사한다.
                 from .shortlist import recheck_metadata
-                saved = saved_rows(payload.search_id, profile, payload.start, payload.end)
+                saved, effective_start, effective_end = saved_rows(
+                    payload.search_id, profile, payload.start, payload.end)
                 rows = [recheck_metadata(r) for r in saved]
             else:
                 rows = bids_provider()
@@ -180,7 +188,7 @@ def create_bid_router(*, profile_dependency: Callable, bids_provider: Callable,
                 loaded = set(loaded_keys_provider())
                 rows = [row for row in rows if (row["bid_no"], row["revision"]) in loaded]
             return recheck_after_ingest([key.model_dump() for key in payload.bids], rows,
-                                        profile, payload.start, payload.end, now=clock(), search=search)
+                                        profile, effective_start, effective_end, now=clock(), search=search)
         return invoke(run)
 
     # revision 필수: 어느 차수인지 모르는 요청을 최신이라고 추정하지 않는다.

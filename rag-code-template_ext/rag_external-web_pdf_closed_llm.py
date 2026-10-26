@@ -178,7 +178,8 @@ async def use_bid_search_cache(request, call_next):
             try:
                 profile = await run_in_threadpool(get_authenticated_profile, authorization)
                 profile_key = hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest()
-                matches = (request.query_params.get("from") == params.get("deadline_from", params.get("from"))
+                matches = (request.query_params.get("from") in {
+                               params.get("deadline_from", params.get("from")), params.get("from")}
                            and request.query_params.get("to") == params.get("to")
                            and cached.get("_cache_profile") == profile_key
                            and int(request.query_params.get("limit", "20")) == int(cached.get("_cache_limit", 20)))

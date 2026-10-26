@@ -56,6 +56,17 @@ class DocumentReadinessTests(unittest.TestCase):
         with patch.object(search_jobs.collector, 'download_file', side_effect=downloader or self.download):
             return search_jobs._process_bid(self.item, full, self.store, lambda _: None)
 
+    def test_successful_preparation_reuses_text_and_invalidates_on_metadata_change(self):
+        with patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as worker:
+            first = self.process(full=False)
+            second = self.process(full=False)
+            self.assertEqual(first['status'], 'completed')
+            self.assertEqual(second['status'], 'completed')
+            self.assertEqual(worker.call_count, 1)
+            self.item['ntceInsttOfclNm'] = '새담당자'
+            self.process(full=False)
+            self.assertEqual(worker.call_count, 2)
+
     def test_notice_stage_downloads_only_one_notice(self):
         downloaded = []
         def download(url, target):
@@ -74,6 +85,11 @@ class DocumentReadinessTests(unittest.TestCase):
         second = search_jobs.create_job(sid, refs, 'documents')
         self.assertEqual(first['job_id'], second['job_id'])
         self.assertTrue(second['reused'])
+        other_search = self.root / ('b' * 32)
+        other_search.mkdir()
+        write_json(other_search / 'search.json', {'items': [self.item]})
+        other = search_jobs.create_job('b' * 32, refs, 'documents')
+        self.assertEqual(other['job_id'], first['job_id'])
         self.assertEqual(len(list((self.root / 'jobs').glob('*.json'))), 1)
         search_jobs.ACTIVE_JOBS.discard(first['job_id'])
         third = search_jobs.create_job(sid, refs, 'documents')
@@ -109,6 +125,13 @@ class DocumentReadinessTests(unittest.TestCase):
         folder.mkdir()
         write_json(folder / (job_id + '.json'), {'job_id': job_id, 'mode': 'documents',
                    'bids': [{'bid_no': 'B1', 'bid_order': '000'}]})
+        manifest = self.root / 'documents/B1_000/attachments.csv'
+        rows = read_csv(manifest)
+        outside = self.root / 'private.pdf'
+        outside.write_bytes(self.pdf)
+        rows.append({**rows[0], 'url': 'https://www.g2b.go.kr/outside',
+                     'local_path': str(outside), 'file_name': 'outside.pdf'})
+        search_jobs.write_csv(manifest, search_jobs.ATTACHMENT_FIELDS, rows)
         client = TestClient(api.app)
         response = client.get('/jobs/' + job_id + '/files')
         self.assertEqual(response.status_code, 200)
@@ -299,7 +322,12 @@ class DocumentReadinessTests(unittest.TestCase):
                 'status': 'converted'}])
             from data_pipeline.prepare_documents import prepare
             prepare(folder)
-        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=convert) as tool:
+        original_lock = search_jobs.directory_lock
+        def lock(folder, name, **kwargs):
+            self.assertNotEqual(name, '.conversion.lock')
+            return original_lock(folder, name, **kwargs)
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=convert) as tool, \
+                patch.object(search_jobs, 'directory_lock', side_effect=lock):
             result = self.process()
         tool.assert_called_once()
         self.assertTrue(result['rfp_ready'])

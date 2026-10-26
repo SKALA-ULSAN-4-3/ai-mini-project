@@ -24,9 +24,13 @@ from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY
                      HWP_SUFFIXES, directory_lock, read_json, write_json,
                      read_jsonl, write_jsonl, read_csv, write_csv, stamp)
 from .knowledge import KnowledgeStore
+from .privacy import official_names
 
 CACHE_SECONDS = 300
 ACTIVE_JOBS = set()
+PREPARE_VERSION = hashlib.sha256(b"".join(
+    (Path(__file__).parent / name).read_bytes()
+    for name in ("prepare_documents.py", "privacy.py", "convert_documents.py"))).hexdigest()
 RESTRICTION_FIELDS = (
     "indstrytyLmtYn", "rgnLmtBidLocplcJdgmBssNm", "jntcontrctDutyRgnNm1",
     "jntcontrctDutyRgnNm2", "jntcontrctDutyRgnNm3", "cmmnSpldmdMethdNm",
@@ -322,7 +326,7 @@ def create_job(search_id, bids, mode):
         for path in folder.glob("*.json"):
             old = read_json(path)
             if (old.get("job_id") in ACTIVE_JOBS
-                    and old.get("search_id") == search_id and old.get("mode") == mode
+                    and old.get("mode") == mode
                     and old.get("status") in {"queued", "running"}
                     and sorted((b["bid_no"], b["bid_order"]) for b in old["bids"]) == identity):
                 return {**old, "reused": True}
@@ -426,7 +430,8 @@ def _prepare_selected(folder, rows, full=False):
     for row in rows:
         kinds = {"notice"} if row.get("role") == "notice" else classify_attachment(row["file_name"])
         selected = (row["selected"] and "cancel" not in kinds
-                    and (full or bool(kinds & {"notice", "rfp", "agreement"})))
+                    and ((full and Path(row["local_path"]).suffix.lower() in {".hwp", ".hwpx", ".pdf"})
+                         or bool(kinds & {"notice", "rfp", "agreement"})))
         if Path(row["file_name"]).suffix.lower() in HWP_SUFFIXES and stem(row) in pdfs:
             selected = False  # 원본은 보존하고 같은 이름의 PDF만 내부 적재에 쓴다.
         prepared = {**row, "selected": selected}
@@ -434,6 +439,23 @@ def _prepare_selected(folder, rows, full=False):
             # API에 이름이 없는 표준공고서도 RAG의 공통 판별 함수가 인식할 수 있게 한다.
             prepared["file_name"] = Path(row["local_path"]).name
         scoped.append(prepared)
+    selected = [row for row in scoped if row["selected"] and row["status"] in DOWNLOAD_SUCCESS]
+    config = converter.TOOLS / "converter.json"
+    inputs = {"version": PREPARE_VERSION,
+              "files": [(row["url"], row["file_name"], converter.sha256(Path(row["local_path"]))) for row in selected],
+              "bids": read_csv(folder / "bids.csv"),
+              "names": [official_names(item) for item in read_json(folder / "candidates.json").get("items", [])],
+              "converter": converter.sha256(config) if config.is_file() else None}
+    fingerprint = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
+    cache_file = folder / "prepared-cache.json"
+    try:
+        cached = read_json(cache_file)
+        if (cached["fingerprint"] == fingerprint and cached["outputs"]
+                and all((folder / name).is_file() and converter.sha256(folder / name) == digest
+                        for name, digest in cached["outputs"].items())):
+            return
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
     write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, scoped)
     try:
         if any(row["selected"] and row["status"] in DOWNLOAD_SUCCESS
@@ -445,6 +467,19 @@ def _prepare_selected(folder, rows, full=False):
             write_jsonl(conversion_file, cached.values())
         else:
             _prepare_with_timeout(folder, False)
+        documents = read_jsonl(folder / "processed/documents.jsonl")
+        if documents and all(doc["status"] in TEXT_READY for doc in documents):
+            outputs = {name: converter.sha256(folder / name) for name in (
+                "processed/pages.jsonl", "processed/chunks.jsonl", "processed/documents.jsonl")}
+            conversion_file = folder / "conversions.jsonl"
+            if conversion_file.is_file():
+                for record in read_jsonl(conversion_file):
+                    if (record.get("status") in ("converted", "existing")
+                            and record.get("original_path") in {str(Path(row["local_path"]).resolve()) for row in selected}):
+                        path = Path(record["pdf_path"]).resolve()
+                        if path.is_relative_to(folder.resolve()):
+                            outputs[str(path.relative_to(folder.resolve()))] = converter.sha256(path)
+            write_json(cache_file, {"fingerprint": fingerprint, "outputs": outputs})
     finally:
         write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, rows)
 

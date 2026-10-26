@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { fetchScoringTable, fetchScore } from '../api/flow'
+import { fetchScoringTable, fetchScore, fetchAgentScore } from '../api/flow'
 import { errorMessage } from '../api/client'
 import SourceList from './SourceList.vue'
 
@@ -38,6 +38,27 @@ async function load() {
   }
 }
 onMounted(load)
+
+// ---- X2 채점 에이전트: 고정 경로 결과와 나란히 비교 ----
+const agent = ref(null)
+const agentLoading = ref(false)
+const agentError = ref('')
+const AGENT_STATUS = { complete: '모든 항목 처리 완료', needs_input: '프로필 정보가 더 필요합니다', max_tool_calls: '도구 호출 한도에 도달했습니다' }
+
+async function runAgent() {
+  agentLoading.value = true; agentError.value = ''
+  try {
+    agent.value = await fetchAgentScore(props.bid)
+  } catch (e) {
+    agentError.value = e.response?.status === 404
+      ? '이 서버에서는 에이전트 채점을 사용할 수 없습니다. (서버에서 켜져 있지 않음)'
+      : errorMessage(e, { 409: '제안요청서가 아직 준비되지 않았습니다.' })
+  } finally {
+    agentLoading.value = false
+  }
+}
+const show = (v) => (typeof v === 'number' ? `${v}점` : v || '-')
+const same = (a, b) => a === b
 </script>
 
 <template>
@@ -87,5 +108,43 @@ onMounted(load)
         </tbody>
       </table>
     </template>
+
+    <!-- X2: 에이전트로 채점 -->
+    <div v-if="table" class="kv" style="margin-top: 14px">
+      <button type="button" class="small" :disabled="agentLoading" @click="runAgent">
+        {{ agent ? '에이전트로 다시 채점' : '에이전트로 채점' }}
+      </button>
+      <span class="meta" style="margin-left: 8px">AI가 도구를 골라 항목별로 계산합니다. 점수 계산은 코드가 하고, 결과는 위 고정 경로와 비교합니다.</span>
+      <p v-if="agentLoading" class="sub">에이전트가 채점하는 중… (7~10초 넘게 걸릴 수 있어요)</p>
+      <p v-if="agentError" class="error">{{ agentError }}</p>
+
+      <template v-if="agent">
+        <p class="notice">{{ AGENT_STATUS[agent.status] || agent.status }}. 점수는 참고용이며 최종 판단은 담당자가 합니다.</p>
+        <table>
+          <thead><tr><th>항목</th><th>고정 경로</th><th>에이전트</th><th>비교</th></tr></thead>
+          <tbody>
+            <tr v-for="it in agent.items" :key="it.id">
+              <td>{{ it.item }}</td>
+              <td>{{ show(score.items.find((x) => x.id === it.id)?.expected) }}</td>
+              <td>{{ show(it.expected) }}</td>
+              <td>
+                <span v-if="same(score.items.find((x) => x.id === it.id)?.expected, it.expected)" class="badge ok">일치</span>
+                <span v-else class="badge warn">다름</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-if="agent.questions?.length" class="notice">
+          에이전트가 되묻습니다:
+          <span v-for="q in agent.questions" :key="q" style="display: block">{{ q }}</span>
+          <router-link to="/profile">회사 프로필에서 입력</router-link> 후
+          <button type="button" class="small" :disabled="agentLoading" @click="runAgent">다시 채점</button>
+        </p>
+        <p class="src">
+          응답 시간 {{ Math.round((agent.latency_ms || 0) / 100) / 10 }}초 · 도구 호출 {{ agent.tool_calls?.length || 0 }}회 · 모델 호출 {{ agent.model_calls }}회
+          <template v-if="agent.token_usage"> · 토큰 입력 {{ agent.token_usage.input_tokens }} / 출력 {{ agent.token_usage.output_tokens }}</template>
+        </p>
+      </template>
+    </div>
   </div>
 </template>

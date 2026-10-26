@@ -67,10 +67,18 @@ export async function fetchSummaries(bids) {
   const d = (await rag.post('/bids/summaries', { bids: refs(bids) })).data
   return (d.results || []).map((r, i) => ({ ...r, bid_no: r.bid_no ?? bids[i]?.bid_no, revision: rev({ ...bids[i], ...r }) }))
 }
-// ⑤⑧ 선택·승인: 팀 결정에 따라 서버(DB)에는 저장하지 않습니다. (DB에는 공고문 원본과 요약만 저장)
-//   선택·승인 목록은 화면 상태(flow 보관소, 브라우저 sessionStorage)로만 유지합니다.
-export async function saveSelections() {}
-export async function saveApprovals() {}
+// ⑤⑧ 선택·승인 (4번 Java: POST /api/me/selections, /api/me/approvals, GET /api/me/pipeline)
+//   서버는 공고 1건씩 받고({bid_no, revision}, 차수는 "000" 같은 문자열 그대로), 누적 저장합니다. 승인은 선택 저장 뒤에만 가능(아니면 409).
+export async function saveSelections(bids) {
+  for (const b of bids) await client.post('/me/selections', { bid_no: b.bid_no, revision: String(b.revision) })
+}
+export async function saveApprovals(bids) {
+  for (const b of bids) await client.post('/me/approvals', { bid_no: b.bid_no, revision: String(b.revision) })
+}
+// 로그인 직후: 서버에 저장된 선택·승인 목록 [{bid_no, revision, status:'selected'|'approved', ...}]
+export async function fetchPipeline() {
+  return (await client.get('/me/pipeline')).data || []
+}
 
 // ④ 요약 저장 (4번 Java: PUT /api/bids/{bid_no}/summary). 로그인한 회사 계정에 저장되고, 같은 공고·차수는 덮어씁니다.
 // 요청: 2번이 만든 요약 결과를 그대로 { revision, summary, missing, needs_review, handoff, latency_ms }
@@ -100,4 +108,21 @@ export async function askQuestion(prompt, bid) {
   const body = { prompt, source: 'pdf' }
   if (bid?.bid_no) { body.bid_no = bid.bid_no; body.revision = bid.revision }
   return (await rag.post('/rag-query', body)).data
+}
+
+// X2 채점 에이전트 (3번): POST /agent/score {bid_no, revision}. 서버에 켜져 있지 않으면 404.
+// 응답: 고정 경로 점수와 같은 items 에 status(complete|needs_input|…), questions, tool_calls, latency_ms, token_usage 가 더해집니다.
+export async function fetchAgentScore(b) {
+  return (await rag.post('/agent/score', { bid_no: b.bid_no, revision: String(b.revision) }, { timeout: 90000 })).data
+}
+
+// X3 음성 질의 (2번): 음성→텍스트 POST /stt (multipart, 필드 audio) → {text}, 텍스트→음성 POST /tts {text} → 오디오.
+//   ※ 요청·응답 형식은 아직 서버와 확정 전인 가정입니다. 확정되면 이 두 함수만 고치면 됩니다.
+export async function transcribe(blob) {
+  const fd = new FormData()
+  fd.append('audio', blob, 'question.webm')
+  return (await rag.post('/stt', fd)).data.text
+}
+export async function synthesize(text) {
+  return (await rag.post('/tts', { text }, { responseType: 'blob' })).data
 }

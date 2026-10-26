@@ -42,7 +42,21 @@ export function handlePipeline({ config, url, method, body, ok, fail }) {
     })
     return ok(config, { status: done >= j.bids.length ? (bids.every((x) => x.status === 'failed') ? 'failed' : bids.some((x) => x.status === 'failed') ? 'partial_failed' : 'completed') : 'running', done, total: j.bids.length, bids })
   }
-  if (['/me/selections', '/me/approvals'].includes(url) && method === 'post') return ok(config, { saved: (body.bids || []).length })
+  // 4번 선택·승인 (가짜): 브라우저 localStorage에 계정별로 보관
+  if (['/me/selections', '/me/approvals', '/me/pipeline'].includes(url)) {
+    const key = 'mock_pipeline'
+    const rows = JSON.parse(localStorage.getItem(key) || '[]')
+    if (method === 'get') return ok(config, rows)
+    let row = rows.find((r) => r.bid_no === body.bid_no && r.revision === body.revision)
+    if (url === '/me/selections') {
+      if (!row) { row = { ...body, status: 'selected', selected_at: new Date().toISOString(), approved_at: null }; rows.push(row) }
+    } else {
+      if (!row) throw fail(config, 409, '선택하지 않은 공고는 승인할 수 없습니다.')
+      if (row.status !== 'approved') { row.status = 'approved'; row.approved_at = new Date().toISOString() }
+    }
+    localStorage.setItem(key, JSON.stringify(rows))
+    return ok(config, row)
+  }
   return null
 }
 
@@ -128,6 +142,18 @@ export function handleBidData({ config, url, method, body, profile, ok, fail }) 
       schedule: b.schedule.map((s, i) => ({ id: `evt${String(i + 1).padStart(2, '0')}`, event: s.event, sources: [ref(5)], notes: [], ...dd(s.off + (dueOff - b.schedule[2].off)), needs_review: false })),
     })
   }
+
+  // X2 채점 에이전트 (가짜): 고정 경로 점수에 도구 호출 기록을 붙입니다. 신용등급이 없으면 되묻기(needs_input).
+  if (url === '/agent/score' && method === 'post') {
+    const res = handleBidData({ config: { ...config, params: { revision: body.revision } }, url: `/bids/${body.bid_no}/score`, method: 'get', body: {}, profile, ok, fail })
+    const d = res.data
+    const needs = d.missing_fields.length > 0
+    const calls = d.items.map((it) => ({ name: it.status === 'manual' ? 'mark_manual' : it.status === 'calculated' ? 'calc_score' : 'get_profile', status: it.status }))
+    return ok(config, { ...d, status: needs ? 'needs_input' : 'complete', unresolved_items: [], tool_calls: [{ name: 'get_scoring_table' }, ...calls], model_calls: calls.length + 1, latency_ms: 7500, token_usage: { input_tokens: 4200, output_tokens: 380, complete: true }, cost: null })
+  }
+  // X3 음성 (가짜): STT 는 정해진 질문 문장을 돌려주고, TTS 는 없는 것으로 처리해 브라우저 읽기 기능으로 대신합니다.
+  if (url === '/stt' && method === 'post') return ok(config, { text: '이 공고의 마감 일시는 언제인가요?' })
+  if (url === '/tts' && method === 'post') throw fail(config, 404, 'mock 에는 음성 합성이 없습니다.')
 
   // Q&A: 키워드로 답을 고르는 흉내 (요청 prompt, 응답 response, 출처는 문자열 목록)
   if (url === '/rag-query' && method === 'post') {

@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue'
 // ★ 서버 주소 두 개. 팀에서 확정된 주소로 바꾸세요.
 // 팀이 Render에 올린 서버를 쓰려면 AUTH_BACKEND 에 그 주소(예: 'https://○○○.onrender.com')를 넣으세요.
 // (Render 서버는 잠들어 있다가 첫 요청에 30~60초 걸릴 수 있어요. SERVICE_API_KEY 는 화면 코드에 절대 넣지 마세요.)
-const AUTH_BACKEND = 'http://localhost:8080' // 가입·로그인·프로필 (/api/...)
+const AUTH_BACKEND = process.env.AUTH_BACKEND || 'http://localhost:8080' // 가입·로그인·프로필 (/api/...)
 const RAG_SERVER = 'http://localhost:8001'   // 공고·요약·채점·Q&A (가이드의 :8001)
 
 export default defineConfig({

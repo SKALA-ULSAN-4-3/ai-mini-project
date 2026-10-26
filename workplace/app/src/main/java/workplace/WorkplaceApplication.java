@@ -8,11 +8,13 @@ import workplace.service.PipelineService;
 import workplace.web.handler.PipelineHandler;
 import workplace.repository.BidDocumentRepository;
 import workplace.repository.BidSummaryRepository;
+import workplace.repository.BidCacheRepository;
 import workplace.repository.CompanyProfileRepository;
 import workplace.repository.ConnectionFactory;
 import workplace.repository.DriverManagerConnectionFactory;
 import workplace.repository.JdbcBidDocumentRepository;
 import workplace.repository.JdbcBidSummaryRepository;
+import workplace.repository.JdbcBidCacheRepository;
 import workplace.repository.JdbcCompanyProfileRepository;
 import workplace.repository.JdbcUserRepository;
 import workplace.repository.UserRepository;
@@ -20,6 +22,7 @@ import workplace.security.JwtProvider;
 import workplace.service.AuthService;
 import workplace.service.BidDocumentService;
 import workplace.service.BidSummaryService;
+import workplace.service.BidCacheService;
 import workplace.service.CompanyProfileService;
 import workplace.web.CorsHandler;
 import workplace.web.CurrentUserResolver;
@@ -33,6 +36,7 @@ import workplace.storage.DocumentStorage;
 import workplace.storage.SupabaseDocumentStorage;
 import workplace.web.handler.AuthCheckHandler;
 import workplace.web.handler.BidHandler;
+import workplace.web.handler.BidCacheHandler;
 import workplace.web.handler.HealthHandler;
 import workplace.web.handler.LoginHandler;
 import workplace.web.handler.LivenessHandler;
@@ -79,6 +83,10 @@ public final class WorkplaceApplication {
                 connectionFactory,
                 jsonCodec.objectMapper()
         );
+        BidCacheRepository bidCacheRepository = new JdbcBidCacheRepository(
+                connectionFactory,
+                jsonCodec.objectMapper()
+        );
         BidDocumentRepository bidDocumentRepository =
                 new JdbcBidDocumentRepository(connectionFactory);
         DocumentStorage documentStorage = config.supabaseConfigured()
@@ -93,6 +101,10 @@ public final class WorkplaceApplication {
         AuthService authService = new AuthService(userRepository);
         CompanyProfileService profileService = new CompanyProfileService(profileRepository);
         BidSummaryService bidSummaryService = new BidSummaryService(bidSummaryRepository);
+        BidCacheService bidCacheService = new BidCacheService(
+                bidCacheRepository,
+                profileService
+        );
         BidDocumentService bidDocumentService =
                 new BidDocumentService(bidDocumentRepository, documentStorage);
         ServiceKeyAuthenticator serviceKeys =
@@ -160,6 +172,19 @@ public final class WorkplaceApplication {
                         serviceKeys,
                         bidSummaryService,
                         bidDocumentService,
+                        requestBodies,
+                        responses
+                ),
+                responses,
+                config
+        );
+        register(
+                server,
+                "/api/cache",
+                new BidCacheHandler(
+                        currentUserResolver,
+                        serviceKeys,
+                        bidCacheService,
                         requestBodies,
                         responses
                 ),

@@ -79,19 +79,23 @@ async function search() {
   const list = queries.value.split(',').map((s) => s.trim()).filter(Boolean)
   if (!list.length) { error.value = '검색어를 한 개 이상 입력해 주세요.'; return }
   if (from.value > to.value) { error.value = '시작일이 종료일보다 늦을 수 없습니다.'; return }
+  const requestedPeriod = { from: from.value, to: to.value, queries: queries.value }
   loading.value = true
   startProgress()
   jobId.value = ''; noticeJob.value = null
   try {
     // ① 나라장터 검색 (1번 API)
-    const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 20 })
+    const d = await searchBids({ from: requestedPeriod.from, to: requestedPeriod.to, queries: list, limit: 20 })
     setStage(2)
     flow.resetFrom(3)
     flow.searchId = d.search_id
-    flow.period = { from: from.value, to: to.value, queries: queries.value }
+    // 입력한 게시기간은 보존하고, 후속 요청에는 서버가 확정한 마감기간을 사용한다.
+    const deadlineFrom = d.deadline_from || requestedPeriod.from
+    const deadlineTo = d.deadline_to || requestedPeriod.to
+    flow.period = { ...requestedPeriod, deadline_from: deadlineFrom, deadline_to: deadlineTo }
     // ② 회사 프로필에 맞게 추리기 (3번 API). 여기서 404 는 "저장된 프로필이 없음"입니다.
     try {
-      const r = await fetchCandidates(from.value, to.value, d.search_id)
+      const r = await fetchCandidates(deadlineFrom, deadlineTo, d.search_id)
       flow.candidates = r.bids
       flow.excluded = r.excluded
       setStage(3)
@@ -168,7 +172,8 @@ async function onDone(job) {
   const done = flow.candidates.filter((b) => flow.readyKeys.includes(keyOf(b)))
   if (!done.length) return
   try {
-    const rows = await recheckBids(flow.period.from, flow.period.to, flow.searchId, done)
+    const rows = await recheckBids(flow.period.deadline_from || flow.period.from,
+      flow.period.deadline_to || flow.period.to, flow.searchId, done)
     const byKey = Object.fromEntries(rows.map((r) => [keyOf(r), r.recheck]))
     flow.candidates = flow.candidates.map((b) => (byKey[keyOf(b)] ? { ...b, recheck: byKey[keyOf(b)] } : b))
   } catch (e) {

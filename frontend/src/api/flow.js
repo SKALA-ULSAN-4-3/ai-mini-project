@@ -39,7 +39,7 @@ export async function searchBids({ from, to, queries, limit = 20 }) {
   return (await rag.post('/search-bids', { from, to, queries, limit })).data
 }
 // ② 추린 공고 (3번): { bids, excluded, candidate_count, needs_review }
-// search_id 는 3번이 1번의 새 검색 결과를 읽도록 바뀌면 필요해질 값이라 미리 함께 보냅니다. (지금 서버는 무시)
+// from/to는 /search-bids 응답의 deadline_from/deadline_to이며 search_id의 저장 기간과 일치해야 합니다.
 export async function fetchCandidates(from, to, searchId) {
   const d = (await rag.get('/bids', { params: { from, to, limit: 20, search_id: searchId } })).data
   return { bids: (d.bids || []).map(toBid), excluded: d.excluded || [] }

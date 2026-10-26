@@ -164,6 +164,9 @@ def calculate_scores(table, profile, bid_no, revision):
             result["reason"] = "정성·가격 항목은 담당자 판단"
         elif item.get("kind") != "quantitative":
             result["reason"] = "평가 항목 종류 미확인"
+        elif not item.get("metric") or not item.get("rule"):
+            note = item.get("rule_note") or "원문에서 계산 가능한 산정표를 확인하지 못했습니다."
+            result["reason"] = f"계산 기준 확인 필요: {note}"
         else:
             try:
                 require_sources(item)

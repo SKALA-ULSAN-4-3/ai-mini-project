@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 from fastapi import BackgroundTasks, APIRouter, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from pypdf import PdfReader
 from pydantic import AliasChoices, BaseModel, Field
 from . import search_jobs
@@ -65,8 +66,10 @@ def enqueue_fetch(request, background_tasks, mode):
         raise HTTPException(404, str(exc)) from None
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None
-    background_tasks.add_task(search_jobs.run_job, job["job_id"], key)
-    return {"job_id": job["job_id"], "status": job["status"], "total": job["total"]}
+    if not job.get("reused"):
+        background_tasks.add_task(search_jobs.run_job, job["job_id"], key)
+    return {"job_id": job["job_id"], "status": job["status"], "total": job["total"],
+            "reused": bool(job.get("reused"))}
 
 
 @router.post("/fetch-notices", status_code=202)
@@ -86,6 +89,69 @@ def fetch_progress(job_id: str):
     except search_jobs.SearchNotFound as exc:
         raise HTTPException(404, str(exc)) from None
 
+
+
+
+def _job_files(job_id):
+    job = search_jobs.get_job(job_id)
+    files = []
+    for bid in job["bids"]:
+        folder = (search_jobs.root_dir() / "documents" / collector.safe_name(
+            f"{bid['bid_no']}_{bid['bid_order']}")).resolve()
+        manifest = folder / "attachments.csv"
+        if not manifest.is_file():
+            continue
+        rows = search_jobs.read_csv(manifest)
+        allowed = []
+        for row in rows:
+            if row.get("status") not in search_jobs.DOWNLOAD_SUCCESS or not row.get("local_path"):
+                continue
+            if job["mode"] != "documents" and row.get("role") != "notice":
+                continue
+            allowed.append(row)
+            path = Path(row["local_path"]).resolve()
+            if path.is_file() and path.is_relative_to(folder):
+                files.append((bid, row["file_name"], "original", path))
+        conversions = folder / "conversions.jsonl"
+        originals = {str(Path(row["local_path"]).resolve()): row for row in allowed}
+        if conversions.is_file():
+            for converted in search_jobs.read_jsonl(conversions):
+                row = originals.get(converted.get("original_path"))
+                if row is None or converted.get("status") not in ("converted", "existing"):
+                    continue
+                path = Path(converted.get("pdf_path") or "__missing__").resolve()
+                if path.is_file() and path.is_relative_to(folder):
+                    files.append((bid, Path(row["file_name"]).stem + ".pdf", "converted", path))
+    result = {}
+    for bid, name, kind, path in files:
+        identity = hashlib.sha256(str(path).encode()).hexdigest()[:24]
+        result[identity] = {"file_id": identity, "bid_no": bid["bid_no"],
+                            "bid_order": bid["bid_order"], "file_name": name,
+                            "kind": kind, "size_bytes": path.stat().st_size, "path": path}
+    return result
+
+
+@router.get("/jobs/{job_id}/files")
+def job_files(job_id: str):
+    try:
+        files = _job_files(job_id)
+    except search_jobs.SearchNotFound as exc:
+        raise HTTPException(404, str(exc)) from None
+    return {"files": [{k: v for k, v in file.items() if k != "path"}
+                      for file in files.values()]}
+
+
+@router.get("/jobs/{job_id}/files/{file_id}")
+def download_job_file(job_id: str, file_id: str):
+    try:
+        file = _job_files(job_id).get(file_id)
+    except search_jobs.SearchNotFound as exc:
+        raise HTTPException(404, str(exc)) from None
+    if file is None:
+        raise HTTPException(404, "이 작업에 포함된 파일이 없습니다.")
+    return FileResponse(file["path"], filename=file["file_name"],
+                        media_type="application/pdf" if file["file_name"].lower().endswith(".pdf")
+                        else "application/octet-stream")
 
 
 def dataset():

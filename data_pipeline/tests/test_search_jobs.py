@@ -56,6 +56,93 @@ class DocumentReadinessTests(unittest.TestCase):
         with patch.object(search_jobs.collector, 'download_file', side_effect=downloader or self.download):
             return search_jobs._process_bid(self.item, full, self.store, lambda _: None)
 
+    def test_successful_preparation_reuses_text_and_invalidates_on_metadata_change(self):
+        with patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as worker:
+            first = self.process(full=False)
+            second = self.process(full=False)
+            self.assertEqual(first['status'], 'completed')
+            self.assertEqual(second['status'], 'completed')
+            self.assertEqual(worker.call_count, 1)
+            self.item['ntceInsttOfclNm'] = '새담당자'
+            self.process(full=False)
+            self.assertEqual(worker.call_count, 2)
+
+    def test_notice_stage_downloads_only_one_notice(self):
+        downloaded = []
+        def download(url, target):
+            downloaded.append(url)
+            self.download(url, target)
+        self.process(full=False, downloader=download)
+        self.assertEqual(downloaded, [self.item['ntceSpecDocUrl1']])
+
+    def test_duplicate_prepare_reuses_active_job(self):
+        sid = 'c' * 32
+        folder = self.root / sid
+        folder.mkdir()
+        write_json(folder / 'search.json', {'items': [self.item]})
+        refs = [{'bid_no': 'B1', 'bid_order': '000'}]
+        first = search_jobs.create_job(sid, refs, 'documents')
+        second = search_jobs.create_job(sid, refs, 'documents')
+        self.assertEqual(first['job_id'], second['job_id'])
+        self.assertTrue(second['reused'])
+        other_search = self.root / ('b' * 32)
+        other_search.mkdir()
+        write_json(other_search / 'search.json', {'items': [self.item]})
+        other = search_jobs.create_job('b' * 32, refs, 'documents')
+        self.assertEqual(other['job_id'], first['job_id'])
+        self.assertEqual(len(list((self.root / 'jobs').glob('*.json'))), 1)
+        search_jobs.ACTIVE_JOBS.discard(first['job_id'])
+        third = search_jobs.create_job(sid, refs, 'documents')
+        self.assertNotEqual(third['job_id'], first['job_id'])
+        search_jobs.ACTIVE_JOBS.discard(third['job_id'])
+
+    def test_conversion_profiles_are_isolated_without_global_lock(self):
+        profile = self.root / 'base-profile'
+        profile.mkdir()
+        (profile / '.lock').write_text('base profile in use')
+        (profile / 'registrymodifications.xcu').write_text('extension setup')
+        paths = []
+        def worker(folder, convert, timeout, env):
+            current = Path(env['BID_CONVERTER_PROFILE'])
+            self.assertTrue(current.is_dir())
+            self.assertFalse((current / '.lock').exists())
+            self.assertTrue((current / 'registrymodifications.xcu').exists())
+            paths.append(current)
+        with patch.object(search_jobs.converter, 'PROFILE', profile), \
+                patch.object(search_jobs, '_run_prepare_worker', side_effect=worker):
+            search_jobs._prepare_with_timeout(self.root, True)
+            search_jobs._prepare_with_timeout(self.root, True)
+        self.assertNotEqual(paths[0], paths[1])
+        self.assertTrue(all(not path.exists() for path in paths))
+        self.assertTrue((profile / '.lock').exists())
+
+    def test_job_files_include_selected_originals_and_reject_other_paths(self):
+        from data_pipeline import api
+        from fastapi.testclient import TestClient
+        self.process()
+        job_id = 'd' * 32
+        folder = self.root / 'jobs'
+        folder.mkdir()
+        write_json(folder / (job_id + '.json'), {'job_id': job_id, 'mode': 'documents',
+                   'bids': [{'bid_no': 'B1', 'bid_order': '000'}]})
+        manifest = self.root / 'documents/B1_000/attachments.csv'
+        rows = read_csv(manifest)
+        outside = self.root / 'private.pdf'
+        outside.write_bytes(self.pdf)
+        rows.append({**rows[0], 'url': 'https://www.g2b.go.kr/outside',
+                     'local_path': str(outside), 'file_name': 'outside.pdf'})
+        search_jobs.write_csv(manifest, search_jobs.ATTACHMENT_FIELDS, rows)
+        client = TestClient(api.app)
+        response = client.get('/jobs/' + job_id + '/files')
+        self.assertEqual(response.status_code, 200)
+        files = response.json()['files']
+        self.assertEqual(len(files), 2)
+        self.assertTrue(all('path' not in f for f in files))
+        downloaded = client.get('/jobs/' + job_id + '/files/' + files[0]['file_id'])
+        self.assertEqual(downloaded.content[:5], b'%PDF-')
+        self.assertEqual(client.get('/jobs/' + job_id + '/files/unknown').status_code, 404)
+        self.assertEqual(client.get('/jobs/' + 'e' * 32 + '/files').status_code, 404)
+
     def test_notice_download_does_not_mean_rfp_ready(self):
         self.item.pop('ntceSpecFileNm2')
         self.item.pop('ntceSpecDocUrl2')
@@ -201,7 +288,7 @@ class DocumentReadinessTests(unittest.TestCase):
             process.pid = 12345
             process.communicate.side_effect = [subprocess.TimeoutExpired('worker', 1), ('', '')]
             with self.assertRaisesRegex(RuntimeError, '1초'):
-                search_jobs._prepare_with_timeout(self.root, True, timeout=1)
+                search_jobs._run_prepare_worker(self.root, True, 1, None)
             kill.assert_called_once_with(12345, search_jobs.signal.SIGTERM)
             self.assertTrue(popen.call_args.kwargs['start_new_session'])
 
@@ -235,7 +322,12 @@ class DocumentReadinessTests(unittest.TestCase):
                 'status': 'converted'}])
             from data_pipeline.prepare_documents import prepare
             prepare(folder)
-        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=convert) as tool:
+        original_lock = search_jobs.directory_lock
+        def lock(folder, name, **kwargs):
+            self.assertNotEqual(name, '.conversion.lock')
+            return original_lock(folder, name, **kwargs)
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=convert) as tool, \
+                patch.object(search_jobs, 'directory_lock', side_effect=lock):
             result = self.process()
         tool.assert_called_once()
         self.assertTrue(result['rfp_ready'])
@@ -352,6 +444,21 @@ class DeadlineSearchTests(unittest.TestCase):
                 self.assertEqual(collector.deadline_in_period({'bidClseDt': raw},
                                  date(2026, 11, 1), date(2026, 11, 30)), expected)
 
+    def test_progress_cache_reuses_only_successful_results(self):
+        with tempfile.TemporaryDirectory() as temp, \
+                patch.object(search_jobs, 'root_dir', return_value=Path(temp)), \
+                patch.object(search_jobs.time, 'time', return_value=100) as clock, \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}) as lookup:
+            search_jobs._cached_progress('key', 'B1', '000')
+            search_jobs._cached_progress('key', 'B1', '000')
+            self.assertEqual(lookup.call_count, 1)
+            clock.return_value = 131
+            search_jobs._cached_progress('key', 'B1', '000')
+            self.assertEqual(lookup.call_count, 2)
+            search_jobs._cached_progress('other-key', 'B1', '000')
+            self.assertEqual(lookup.call_count, 3)
+
     def test_filter_happens_before_candidate_limit(self):
         items = [{'bidNtceNo': 'OLD', 'bidClseDt': '2026-10-01 12:00'},
                  {'bidNtceNo': 'UNKNOWN', 'bidClseDt': ''},
@@ -380,7 +487,7 @@ class DeadlineSearchTests(unittest.TestCase):
                 patch.object(collector, 'fetch_page', side_effect=fetch), \
                 patch.object(search_jobs.bid_progress, 'lookup_progress', return_value={
                     'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
-                patch.object(collector, 'lookup_eorder_attachments', return_value=[]), \
+                patch.object(collector, 'lookup_eorder_attachments', return_value=[]) as eorder, \
                 patch.object(search_jobs.restrictions, 'lookup_restrictions', return_value={
                     'region_restriction': {'lookup_status': 'complete', 'status': 'not_listed'},
                     'industry_restriction': {'lookup_status': 'complete', 'status': 'none'}}), \
@@ -391,7 +498,8 @@ class DeadlineSearchTests(unittest.TestCase):
             result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertEqual([r['bid_no'] for r in result['items']], ['EARLIER'])
             self.assertEqual(result['date_basis'], 'deadline')
-            self.assertTrue(result['items'][0]['notice_only'])
+            self.assertFalse(result['items'][0]['notice_only'])
+            eorder.assert_not_called()
             self.assertTrue(all(end <= date(2026, 10, 26) for start, end in windows))
             self.assertEqual(windows, [(date(2026, 10, 20), date(2026, 10, 26))])
             self.assertEqual(result['deadline_from'], '2026-10-26')

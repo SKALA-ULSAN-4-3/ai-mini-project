@@ -206,6 +206,8 @@ def setup(soffice):
 def convert_one(source, target, soffice, profile=PROFILE, _archive_depth=0):
     """격리된 임시 출력에서 완성된 PDF만 목적 경로에 반영한다."""
     from pypdf import PdfReader
+    if profile == PROFILE and os.environ.get("BID_CONVERTER_PROFILE"):
+        profile = Path(os.environ["BID_CONVERTER_PROFILE"])
     target.parent.mkdir(parents=True, exist_ok=True)
     # 일부 공고는 파일명이 .hwp지만 실제 내용은 한글 원문 여러 개를 담은 ZIP이다.
     # 정상 HWPX ZIP과 구분하고, 이름이 일치하는 원문 하나만 임시 경로에서 변환한다.

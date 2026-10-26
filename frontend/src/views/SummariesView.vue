@@ -13,7 +13,7 @@ const flow = useFlowStore()
 const loading = ref(false)
 const error = ref('')
 const checked = ref(flow.selected.map(keyOf))
-const jobId = ref('')
+const jobId = ref(flow.documentsJobId || '')
 const opened = reactive({}) // 펼친 카드만 원문 PDF 목록을 불러옵니다.
 const docsJob = ref(null)
 const starting = ref(false)
@@ -91,6 +91,7 @@ async function prepare() {
     await saveSelections(picked) // 내 계정(DB)에 선택 저장 (공고별 1건씩)
     startMessage.value = '제안요청서 준비 작업을 요청하는 중…'
     jobId.value = await fetchDocuments(flow.searchId, picked)
+    flow.documentsJobId = jobId.value
   } catch (e) {
     error.value = errorMessage(e)
   } finally {

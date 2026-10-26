@@ -76,6 +76,8 @@ function onDocsDone(job) {
 }
 
 // ⑤ 선택한 공고의 제안요청서 준비
+// 제안요청서 준비가 끝나 채점표로 갈 수 있는 상태: 이때는 "채점표 보러 가기"를 눈에 띄는 버튼으로 둡니다.
+const ready = computed(() => !!docsJob.value && flow.selected.length > 0)
 async function prepare() {
   if (starting.value) return
   starting.value = true // await 앞에서 가장 먼저 잠급니다. (연타 방지)
@@ -162,13 +164,18 @@ async function prepare() {
 
     <div v-if="flow.summaries.length" class="action-bar">
       <span><strong>{{ checked.length }}건</strong> 선택됨<span class="meta"> · 선택한 공고만 채점표를 만들어요</span></span>
-      <button class="primary" type="button" :disabled="starting || (!!jobId && !docsJob)" @click="prepare">
+      <router-link v-if="ready" to="/review" class="cta">채점표 보러 가기 →</router-link>
+      <button v-else class="primary" type="button" :disabled="starting || (!!jobId && !docsJob)" @click="prepare">
         {{ starting ? startMessage : `선택한 ${checked.length}건 제안요청서 준비` }}
       </button>
+      <div v-if="jobId || docsJob" class="action-status">
+        <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="제안요청서를 받는 중" @done="onDocsDone" />
+        <p v-if="docsJob && !flow.selected.length" class="error">제안요청서를 준비한 공고가 없습니다. 다시 시도해 주세요.</p>
+        <button v-if="ready" class="small" type="button" :disabled="starting" @click="prepare">
+          {{ starting ? startMessage : `선택한 ${checked.length}건 제안요청서 다시 준비` }}
+        </button>
+      </div>
     </div>
-    <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="제안요청서를 받는 중" @done="onDocsDone" />
     <p v-if="changedRevisions.length" class="notice">정정공고로 차수가 바뀐 공고가 있어 최신 차수로 바꿨습니다: {{ changedRevisions.join(', ') }}</p>
-    <router-link v-if="docsJob && flow.selected.length" to="/review" class="back">채점표 보러 가기 →</router-link>
-    <p v-else-if="docsJob" class="error">제안요청서를 준비한 공고가 없습니다. 다시 시도해 주세요.</p>
   </div>
 </template>

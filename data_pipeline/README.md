@@ -6,7 +6,7 @@
 
 ## 설정
 
-프로젝트 루트 `.env`의 `DATA_GO_KR_SERVICE_KEY`(조회), `OPENAI_API_KEY`(임베딩)를 사용합니다. 값을 출력하거나 산출물에 기록하지 않습니다.
+프로젝트 루트 `.env`의 `DATA_GO_KR_SERVICE_KEY`(입찰공고·첨부·제한 상세), `DATA_GO_KR_SCSBID_SERVICE_KEY`(개찰결과·재입찰), `OPENAI_API_KEY`(임베딩)를 사용합니다. 두 공공데이터 키는 별도 변수로 읽으며 서로 대체하지 않습니다. 값을 출력하거나 산출물에 기록하지 않습니다.
 
 macOS(Homebrew 필요) 또는 Ubuntu 24.04에서 다음 Bash로 Python 패키지·LibreOffice·JDK 21을 설치하고 H2Orestart를 프로젝트 프로필에 등록합니다. 스크립트 전체를 sudo로 실행하지 않습니다. Ubuntu에서는 시스템 패키지 설치 단계에서만 sudo를 사용합니다.
 
@@ -38,12 +38,118 @@ macOS 신규 프로필에서는 `unopkg`가 실행하는 보조 프로세스가 
 ## 화면 연결용 확정 흐름
 
 
-1. `POST /search-bids`: 기간·검색어로 목록과 첨부 링크를 조회해 search_id로 저장합니다. 다운로드·회사별 추천은 하지 않습니다.
+1. `POST /search-bids`: **입찰 마감일이 시작일~종료일(양 끝 포함)에 속하는 공고**의 목록과 첨부 링크를 조회해 search_id로 저장합니다. 마감일이 비어 있거나 읽을 수 없는 공고는 기간 포함을 확인할 수 없어 검색 결과에서 제외합니다. 다운로드·회사별 추천은 하지 않습니다.
 2. `POST /fetch-notices`: 검색 결과에서 다른 담당 로직이 고른 최대 20건의 공고문 한 개씩만 받아 변환·누적 적재합니다.
 3. `GET /jobs/{job_id}`: 공고별 진행률·실패를 확인합니다.
 4. 담당자가 공고를 명시적으로 선택한 후 `POST /fetch-documents`: 선택한 공고번호의 차수만 재확인하고 저장한 링크로 나머지 첨부를 받습니다. 정정공고면 새 차수를 사용합니다.
 
-공고문 판별은 RAG의 `knowledge_bridge.classify_attachment`를 그대로 사용합니다. 공고문을 식별하지 못하면 다른 첨부로 대체하지 않습니다. 신청서 HWP·ZIP은 원본을 보존하고 공고문/RFP만 내부 PDF 변환·적재합니다. 검색 응답에서 API 담당자 성명·연락처 필드는 제외하지만 원본과 추출된 공개 업무 연락처는 보존합니다.
+### 개찰·재입찰에 따른 추천 입력 제외
+
+`bid_progress.py`가 [나라장터 낙찰정보서비스](https://www.data.go.kr/data/15129397/openapi.do)의
+`getOpengResultListInfoServc`와 `getOpengResultListInfoRebid`를 공고번호로 조회하고 정확한 차수만 사용합니다.
+개찰결과가 있거나 개찰일시·입찰마감일시가 지난 공고는 `마감`으로 처리해 추천에 전달하지 않습니다.
+미래 개찰 예정일만 있는 공고는 개찰 완료로 처리하지 않습니다. 개찰결과 없이 예정일시만 지난 경우에는
+실제 개찰 확인과 구분하여 `opening_confirmed: false`와 사유를 남깁니다.
+
+같은 공고·차수·입찰분류의 최신 재입찰 회차에서 새 마감일시가 남아 있고, 그 회차가 이미 개찰완료·유찰된
+기록이 없으면 새 마감일을 검색 기간과 추천 판정에 사용합니다. 재공고 여부나 재입찰 허용 여부만으로
+재입찰 진행 중이라고 확정하지 않습니다. 원래 마감일은 `original_bidClseDt`에 보존합니다.
+재입찰 허용 공고는 기존 마감이 검색 기간 밖이어도 새 회차를 먼저 확인합니다.
+
+이 확인은 후보 수 제한 전에 수행합니다. 검색 스냅샷에는 공개 상태 근거만 보관하며 업체·투찰자 정보는 저장하지 않습니다.
+`/search-bids`의 `progress_excluded`에 마감·조회 실패로 제외한 공고와 이유를 반환합니다.
+조회 실패를 접수 가능으로 간주하지 않으며 실패 결과는 검색 캐시로 재사용하지 않습니다.
+완료된 재입찰 또는 캐시 확인 중 마감이 지난 회차도 추천에 넘기지 않습니다.
+키·코드를 변경한 뒤에는 서버를 재시작하고 새 검색을 실행하세요. 기존 브라우저 목록은 자동으로 다시 검색되지 않습니다.
+
+공고문 판별은 RAG의 `knowledge_bridge.classify_attachment`를 그대로 사용합니다. 공고문을 식별하지 못하면 다른 첨부로 대체하지 않습니다. 신청서 HWP·ZIP은 원본을 보존하고 공고문·제안요청서·협약문서만 내부 PDF 변환·적재합니다. 검색 응답에서 API 담당자 성명·연락처 필드는 제외하지만 원본과 추출된 공개 업무 연락처는 보존합니다.
+
+### 파일첨부와 제안요청정보의 별도 조회
+
+일반 파일첨부는 `ntceSpecDocUrl1~10`·`stdNtceDocUrl`에서 읽고, 제안요청정보는 같은
+[공식 입찰공고정보서비스](https://www.data.go.kr/data/15129394/openapi.do)의
+`getBidPblancListInfoEorderAtchFileInfo`에서 공고번호(`inqryDiv=2`)로 조회합니다.
+응답의 `bidNtceNo`·`bidNtceOrd`가 선택 공고·차수와 정확히 일치하는 첨부만 합칩니다.
+`eorderAtchFileNm`·`eorderAtchFileUrl`·`eorderDocDivNm`을 보존하며 URL 중복은 제거합니다.
+API 파일명이 비어 있으면 해당 공식 다운로드 주소의 `Content-Disposition`에서 파일명을 보완합니다.
+파일명을 확인할 때는 범위 GET 요청의 헤더만 읽고 닫으며 본문을 저장하지 않습니다.
+헤더에도 이름이 없거나 오류 페이지·비공식 주소이면 조회 실패로 남깁니다.
+현재 `DATA_GO_KR_SERVICE_KEY`를 사용하고, 공식 G2B/PPS 다운로드 주소만 허용합니다.
+
+검색에서는 일반 첨부에 RFP가 없는 후보에 e발주 목록을 보완 조회합니다(동시 최대 4건).
+기존 일반 첨부만 있는 캐시는 재사용하지 않습니다. 다운로드는 선택 후 수행합니다.
+`/fetch-documents`는 최신 공고·차수를 확인한 뒤 e발주 목록도 다시 조회하고 두 경로의 첨부를 받습니다.
+HWP/HWPX 제안요청서·협약문서는 기존 LibreOffice 변환 → PDF 텍스트 추출 → 청크 적재를 사용합니다.
+협약문서만 받았을 때는 제안요청서 준비 완료로 표시하지 않습니다.
+
+목록·작업의 `attachment_lookup_status`는 `complete`(조회 성공), `unavailable`(조회 실패),
+`not_checked`(미조회)를 구분합니다. 조회 실패를 첨부 없음으로 바꾸지 않습니다.
+파일의 `source`는 `notice`(일반 파일첨부) 또는 `eorder`(제안요청정보)이며,
+`document_type`은 e발주 문서구분명입니다. `files[].preparation_status`·`preparation_error`로
+`conversion_failed`, `empty_text` 등의 준비 실패 원인을 확인할 수 있습니다.
+스캔 PDF는 OCR을 수행하지 않으며 HWP 변환 도구 실패 시에도 원본은 보존하고 `rfp_ready=false`를 반환합니다.
+
+공식 [입찰공고정보서비스 참고문서](https://www.data.go.kr/data/15129394/openapi.do)의
+`getBidPblancListInfoServcPPSSrch` 날짜 조회는 게시일(`inqryDiv=1`)·개찰일(`2`)만 지원합니다.
+실시간 검색은 선택 시작일(미래이면 오늘) 이전 180일부터 선택 종료일(미래이면 오늘)까지
+게시 이력을 최근 순으로 조회하고, 응답의 `bidClseDt`를 서울 날짜로 비교한 후 요청 건수에 적용합니다.
+`BID_SEARCH_LOOKBACK_DAYS`(1~3650)로 탐색 범위를 늘릴 수 있으며, 이 범위보다 오래된 게시 공고는 수집하지 못할 수 있습니다.
+이전 게시일 기준 검색 캐시는 재사용하지 않습니다. 기존 오프라인 CLI의 게시일 검색·고정 평가셋은 유지합니다.
+
+`notice_only=true`는 e발주 목록 조회까지 성공하고 제공된 첨부가 모두 공고문으로 식별된 경우입니다.
+첨부 목록이 없거나 종류가 미확인 또는 e발주 조회가 실패했다면 공고문만 있다고 단정하지 않습니다.
+맞춤 추천에서는 다른 후보를 먼저 배치하고 공고문만 있는 후보는 뒤로 보냅니다.
+화면에 “해당 공고는 공고문만 있다” 안내를 표시하며 기본 선택에서 제외하지만, 사용자가 직접 선택할 수 있습니다.
+
+### 지역·업종 제한 상세
+
+실시간 검색은 동일 공고번호·차수로 공식 `getBidPblancListInfoPrtcptPsblRgn`(참가가능지역)과
+`getBidPblancListInfoLicenseLimit`(면허제한)을 조회하고 `region_restriction`·`industry_restriction`에 보존합니다.
+면허제한명·4자리 업종코드(선행 0 포함)·제한그룹·순번·대체 허용업종·주력분야를 전달합니다.
+`indstrytyLmtYn=N`은 업종제한 없음으로 처리하며 불필요한 면허 상세 조회를 생략합니다.
+
+| 상태 | 표시·처리 |
+| --- | --- |
+| `limited` | 실제 참가가능지역명 또는 대상 업종명·코드 표시 |
+| `none` | 명시적으로 확인한 제한 없음 (`전국`, 업종제한 `N` 등) |
+| `not_listed` | 상세 API 조회 성공·등록 내역 없음. 공고문 확인 필요이며 제한 없음으로 확정하지 않음 |
+| `unknown` | 제한 신호는 있으나 상세 대상 값이 미등록·불완전 |
+| `unavailable` | 상세 조회 실패. 등록 내역 없음과 구분하고 재시도 안내 |
+
+성공한 상세 조회는 `data/searches/restriction-cache/`에서 공고·차수·업종제한 플래그별로
+최대 300초 재사용하고 실패는 캐시하지 않습니다. 상세 조회가 실패한 검색 결과도 캐시로 고정하지 않아 재검색에서 다시 조회합니다.
+이전 미확인 검색 캐시는 새 검색에서 재사용하지 않습니다.
+검색·추천 응답의 상세 필드와 화면의 `summary`에 조건을 표시하며, 적재 후 재확인에도 같은 상세 정보를 전달합니다.
+확인된 시·도 제한이 회사 소재지와 다르면 제외합니다. 시군구 제한을 시·도 전체로 확대하지 않으며,
+회사 프로필이 시·도만 제공하면 상세 소재지 확인이 필요함을 별도 표시합니다.
+여러 면허의 제한 그룹·주력분야를 단순 OR 배열로 바꾸지 않습니다. 실제 대상 업종은 표시하되
+복수 업종의 동시 충족·대체 허용·공동수급에 의한 충족 여부는 공고문 검토 대상으로 유지합니다.
+
+### 다운로드와 제안요청서 준비 상태
+
+`/search-bids`의 `attachments`는 API가 제공한 파일명·URL·종류이며,
+`rfp_listed`는 공통 판별 함수로 제안요청서류를 식별했는지 표시합니다.
+`false`는 API 목록에서 식별하지 못했다는 의미이며, 실제 공고에 제안요청서가 없다는 확정이 아닙니다.
+ZIP 내부나 다른 이름으로 배포된 문서는 별도 확인이 필요합니다.
+
+`/fetch-documents`는 같은 차수여도 공고번호 재조회에서 받은 최신 첨부 목록으로 처리합니다.
+`GET /jobs/{job_id}`의 공고별 응답을 다음과 같이 구분합니다.
+
+| 필드 | 의미 |
+| --- | --- |
+| `download_complete` | 이번 단계에서 선택된 모든 첨부의 다운로드 완료 및 실제 파일 존재 여부 |
+| `rfp_ready` | 제안요청서류의 텍스트 청크가 실제 인덱스에 적재되었는지 여부 |
+| `rfp_status` | `ready`, `not_listed`, `not_requested`, `download_failed`, `not_indexed`, `lookup_failed`, `not_checked` |
+| `rfp_files` | 식별한 제안요청서류의 파일명·원본 URL·다운로드 상태·적재 청크 수 |
+| `files` | 전체 첨부의 파일명·원본 URL·출처·문서구분·다운로드/준비 상태·적재 청크 수 |
+| `detail_url` | API에 제공된 공고 상세 주소. 제안요청서 위치가 미확인일 때 첨부를 확인할 경로 |
+
+공고서만 적재되었다면 다운로드가 끝나도 `rfp_ready=false`입니다.
+전체 첨부 단계에서는 이를 `completed`로 표시하지 않고, 공고서 적재가 성공한 경우
+`partial_failed`와 확인 사유를 반환합니다. 변환 실패 시에도 다운로드 완료 여부는 별도로 전달합니다.
+화면은 `rfp_ready=false`인 공고를 채점 화면으로 넘기지 않습니다.
+다운로드가 끝난 후에도 `rfp_status=not_indexed`이면 변환·텍스트 추출 상태를 확인해야 합니다.
+과업지시서·규격서도 기존 공통 판별의 제안요청서류에 포함되며, 준비 완료가 평가표의 존재를 보장하지는 않습니다.
 
 고정 20건 목록 `dataset_selection.json`은 삭제했습니다. 최대 20건은 요청당 배치 제한이며 미리 고른 데이터 목록이 아닙니다. 기존 데이터는 삭제하지 않았습니다.
 
@@ -127,7 +233,7 @@ data_pipeline/.venv/bin/python -m unittest discover -s data_pipeline/tests -v
 | 실행 앱 / worker | `data_pipeline.render_rag_app:app` / 1 |
 | 헬스 | `/health` |
 | BACKEND_URL | `https://ai-service-mini-backend.onrender.com` |
-| 비밀 환경변수 | `DATA_GO_KR_SERVICE_KEY`, `OPENAI_API_KEY` |
+| 비밀 환경변수 | `DATA_GO_KR_SERVICE_KEY`, `DATA_GO_KR_SCSBID_SERVICE_KEY`, `OPENAI_API_KEY` |
 
 Dockerfile의 기본 실행 명령을 사용합니다. LibreOffice·Java·한글 글꼴·H2Orestart는 이미지에서 설치합니다.
 호스트 `.env`, 원문, 인덱스, 가상환경은 이미지에 포함하지 않습니다.

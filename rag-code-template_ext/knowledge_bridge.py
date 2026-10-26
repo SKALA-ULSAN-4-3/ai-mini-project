@@ -111,6 +111,7 @@ class StoreCache:
 #                          "[제안요청서] ….hwp", "(과업내용서) ….hwpx", "3. 과업지시서(…).hwp"
 NOTICE_WORDS = ("공고문", "공고서", "입찰공고", "재공고")
 RFP_WORDS = ("제안요청서", "제안요청", "과업지시서", "과업내용서", "규격서", "RFP")
+AGREEMENT_WORDS = ("협약서", "협약문서", "기술지원확약서")
 
 
 def classify_attachment(filename: str) -> set[str]:
@@ -118,6 +119,8 @@ def classify_attachment(filename: str) -> set[str]:
     import unicodedata
     name = unicodedata.normalize("NFC", filename or "")  # macOS 파일명(NFD)도 같게 비교
     kinds = {k for k, words in (("rfp", RFP_WORDS), ("notice", NOTICE_WORDS)) if any(w in name for w in words)}
+    if any(word in name for word in AGREEMENT_WORDS):
+        kinds.add("agreement")
     # "(최종)제안요청서(재공고)"처럼 "재공고"는 재공고 사실만 붙인 것이다. 제안요청서 이름에서는 공고문으로 보지 않는다
     # (1번이 공고문만 받을 때 이 함수로 고르므로, 공고문이 HWP뿐이면 제안요청서 PDF를 공고문으로 받게 됨)
     if "rfp" in kinds and not any(w in name.replace("재공고", "") for w in NOTICE_WORDS):

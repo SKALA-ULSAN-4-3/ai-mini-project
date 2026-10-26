@@ -46,7 +46,7 @@ function onDocsDone(job) {
   flow.selected = flow.selected
     .filter((s) => {
       const j = job.bids.find((b) => b.bid_no === s.bid_no)
-      return !j || isOk(j.status)
+      return j && isOk(j.status) && j.rfp_ready === true
     })
     .map((s) => {
       const j = job.bids.find((b) => b.bid_no === s.bid_no)

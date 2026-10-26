@@ -1,5 +1,7 @@
 """확정 흐름의 검색 스냅샷 → 공고문 준비 → 선택 첨부 준비와 진행률."""
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date, datetime, timedelta
 import importlib
 import json
 import os
@@ -12,6 +14,8 @@ import uuid
 
 from . import collect_bids as collector
 from . import convert_documents as converter
+from . import restrictions
+from . import bid_progress
 from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY,
                      HWP_SUFFIXES, directory_lock, read_json, write_json,
                      read_jsonl, write_jsonl, read_csv, write_csv, stamp)
@@ -22,9 +26,63 @@ CACHE_SECONDS = 300
 RESTRICTION_FIELDS = (
     "indstrytyLmtYn", "rgnLmtBidLocplcJdgmBssNm", "jntcontrctDutyRgnNm1",
     "jntcontrctDutyRgnNm2", "jntcontrctDutyRgnNm3", "cmmnSpldmdMethdNm",
-    "cntrctCnclsMthdNm", "presmptPrce", "asignBdgtAmt", "bidClseDt",
+    "cntrctCnclsMthdNm", "presmptPrce", "asignBdgtAmt", "bidClseDt", "opengDt",
 )
-ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name"]
+ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name", "source", "document_type"]
+
+
+def _enrich_restrictions(item, key):
+    """공고·차수별 공개 제한 정보를 잠시 재사용한다. 실패 결과는 캐시하지 않는다."""
+    bid_no, order = str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000")
+    folder = root_dir() / "restriction-cache"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / (collector.safe_name(f"{bid_no}_{order}") + ".json")
+    details = None
+    if path.is_file():
+        try:
+            cached = read_json(path)
+            if (cached.get("bid_no"), cached.get("bid_order"), cached.get("industry_flag")) == (
+                    bid_no, order, item.get("indstrytyLmtYn")) and time.time() - cached["created_epoch"] < CACHE_SECONDS:
+                details = cached["details"]
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+    if details is None:
+        details = restrictions.lookup_restrictions(item, key)
+        if all(d.get("lookup_status") == "complete" for d in details.values()):
+            write_json(path, {"bid_no": bid_no, "bid_order": order,
+                              "industry_flag": item.get("indstrytyLmtYn"),
+                              "created_epoch": time.time(), "details": details})
+    return {**item, **details}
+
+
+def _enrich_candidate(item, key):
+    enriched = _enrich_restrictions(item, key)
+    if not any("rfp" in classify_attachment(name) for name, _ in collector.attachments(item)):
+        enriched = _enrich_eorder(enriched, key)
+    return enriched
+
+
+def _enrich_eorder(item, key):
+    enriched = dict(item)
+    # 이전 결과가 남아 있어도 최신 조회가 실패하면 오래된 첨부를 준비 완료 근거로 쓰지 않는다.
+    enriched["eorder_attachments"] = []
+    try:
+        enriched["eorder_attachments"] = collector.lookup_eorder_attachments(
+            key, str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000"))
+        enriched["eorder_lookup_status"] = "complete"
+        enriched.pop("eorder_lookup_error", None)
+    except collector.CollectionError as exc:
+        enriched["eorder_lookup_status"] = "unavailable"
+        enriched["eorder_lookup_error"] = str(exc)
+    return enriched
+
+
+def _attachment_source(item, url):
+    for attachment in item.get("eorder_attachments", []):
+        if attachment["url"] == url and (attachment.get("bid_no"), attachment.get("bid_order")) == (
+                str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000")):
+            return {"source": "eorder", "document_type": attachment.get("document_type", "")}
+    return {"source": "notice", "document_type": ""}
 
 
 def latest_notices(items):
@@ -88,20 +146,40 @@ def _snapshot(search_id):
     return read_json(path)
 
 
-def _public_search(saved, cached):
+def _public_search(saved, cached, now=None):
     items = []
     latest = latest_notices(saved["items"])
     for item in saved["items"]:
         if not is_active_notice(item, latest):
             continue
+        item = bid_progress.apply_progress(item, now)
+        if not item["bid_progress"]["recommendable"]:
+            continue
+        if saved["request"].get("date_basis") == "deadline" and not collector.deadline_in_period(
+                item, date.fromisoformat(saved["request"]["from"]), date.fromisoformat(saved["request"]["to"])):
+            continue
         row = collector.notice_row(item, saved["request"]["queries"], saved["collected_at"])
         # 허용 목록으로만 응답한다. API 담당자 성명·연락처를 그대로 반환하지 않는다.
         row.update({field: item.get(field) for field in RESTRICTION_FIELDS})
+        row["bid_progress"] = item["bid_progress"]
+        row.update({field: item[field] for field in ("region_restriction", "industry_restriction") if field in item})
         row["attachments"] = [{"file_name": name, "url": url,
+                               **_attachment_source(item, url),
                                "kinds": sorted(classify_attachment(name)) if name != "standard_notice" else ["notice"]}
                               for name, url in collector.attachments(item)]
+        row["rfp_listed"] = any("rfp" in a["kinds"] and "cancel" not in a["kinds"]
+                                for a in row["attachments"])
+        row["attachment_lookup_status"] = item.get("eorder_lookup_status", "not_checked")
+        row["notice_only"] = row["attachment_lookup_status"] == "complete" and bool(row["attachments"]) and all(
+            a["kinds"] == ["notice"] for a in row["attachments"])
+        row["warnings"] = (["해당 공고는 공고문만 있다. 제공된 첨부 목록 기준이며 공고 상세 확인이 필요합니다."]
+                           if row["notice_only"] else [])
+        if row["attachment_lookup_status"] != "complete" and not row["rfp_listed"]:
+            row["warnings"].append("제안요청정보의 첨부 목록을 확인하지 못했습니다. 공고문만 있다고 단정할 수 없습니다.")
         items.append(row)
     return {"search_id": saved["search_id"], "items": items, "cached": cached,
+            "progress_excluded": saved.get("progress_excluded", []),
+            "date_basis": saved["request"].get("date_basis", "published_at"),
             "collected_at": saved["collected_at"], "cache_seconds": CACHE_SECONDS,
             "page_limit_reached": saved["page_limit_reached"]}
 
@@ -110,26 +188,83 @@ def search_bids(start, end, queries, limit, key):
     queries = list(dict.fromkeys(q.strip() for q in queries))
     if start > end or not queries or not all(queries):
         raise ValueError("검색 기간과 검색어를 확인하세요.")
-    request = {"from": str(start), "to": str(end), "queries": queries, "limit": limit}
+    current_time = datetime.now(collector.KST)
+    # 공식 PPSSrch의 날짜 조회는 게시일/개찰일만 지원한다. 게시 후보를 넓혀 마감일로 직접 검증한다.
+    lookback_days = int(os.environ.get("BID_SEARCH_LOOKBACK_DAYS", "180"))
+    if not 1 <= lookback_days <= 3650:
+        raise ValueError("BID_SEARCH_LOOKBACK_DAYS는 1~3650 정수여야 합니다.")
+    request = {"from": str(start), "to": str(end), "queries": queries, "limit": limit,
+               "date_basis": "deadline", "lookback_days": lookback_days,
+               "restriction_sources": "region-license-v2",
+               "progress_source": "scsbid-v1",
+               "progress_key_configured": bool(os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()),
+               "attachment_sources": "notice+eorder-v1"}
     digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
     with directory_lock(root_dir(), ".search.lock") as root:
         cache = root / f"cache-{digest}.json"
         if cache.exists():
             cached = read_json(cache)
             if time.time() - cached["created_epoch"] < CACHE_SECONDS:
-                return _public_search(_snapshot(cached["search_id"]), True)
+                return _public_search(_snapshot(cached["search_id"]), True, current_time)
         if not key:
             raise RuntimeError("DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.")
-        items, truncated = collector.search_candidates(key, start, end, queries, limit)
+        today = current_time.date()
+        discovery_end = min(end, today)
+        discovery_start = min(start, today) - timedelta(days=lookback_days)
+        progress_key = os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()
+        progress_cache, progress_excluded = {}, {}
+
+        def current_candidate(item):
+            # 원래 마감이 지난 재입찰 허용 공고도 새 마감을 확인한 뒤 기간으로 거른다.
+            opening = bid_progress.parse_time(item.get("opengDt"))
+            elapsed_unknown = not item.get("bidClseDt") and opening is not None and opening <= (
+                current_time if current_time.tzinfo else current_time.replace(tzinfo=collector.KST))
+            if (not collector.deadline_in_period(item, start, end)
+                    and str(item.get("rbidPermsnYn") or "").upper() != "Y" and not elapsed_unknown):
+                return None
+            identity = (str(item.get("bidNtceNo") or ""), str(item.get("bidNtceOrd") or "000"))
+            if not identity[0] or any(w in str(item.get("ntceKindNm") or "") for w in ("취소", "철회")):
+                return None
+            if identity not in progress_cache:
+                try:
+                    progress_cache[identity] = bid_progress.lookup_progress(progress_key, *identity)
+                except collector.CollectionError as exc:
+                    progress_cache[identity] = {"lookup_status": "unavailable", "error": str(exc)}
+            current = bid_progress.apply_progress({**item, "bid_progress": progress_cache[identity]}, current_time)
+            if not current["bid_progress"]["recommendable"]:
+                state = current["bid_progress"]
+                progress_excluded[identity] = {"bid_no": identity[0], "bid_order": identity[1],
+                                               "status": state["state"], "label": state["label"],
+                                               "reason": state.get("reason") or state.get("error")}
+                return None
+            return current
+
+        items, truncated = collector.search_candidates(
+            key, discovery_start, discovery_end, queries, limit, deadline_period=(start, end),
+            candidate_transform=current_candidate)
+        latest = latest_notices(items)
+        # 상세 제한을 조회하고, 일반 첨부에 RFP가 없으면 e발주 목록도 보완한다.
+        positions = [i for i, item in enumerate(items) if is_active_notice(item, latest)]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            enriched = executor.map(lambda i: _enrich_candidate(items[i], key), positions)
+            for i, item in zip(positions, enriched):
+                items[i] = item
         search_id = uuid.uuid4().hex
         folder = root / search_id
         folder.mkdir()
         saved = {"search_id": search_id, "request": request, "items": items,
+                 "progress_excluded": list(progress_excluded.values()),
                  "collected_at": stamp(), "page_limit_reached": truncated}
         # 판별 함수 연결 오류가 나면 사용할 수 없는 결과를 캐시에 등록하지 않는다.
-        response = _public_search(saved, False)
+        response = _public_search(saved, False, current_time)
         write_json(folder / "search.json", saved)
-        write_json(cache, {"created_epoch": time.time(), "search_id": search_id})
+        latest = latest_notices(items)
+        details_complete = all(
+            all(item.get(field, {}).get("lookup_status") == "complete"
+                for field in ("region_restriction", "industry_restriction"))
+            for item in items if is_active_notice(item, latest))
+        if details_complete and not any(r["status"] == "unavailable" for r in progress_excluded.values()):
+            write_json(cache, {"created_epoch": time.time(), "search_id": search_id})
         return response
 
 
@@ -137,7 +272,8 @@ def select_items(search_id, bids):
     saved = _snapshot(search_id)
     latest = latest_notices(saved["items"])
     available = {(str(i["bidNtceNo"]), str(i.get("bidNtceOrd") or "000")): i
-                 for i in saved["items"] if is_active_notice(i, latest)}
+                 for i in saved["items"] if is_active_notice(i, latest)
+                 and bid_progress.apply_progress(i)["bid_progress"]["recommendable"]}
     keys = [(b["bid_no"], b["bid_order"]) for b in bids]
     if not 1 <= len(keys) <= 20 or len(set(keys)) != len(keys):
         raise ValueError("중복 없는 공고 1~20건을 지정하세요.")
@@ -183,6 +319,7 @@ def _attachment_rows(item, notice_url, full, previous):
     for position, (name, url) in enumerate(collector.attachments(item), 1):
         is_notice = url == notice_url
         row = {"bid_no": str(item["bidNtceNo"]), "bid_order": str(item.get("bidNtceOrd") or "000"),
+               **_attachment_source(item, url),
                "file_name": name, "url": url, "selected": full or is_notice,
                "status": "listed" if full or is_notice else "deferred", "local_path": "", "error": "",
                "role": "notice" if is_notice else "supporting",
@@ -195,7 +332,7 @@ def _attachment_rows(item, notice_url, full, previous):
 
 
 def _prepare_selected(folder, rows):
-    """내부 적재용 공고문/RFP만 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
+    """공고문·제안요청서·협약문서를 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
     def stem(row):
         return unicodedata.normalize("NFC", Path(row["file_name"]).stem).casefold()
 
@@ -204,7 +341,7 @@ def _prepare_selected(folder, rows):
     scoped = []
     for row in rows:
         kinds = {"notice"} if row["file_name"] == "standard_notice" else classify_attachment(row["file_name"])
-        selected = row["selected"] and bool(kinds & {"notice", "rfp"}) and "cancel" not in kinds
+        selected = row["selected"] and bool(kinds & {"notice", "rfp", "agreement"}) and "cancel" not in kinds
         if Path(row["file_name"]).suffix.lower() in HWP_SUFFIXES and stem(row) in pdfs:
             selected = False  # 원본은 보존하고 같은 이름의 PDF만 내부 적재에 쓴다.
         prepared = {**row, "selected": selected}
@@ -225,6 +362,42 @@ def _prepare_selected(folder, rows):
         prepare(folder)
     finally:
         write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, rows)
+
+
+def _document_readiness(item, rows, indexed_records, documents=()):
+    """다운로드와 실제 RFP 청크 적재를 구분한다. 파일명·URL만으로 준비 완료를 추정하지 않는다."""
+    files = []
+    for row in rows:
+        kinds = ({"notice"} if row["file_name"] == "standard_notice"
+                 else classify_attachment(row["file_name"]))
+        records = [r for r in indexed_records if r["source_url"] == row["url"]]
+        document = next((d for d in documents if d["source_url"] == row["url"]), {})
+        rfp_ready = "cancel" not in kinds and any(
+            "rfp" in classify_attachment(r["file_name"]) for r in records)
+        files.append({"file_name": row["file_name"], "url": row["url"],
+                      "source": row.get("source", "notice"), "document_type": row.get("document_type", ""),
+                      "status": row["status"], "kinds": sorted(kinds),
+                      "preparation_status": document.get("status", "not_processed"),
+                      "preparation_error": document.get("error", ""),
+                      "indexed_chunks": len(records), "rfp_ready": rfp_ready})
+    selected = [r for r in rows if r["selected"]]
+    download_complete = bool(selected) and all(
+        r["status"] in DOWNLOAD_SUCCESS and bool(r["local_path"])
+        and Path(r["local_path"]).is_file() and Path(r["local_path"]).stat().st_size > 0
+        for r in selected)
+    rfp_files = [f for f in files if "rfp" in f["kinds"] and "cancel" not in f["kinds"]]
+    rfp_ready = any(f["rfp_ready"] for f in rfp_files)
+    lookup_status = item.get("eorder_lookup_status", "not_checked")
+    rfp_status = ("ready" if rfp_ready else "lookup_failed" if not rfp_files and lookup_status == "unavailable"
+                  else "not_checked" if not rfp_files and lookup_status == "not_checked"
+                  else "not_listed" if not rfp_files
+                  else "download_failed" if any(f["status"] == "failed" for f in rfp_files)
+                  else "not_requested" if all(f["status"] == "deferred" for f in rfp_files)
+                  else "not_indexed")
+    return {"download_complete": download_complete, "rfp_ready": rfp_ready,
+            "attachment_lookup_status": lookup_status,
+            "rfp_status": rfp_status, "rfp_files": rfp_files, "files": files,
+            "detail_url": item.get("bidNtceDtlUrl") or item.get("bidNtceUrl", "")}
 
 
 def _process_bid(item, full, store, progress):
@@ -250,7 +423,13 @@ def _process_bid(item, full, store, progress):
         collected_at = read_csv(folder / "bids.csv")[0]["collected_at"] if published else stamp()
         write_csv(folder / "bids.csv", BID_FIELDS, [collector.notice_row(item, [], collected_at)])
         progress("converting")
-        _prepare_selected(folder, rows)
+        try:
+            _prepare_selected(folder, rows)
+        except Exception as exc:
+            # 변환 실패여도 이미 끝난 다운로드와 RFP 미적재 사실을 함께 전달한다.
+            message = str(exc) if isinstance(exc, (ValueError, RuntimeError)) else type(exc).__name__
+            return {"status": "failed", "error": "문서 준비 실패: " + message,
+                    "indexed_chunks": 0, **_document_readiness(item, rows, [])}
         documents = read_jsonl(folder / "processed/documents.jsonl")
         chunks = read_jsonl(folder / "processed/chunks.jsonl")
         ready = {(d["bid_no"], d["bid_order"], d["source_url"])
@@ -266,10 +445,18 @@ def _process_bid(item, full, store, progress):
         failures += [d["original_file_name"] for d in documents if d["status"] not in TEXT_READY]
         if not records:
             failures.append("적재 가능한 공고문/제안요청서 텍스트가 없습니다.")
-        files = [{"file_name": r["file_name"], "status": r["status"]} for r in rows]
+        readiness = _document_readiness(item, rows, records, documents)
+        if full and readiness["attachment_lookup_status"] == "unavailable":
+            failures.append(item.get("eorder_lookup_error") or "제안요청정보 첨부 조회 실패")
+        if full and not readiness["rfp_ready"]:
+            failures.append("파일첨부·제안요청정보에 식별 가능한 제안요청서류가 없습니다. 공고 상세 첨부를 확인하세요."
+                            if readiness["rfp_status"] == "not_listed" else
+                            "제안요청정보 첨부 목록을 확인하지 못했습니다. 조회 상태를 확인한 뒤 다시 시도하세요."
+                            if readiness["rfp_status"] in {"lookup_failed", "not_checked"} else
+                            "제안요청서류가 아직 변환·텍스트 적재되지 않았습니다.")
         return {"status": "partial_failed" if failures and records else "failed" if failures else "completed",
                 "error": "확인 필요: " + ", ".join(dict.fromkeys(failures)) if failures else None,
-                "files": files, "indexed_chunks": len(records)}
+                **readiness, "indexed_chunks": len(records)}
 
 
 def run_job(job_id, key=None):
@@ -297,10 +484,11 @@ def run_job(job_id, key=None):
                     bid["requested_bid_order"] = bid["bid_order"]
                     bid["revision_changed"] = latest_order != bid["bid_order"]
                     bid["bid_order"] = latest_order
-                    if bid["revision_changed"]:
-                        item = current
-                        folder = root_dir() / job["search_id"]
-                        write_json(folder / f"revision-{collector.safe_name(bid['bid_no'])}-{latest_order}.json", current)
+                    # 같은 차수도 첨부 링크가 보완될 수 있으므로 재조회한 목록을 사용한다.
+                    progress("checking_attachments")
+                    item = _enrich_eorder(current, key)
+                    folder = root_dir() / job["search_id"]
+                    write_json(folder / f"revision-{collector.safe_name(bid['bid_no'])}-{latest_order}.json", item)
                 bid.update(_process_bid(item, job["mode"] == "documents", store, progress))
             except Exception as exc:
                 # SDK/네트워크 예외 원문은 인증키나 연락처를 포함할 수 있다.

@@ -5,6 +5,7 @@ Python 표준 라이브러리만 사용한다. 참가자격 판정·변환·RAG�
 import argparse
 import csv
 from datetime import date, datetime, timedelta
+from email.message import Message
 import json
 import os
 from pathlib import Path
@@ -86,7 +87,81 @@ def attachments(item):
     # 표준 공고문이 별도 URL로 제공되는 경우 함께 확보한다.
     url = str(item.get("stdNtceDocUrl") or "").strip()
     if url and url not in seen:
+        seen.add(url)
         yield "standard_notice", url
+    # 제안요청정보(e발주)는 일반 파일첨부의 ntceSpecDocUrl1~10과 별도 제공된다.
+    for attachment in item.get("eorder_attachments", []):
+        if (attachment.get("bid_no"), attachment.get("bid_order")) != (
+                str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000")):
+            continue
+        url = str(attachment.get("url") or "").strip()
+        if url and url not in seen:
+            seen.add(url)
+            yield attachment["file_name"], url
+
+
+def lookup_eorder_attachments(key, bid_no, bid_order):
+    """공식 e발주 첨부 API에서 동일 공고·차수의 제안요청서·협약문서 등을 조회한다."""
+    if not key:
+        raise CollectionError("제안요청정보 첨부 조회에 필요한 API 키가 없습니다.")
+    url = API_URL.rsplit("/", 1)[0] + "/getBidPblancListInfoEorderAtchFileInfo"
+    found = []
+    seen = set()
+    for page in range(1, 21):
+        params = {"serviceKey": unquote(key), "type": "json", "inqryDiv": "2",
+                  "bidNtceNo": bid_no, "bidNtceOrd": bid_order, "pageNo": page, "numOfRows": 100}
+        request = Request(url + "?" + urlencode(params), headers={"User-Agent": "BidCollector/1.0"})
+        try:
+            with build_opener().open(request, timeout=20) as response:
+                items, total = parse_response(response.read(10 * 1024 * 1024))
+        except HTTPError as exc:
+            raise CollectionError(f"제안요청정보 첨부 조회 HTTP {exc.code}") from None
+        except (URLError, TimeoutError, OSError):
+            raise CollectionError("제안요청정보 첨부 조회 연결 실패") from None
+        for item in items:
+            if str(item.get("bidNtceNo") or "") != str(bid_no):
+                continue
+            if not item.get("bidNtceOrd"):
+                raise CollectionError("제안요청정보 첨부의 공고 차수를 확인할 수 없습니다.")
+            if str(item["bidNtceOrd"]) != str(bid_order):
+                continue
+            file_url = str(item.get("eorderAtchFileUrl") or "").strip()
+            if not file_url or file_url in seen:
+                continue
+            if not allowed_download(file_url):
+                raise CollectionError("제안요청정보 첨부가 공식 다운로드 주소가 아닙니다.")
+            name = str(item.get("eorderAtchFileNm") or "").strip()
+            if not name:
+                name = attachment_header_name(file_url)
+            seen.add(file_url)
+            found.append({"bid_no": str(bid_no), "bid_order": str(bid_order),
+                          "file_name": name, "url": file_url,
+                          "document_type": str(item.get("eorderDocDivNm") or ""), "source": "eorder"})
+        if not items or page * 100 >= total:
+            return found
+    raise CollectionError("제안요청정보 첨부 조회 한도를 넘었습니다. 전체 목록 확인이 필요합니다.")
+
+
+def attachment_header_name(url):
+    """API 파일명 누락만 다운로드 헤더로 보완한다. 파일 본문은 읽거나 저장하지 않는다."""
+    if not allowed_download(url):
+        raise CollectionError("제안요청정보 첨부가 공식 다운로드 주소가 아닙니다.")
+    request = Request(url, headers={"User-Agent": "BidCollector/1.0", "Range": "bytes=0-0"})
+    try:
+        # 공식 다운로드 서버는 HEAD를 403으로 거부하므로 GET의 헤더만 읽고 닫는다.
+        with build_opener(OfficialRedirect()).open(request, timeout=20) as response:
+            if response.headers.get_content_type() in ("text/html", "application/json"):
+                raise CollectionError("제안요청정보 첨부 대신 안내/오류 페이지가 반환됐습니다.")
+            header = Message()
+            header["Content-Disposition"] = response.headers.get("Content-Disposition", "")
+            name = unquote(header.get_filename() or "").strip()
+    except HTTPError as exc:
+        raise CollectionError(f"제안요청정보 첨부 파일명 조회 HTTP {exc.code}") from None
+    except (URLError, TimeoutError, OSError):
+        raise CollectionError("제안요청정보 첨부 파일명 조회 연결 실패") from None
+    if (not name or name in (".", "..") or re.search(r'[\x00-\x1f/\\]', name)):
+        raise CollectionError("제안요청정보 첨부의 파일명을 확인할 수 없습니다.")
+    return name
 
 
 def safe_name(name):
@@ -147,18 +222,44 @@ def write_csv(path, fields, rows):
         writer.writerows(rows)
 
 
-def search_candidates(key, start_date, end_date, queries, limit):
+def deadline_in_period(item, start, end):
+    """API 입찰마감일의 서울 날짜를 비교한다. 미확인 날짜는 게시일로 대체하지 않는다."""
+    raw = str(item.get("bidClseDt") or "").strip()
+    try:
+        deadline = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if deadline.tzinfo is not None:
+            deadline = deadline.astimezone(KST)
+        return start <= deadline.date() <= end
+    except ValueError:
+        return False
+
+
+def search_candidates(key, start_date, end_date, queries, limit, *, deadline_period=None, candidate_transform=None):
     """검색어와 공고일 기간으로 API 후보 목록을 수집한다."""
     found = {}
     truncated = False
+    windows = []
     start = start_date
-    while start <= end_date and len(found) < limit:
+    while start <= end_date:
         end = min(start + timedelta(days=6), end_date)
+        windows.append((start, end))
+        start = end + timedelta(days=1)
+    if deadline_period is not None:
+        windows.reverse()  # 실시간 마감일 검색은 최근 게시된 공고부터 탐색한다.
+    for start, end in windows:
+        if len(found) >= limit:
+            break
         for query in queries:
             for page in range(1, 21):
                 print(f"후보 수집: {start}~{end}, 요청 검색어 {query}, {page}페이지", flush=True)
                 items, total = fetch_page(key, start, end, query, page)
                 for item in items:
+                    if candidate_transform is not None:
+                        item = candidate_transform(item)
+                        if item is None:
+                            continue
+                    if deadline_period is not None and not deadline_in_period(item, *deadline_period):
+                        continue
                     identity = (str(item.get("bidNtceNo") or ""), str(item.get("bidNtceOrd") or "000"))
                     if identity[0] and identity not in found:
                         found[identity] = item
@@ -172,7 +273,6 @@ def search_candidates(key, start_date, end_date, queries, limit):
             if len(found) >= limit:
                 break
             clock.sleep(0.25)
-        start = end + timedelta(days=1)
     return list(found.values()), truncated
 
 

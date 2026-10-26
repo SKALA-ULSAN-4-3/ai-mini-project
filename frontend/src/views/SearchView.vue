@@ -11,16 +11,21 @@ import RecheckBadge from '../components/RecheckBadge.vue'
 const flow = useFlowStore()
 
 // ① 검색 조건
-const to = ref(flow.period?.to || iso(new Date()))
-const from = ref(flow.period?.from || iso(addDays(new Date(), -30)))
+const today = iso(new Date())
+const to = ref(flow.period?.to >= today ? flow.period.to : iso(addDays(new Date(), 30)))
+const from = ref(flow.period?.from <= today ? flow.period.from : today)
 const queries = ref(flow.period?.queries || '')
 const queryList = computed(() => queries.value.split(',').map((s) => s.trim()).filter(Boolean))
 const loading = ref(false)
 const error = ref('')
+const searchNotice = ref('')
 const noProfile = ref(false)
+const searchFinished = ref(false)
+const searchCount = ref(0)
+const progressExcluded = ref([])
 
 // ② 추린 공고 중 공고문을 받을 공고 (최대 20건)
-const checked = ref(flow.candidates.slice(0, 20).map(keyOf))
+const checked = ref(flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf))
 const jobId = ref('')
 const noticeJob = ref(null)
 
@@ -36,23 +41,35 @@ function addKeyword(k) {
 
 async function search() {
   error.value = ''; noProfile.value = false
+  searchNotice.value = ''
   const list = queries.value.split(',').map((s) => s.trim()).filter(Boolean)
   if (!list.length) { error.value = '검색어를 한 개 이상 입력해 주세요.'; return }
   if (from.value > to.value) { error.value = '시작일이 종료일보다 늦을 수 없습니다.'; return }
+  if (from.value > today) { error.value = '게시 시작일은 오늘 이전 또는 오늘이어야 합니다.'; return }
+  if (to.value < today) { error.value = '마감 종료일은 오늘 이후 또는 오늘이어야 합니다.'; return }
   loading.value = true
+  searchFinished.value = false
+  progressExcluded.value = []
   jobId.value = ''; noticeJob.value = null
   try {
     // ① 나라장터 검색 (1번 API)
-    const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 20 })
+    const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 100 })
+    searchCount.value = (d.items || []).length
+    progressExcluded.value = d.progress_excluded || []
+    if (d.page_limit_reached) {
+      searchNotice.value = '조회 한도에 도달해 일부 공고가 누락될 수 있습니다. 검색어를 더 구체적으로 입력해 주세요.'
+    }
     flow.resetFrom(3)
     flow.searchId = d.search_id
-    flow.period = { from: from.value, to: to.value, queries: queries.value }
+    flow.period = { from: from.value, to: to.value, queries: queries.value,
+      deadline_from: d.deadline_from || from.value, deadline_to: d.deadline_to || to.value }
     // ② 회사 프로필에 맞게 추리기 (3번 API). 여기서 404 는 "저장된 프로필이 없음"입니다.
     try {
-      const r = await fetchCandidates(from.value, to.value, d.search_id)
+      const r = await fetchCandidates(flow.period.deadline_from, flow.period.deadline_to, d.search_id)
       flow.candidates = r.bids
       flow.excluded = r.excluded
-      checked.value = flow.candidates.slice(0, 20).map(keyOf)
+      searchFinished.value = true
+      checked.value = flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf)
     } catch (e) {
       if (e.response?.status === 404) noProfile.value = true
       else throw e
@@ -85,7 +102,8 @@ async function onDone(job) {
   const done = flow.candidates.filter((b) => flow.readyKeys.includes(keyOf(b)))
   if (!done.length) return
   try {
-    const rows = await recheckBids(flow.period.from, flow.period.to, flow.searchId, done)
+    const rows = await recheckBids(flow.period.deadline_from || flow.period.from,
+      flow.period.deadline_to || flow.period.to, flow.searchId, done)
     const byKey = Object.fromEntries(rows.map((r) => [keyOf(r), r.recheck]))
     flow.candidates = flow.candidates.map((b) => (byKey[keyOf(b)] ? { ...b, recheck: byKey[keyOf(b)] } : b))
   } catch (e) {
@@ -98,12 +116,12 @@ async function onDone(job) {
   <div class="layout">
   <div class="card">
     <h1>공고 검색</h1>
-    <p class="sub">기간과 검색어로 나라장터 공고를 찾고, 우리 회사에 맞는 공고만 추립니다.</p>
+    <p class="sub">게시 시작일부터 오늘까지 게시된 공고 중, 마감일이 오늘~마감 종료일에 포함되는 공고를 검색합니다. 공고문만 있는 공고는 추천 순위를 낮추고 기본 선택에서 제외합니다.</p>
 
     <form @submit.prevent="search">
       <div class="row">
-        <div><label for="from">시작일</label><input id="from" v-model="from" type="date" /></div>
-        <div><label for="to">종료일</label><input id="to" v-model="to" type="date" /></div>
+        <div><label for="from">게시 시작일</label><input id="from" v-model="from" type="date" :max="today" /></div>
+        <div><label for="to">마감 종료일</label><input id="to" v-model="to" type="date" :min="today" /></div>
       </div>
       <label for="q">검색어 <span class="hint">쉼표로 구분 · 예: 챗봇, 모바일 앱</span></label>
       <input id="q" v-model="queries" />
@@ -111,6 +129,18 @@ async function onDone(job) {
     </form>
 
     <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="searchNotice" class="notice">{{ searchNotice }}</p>
+    <p v-if="searchFinished && !loading && !flow.candidates.length" class="notice" role="status">
+      {{ searchCount ? `검색된 공고 ${searchCount}건이 회사 조건에 맞지 않아 추천 공고가 없습니다. 아래 제외 사유를 확인해 주세요.` : '선택한 게시기간·마감기간·검색어에 맞는 추천 공고가 없습니다. 아래 진행 상태 확인 결과를 확인하거나 검색 조건을 조정해 주세요.' }}
+    </p>
+    <details v-if="!loading && progressExcluded.length" style="margin-top: 14px">
+      <summary>입찰 진행 상태로 제외된 공고 {{ progressExcluded.length }}건</summary>
+      <p v-for="b in progressExcluded" :key="b.bid_no + b.bid_order" class="meta">{{ b.bid_no }}: {{ b.label }} · {{ b.reason }}</p>
+    </details>
+    <details v-if="searchFinished && !loading && flow.excluded.length" style="margin-top: 14px">
+      <summary>회사 조건에 맞지 않아 제외된 공고 {{ flow.excluded.length }}건</summary>
+      <p v-for="e in flow.excluded" :key="e.bid_no + e.revision" class="meta">{{ e.bid_no }}-{{ e.revision }}: {{ (e.reasons || []).join(', ') }}</p>
+    </details>
     <p v-if="noProfile" class="notice">
       저장된 회사 프로필이 없습니다. <router-link to="/profile">프로필을 먼저 입력</router-link>해 주세요.
     </p>
@@ -121,18 +151,17 @@ async function onDone(job) {
       <label v-for="b in flow.candidates" :key="keyOf(b)" class="item" style="cursor: pointer">
         <input v-model="checked" type="checkbox" :value="keyOf(b)" style="width: auto; margin-right: 8px" />
         <strong>{{ b.title }}</strong>
-        <p class="meta">{{ b.agency }} · {{ won(b.budget) }} · 마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</p>
+        <p class="meta">{{ b.agency }} · {{ won(b.budget) }} · <span v-if="dday(b.deadline) !== '미확인'">마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</span><span v-else>기한 미확인</span></p>
+        <p v-for="warning in b.warnings" :key="warning" class="notice">{{ warning }}</p>
+        <p v-if="b.region_restriction" class="meta">{{ b.region_restriction.summary }}</p>
+        <p v-if="b.industry_restriction" class="meta">{{ b.industry_restriction.summary }}</p>
+        <p v-if="b.industry_restriction?.note" class="meta">{{ b.industry_restriction.note }}</p>
         <p v-if="b.unknown.length" class="chips">
           <span v-for="u in b.unknown" :key="u" class="badge warn">미확인: {{ unknownLabel(u) }}</span>
         </p>
         <p v-if="b.reason" class="meta">추천 이유: {{ b.reason }}</p>
         <RecheckBadge :recheck="b.recheck" />
       </label>
-
-      <details v-if="flow.excluded.length" style="margin-top: 14px">
-        <summary style="cursor: pointer">조건에 맞지 않아 제외된 공고 {{ flow.excluded.length }}건</summary>
-        <p v-for="e in flow.excluded" :key="e.bid_no + e.revision" class="meta">{{ e.bid_no }}-{{ e.revision }}: {{ (e.reasons || []).join(', ') }}</p>
-      </details>
 
       <button class="primary" type="button" :disabled="!!jobId && !noticeJob" @click="prepare">
         선택한 {{ checked.length }}건 공고문 준비

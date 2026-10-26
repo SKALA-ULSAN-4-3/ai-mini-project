@@ -11,7 +11,7 @@ import os
 import urllib.error
 import urllib.request
 
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Request
 
 TIMEOUT_SECONDS = 5
 
@@ -55,3 +55,31 @@ def get_authenticated_profile(authorization: str | None = Header(default=None)) 
         raise HTTPException(status_code=503, detail="회사 프로필 응답 형식이 올바르지 않습니다.")
     # 3번 계산에 쓰지 않는 식별 · 시각 필드는 넘기지 않는다
     return {k: v for k, v in profile.items() if k not in ("id", "created_at", "updated_at")}
+
+
+def require_login(authorization: str | None = Header(default=None), request: Request = None) -> dict | None:
+    """질의 · 요약 · 추출 · 검색 · 적재 · 음성 API의 로그인 확인 (기획서: 모든 RAG API는 토큰 없으면 401).
+
+    프로필까지는 필요 없으므로 백엔드 GET /api/auth/check로 토큰만 확인한다 (프로필 없는 회사도 Q&A 가능).
+    BACKEND_URL이 없으면(로컬 개발 · 평가) 확인하지 않고 None을 돌려준다."""
+    if (request is not None and authorization
+            and getattr(request.state, "verified_authorization", None) == authorization):
+        return None  # 통합 서버 미들웨어가 이 요청의 토큰을 이미 원격 검증했다.
+    if not backend_url():
+        return None
+    if not authorization or not authorization[:7].lower() == "bearer " or not authorization[7:].strip():
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다. Authorization: Bearer <토큰>을 보내 주세요.",
+                            headers={"WWW-Authenticate": "Bearer"})
+    request = urllib.request.Request(f"{backend_url()}/api/auth/check",
+                                     headers={"Authorization": authorization, "Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            user = json.load(response)
+    except urllib.error.HTTPError as error:
+        if error.code == 401:
+            raise HTTPException(status_code=401, detail=_backend_message(error, "유효하지 않거나 만료된 인증 토큰입니다."),
+                                headers={"WWW-Authenticate": "Bearer"}) from error
+        raise HTTPException(status_code=503, detail="로그인 확인 서비스가 응답하지 않습니다.") from error
+    except (urllib.error.URLError, TimeoutError, ValueError) as error:
+        raise HTTPException(status_code=503, detail="로그인 확인 서비스에 연결할 수 없습니다.") from error
+    return user if isinstance(user, dict) else None

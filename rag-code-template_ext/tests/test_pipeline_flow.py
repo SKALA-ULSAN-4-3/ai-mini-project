@@ -15,14 +15,14 @@ except ImportError:
 
 def listing(no):
     return {"bid_no": no, "bid_order": "000", "title": "웹 구축",
-            "bidNtceDt": "2026-10-23 09:00:00", "bidClseDt": "2026-11-01 18:00:30",
+            "bidNtceDt": "2026-10-23 09:00:00", "bidClseDt": "2026-10-31 18:00:30",
             "asignBdgtAmt": "100000000", "indstrytyLmtYn": "Y",
             "attachments": [{"file_name": "공고문.pdf", "url": "https://example.test/notice.pdf"}]}
 
 
 def metadata(no, regions=None):
     return {"bid_no": no, "revision": "000", "title": "웹 구축", "published_at": "2026-10-23",
-            "deadline": "2026-11-01T18:00:30+09:00", "budget": "100000000",
+            "deadline": "2026-10-31T18:00:30+09:00", "budget": "100000000",
             "regions": regions or [], "industries": [], "licenses": [], "company_sizes": [], "certs": []}
 
 
@@ -125,6 +125,21 @@ class PipelineFlowTest(unittest.TestCase):
             self.assertNotIn("ntceInsttOfclTelNo", row)
             self.assertNotIn("ntceInsttOfclEmailAdrs", row)
             self.assertNotIn("internal_owner", row)
+
+    def test_detailed_restrictions_reach_list_response(self):
+        self.saved[-1]['region_restriction'] = {
+            'status': 'limited', 'lookup_status': 'complete', 'values': ['서울특별시'], 'source': 'region_api'}
+        self.saved[-1]['industry_restriction'] = {
+            'status': 'limited', 'lookup_status': 'complete', 'source': 'license_api',
+            'requirements': [{'name': '소프트웨어사업자(컴퓨터관련서비스사업)', 'code': '1468',
+                              'group_no': '1', 'sequence': '1', 'alternatives': [], 'specialties': ''}]}
+        response = self.client.get(self.url, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        bid = response.json()['bids'][0]
+        self.assertEqual(bid['region_restriction']['summary'], '지역제한: 서울특별시')
+        self.assertIn('1468', bid['industry_restriction']['summary'])
+        self.assertNotIn('지역 제한 미확인', bid['unknown'])
+        self.assertNotIn('업종 제한 있음, 대상 업종 미확인', bid['unknown'])
 
     def test_authentication_before_any_data_access(self):
         self.assertEqual(self.client.get(self.url).status_code, 401)

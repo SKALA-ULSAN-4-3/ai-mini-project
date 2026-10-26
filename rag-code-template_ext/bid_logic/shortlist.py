@@ -15,6 +15,7 @@ from datetime import datetime
 from .common import SEOUL, REGION_NAMES, RequestError, calendar_date, identity, number, region, seoul_time
 from .recommendation import _profile_conditions, profile_query, recommend_bids
 from .notice_metadata import apply_notice_metadata, expired_deadline_reason
+from .list_restrictions import restriction_check
 
 # 1번 검색 응답은 정규화 이름과 나라장터 API 원문 이름이 섞여 올 수 있어 둘 다 받는다.
 ALIASES = {
@@ -164,18 +165,14 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
         seen.add((bid_no, revision))
 
         if start is not None:
-            raw_date = _pick(row, "published_at") or ""
-            try:
-                # API 원문은 날짜 뒤에 시각을 포함한다. 날짜 부분을 서울 공고일로 사용한다.
-                published = calendar_date(raw_date) if len(raw_date) == 10 else _deadline(
-                    {"deadline": raw_date}).date()
-            except (ValueError, TypeError, AttributeError):
+            period_deadline = _deadline(row)
+            if period_deadline is None:
                 excluded.append({"bid_no": bid_no, "revision": revision,
-                                 "status": "unknown", "reasons": ["공고일 미확인"]})
+                                 "status": "unknown", "reasons": ["입찰마감 일시 미확인"]})
                 continue
-            if not start <= published <= end:
+            if not start <= period_deadline.date() <= end:
                 excluded.append({"bid_no": bid_no, "revision": revision,
-                                 "status": "excluded", "reasons": ["공고일이 선택 기간 밖입니다."]})
+                                 "status": "excluded", "reasons": ["입찰마감일이 선택 기간 밖입니다."]})
                 continue
 
         reasons, unknown = [], []
@@ -194,8 +191,13 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
             if upper is not None and budget > upper:
                 reasons.append("희망 최대 금액 초과")
 
+        details, detail_unknown, detail_reasons = restriction_check(row, profile)
+        unknown.extend(detail_unknown)
+        reasons.extend(detail_reasons)
         limited_regions, region_hinted = _regions(row)
-        if region_hinted:
+        if "region_restriction" in details:
+            pass  # 공식 상세 정보의 조건·조회 상태를 사용한다.
+        elif region_hinted:
             # 제한이 있다는 것만 알고 어느 지역인지는 목록에 없다. 통과도 탈락도 아니다.
             unknown.append("지역 제한 대상 지역 미확인")
         elif limited_regions:
@@ -203,14 +205,19 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
                 unknown.append("프로필 region 미확인")
             elif not set(owned_regions).intersection(limited_regions):
                 reasons.append("지역 제한 조건 불일치")
-        else:
+        elif not isinstance(row.get("regions"), list):
             unknown.append("지역 제한 미확인")
 
         # 업종 제한은 목록에 업종 코드가 없어 맞는지 알 수 없다. 제외하지 않는다.
-        if str(row.get(INDUSTRY_LIMIT_FIELD) or "").strip().upper() == "Y":
+        industry_flag = str(row.get(INDUSTRY_LIMIT_FIELD) or "").strip().upper()
+        if "industry_restriction" in details:
+            pass
+        elif industry_flag == "Y":
             unknown.append("업종 제한 있음, 대상 업종 미확인")
-        else:
+        elif industry_flag != "N":
             unknown.append("업종 제한 미확인")
+        else:
+            details["industry_restriction"] = {"status": "none", "summary": "업종제한: 없음", "source": "indstrytyLmtYn=N"}
 
         entry = {**{key: value for key, value in row.items() if key in PUBLIC_LIST_FIELDS},
                  "bid_no": bid_no, "revision": revision,
@@ -218,7 +225,17 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
                  "published_at": _pick(row, "published_at"),
                  "deadline": deadline.isoformat() if deadline else None,
                  "budget": str(budget) if budget is not None else None,
-                 "unknown": unknown}
+                 "unknown": unknown, **details}
+        attachments = row.get("attachments")
+        notice_only = row["notice_only"] if isinstance(row.get("notice_only"), bool) else (
+            isinstance(attachments, list) and bool(attachments) and all(
+                isinstance(a, dict) and a.get("kinds") == ["notice"] for a in attachments))
+        warnings = list(row.get("warnings") or [])
+        warning = "해당 공고는 공고문만 있다. 제공된 첨부 목록 기준이며 공고 상세 확인이 필요합니다."
+        if notice_only and warning not in warnings:
+            warnings.append(warning)
+        entry.update(notice_only=notice_only, recommendation_priority="low" if notice_only else "normal",
+                     warnings=warnings, attachment_lookup_status=row.get("attachment_lookup_status", "not_checked"))
         if reasons:
             excluded.append({"bid_no": bid_no, "revision": revision,
                              "status": "excluded", "reasons": reasons})
@@ -252,8 +269,11 @@ def shortlist_bids(rows, profile, *, now=None, limit=20, similarity=None, start=
         bid["needs_review"] = True  # 목록 정보만으로는 참가자격을 확정할 수 없다.
         bid["reason"] = "목록 정보에서 제외 사유 없음" + (
             "; 공고명 유사도 순" if bid["score"] is not None else "; 유사도 미확인")
+        if bid["notice_only"]:
+            bid["reason"] += "; 공고문만 있어 추천 우선순위 낮음"
     # 유사도는 클수록 유사하므로 내림차순. 동점·미확인은 공고번호·차수 문자열 순.
-    candidates.sort(key=lambda b: (b["score"] is None, -(b["score"] or 0), b["bid_no"], b["revision"]))
+    candidates.sort(key=lambda b: (b["notice_only"], b["score"] is None,
+                                   -(b["score"] or 0), b["bid_no"], b["revision"]))
     return {"bids": candidates[:limit], "excluded": excluded,
             "candidate_count": len(candidates), "needs_review": True,
             "ranking_kind": ranking_kind, "stage": "list_only"}
@@ -270,7 +290,8 @@ def recheck_metadata(row):
             "deadline": deadline.isoformat() if deadline else None, "budget": _budget(row),
             "regions": regions if (regions or isinstance(row.get("regions"), list)) and not hinted else None,
             **{field: row.get(field) for field in ("industries", "licenses", "company_sizes", "certs")},
-            **{field: row[field] for field in ("deadlines", "deadline_kind", "deadline_event", "metadata_sources", "metadata_notes") if field in row}}
+            **{field: row[field] for field in ("deadlines", "deadline_kind", "deadline_event", "metadata_sources", "metadata_notes",
+                                              "region_restriction", "industry_restriction", REGION_BASIS_FIELD) if field in row}}
 
 
 def recheck_after_ingest(shortlisted, bids, profile, start, end, **kwargs):
@@ -286,6 +307,7 @@ def recheck_after_ingest(shortlisted, bids, profile, start, end, **kwargs):
     selected = set(keys)
     targets = [bid for bid in bids if identity(bid) in selected]
     kwargs["limit"] = max(len(targets), 1)
+    kwargs["date_basis"] = "deadline"
     result = recommend_bids(targets, profile, start, end, **kwargs)
     passed = {identity(b): b for b in result["bids"]}
     dropped = {(b["bid_no"], b["revision"]): b for b in result["excluded"]}

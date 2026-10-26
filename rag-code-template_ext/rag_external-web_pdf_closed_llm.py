@@ -37,6 +37,7 @@ from typing import List, Dict, Any, Optional
 import os
 import re
 import json
+import hashlib
 import asyncio
 import tempfile
 import time
@@ -48,7 +49,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # 프로젝트 루트 .env(1·3번과 공통)를 먼저 읽고, 옮기는 동안만 이 폴더의 .env도 보조로 읽는다 (이미 있는 값은 덮지 않음)
-from knowledge_bridge import (StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
+from knowledge_bridge import (ExtractionCache, StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
                               classify_attachment, search_results)
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
@@ -85,25 +86,31 @@ VECTORSTORE_WEB = None
 VECTORSTORE_PDF = None
 STORES = StoreCache()
 STORE_STATE: dict[str, str | None] = {"pdf_generation": None, "web_generation": None, "embedding_model": None}
-EXTRACT_CACHE: dict[tuple[str, str, str], dict] = {}  # (bid_no, revision, 종류) → {지문, 결과}. 같은 공고 재요청 시 LLM 비용 절감
-BID_FINGERPRINTS: dict[tuple[str, str], int] = {}     # (bid_no, revision) → 적재된 조각 목록의 지문
+BID_FINGERPRINTS: dict[tuple[str, str], str] = {}     # (bid_no, revision) → 적재된 조각 목록의 지문
+
+EXTRACTIONS = ExtractionCache(
+    os.getenv("BID_EXTRACT_CACHE_DIR", str(Path(__file__).resolve().parents[1] / "data/cache/extractions")),
+    hashlib.sha256(Path(__file__).read_bytes()).hexdigest() + ":" + EXTRACT_LLM_MODEL
+    + ":" + os.getenv("OPENAI_BASE_URL", "default"))
+
 
 def refresh_stores():
     # 요청마다 1번 저장소의 현재 세대를 확인해, 업로드로 세대가 바뀌었을 때만 다시 읽는다
-    global VECTORSTORE_PDF, VECTORSTORE_WEB
+    global VECTORSTORE_PDF, VECTORSTORE_WEB, BID_FINGERPRINTS
     pdf, pdf_generation, manifest = STORES.get("pdf")
     web, web_generation, _ = STORES.get("web")
     if pdf_generation != STORE_STATE["pdf_generation"]:
         # 실시간 흐름에서는 공고를 자주 적재하므로 캐시를 통째로 지우지 않고, 공고별 문서 지문만 다시 계산한다.
         # 지문이 바뀐 공고(문서가 추가 · 교체된 공고)만 다음 요청 때 다시 추출된다.
-        BID_FINGERPRINTS.clear()
+        fingerprints = {}
         if pdf is not None:
             chunks: dict[tuple[str, str], list[str]] = {}
             for d in pdf.docstore._dict.values():
                 if d.metadata.get("bid_no"):
                     chunks.setdefault((d.metadata["bid_no"], d.metadata.get("revision", "")), []).append(
-                        d.metadata.get("chunk_id", ""))
-            BID_FINGERPRINTS.update({k: hash(tuple(sorted(v))) for k, v in chunks.items()})
+                        json.dumps([d.metadata.get("chunk_id", ""), d.page_content, d.metadata], sort_keys=True, default=str))
+            fingerprints = {k: hashlib.sha256(json.dumps(sorted(v)).encode()).hexdigest() for k, v in chunks.items()}
+        BID_FINGERPRINTS = fingerprints
     STORE_STATE.update(pdf_generation=pdf_generation, web_generation=web_generation,
                        embedding_model=(manifest or {}).get("embedding_model"))
     VECTORSTORE_PDF, VECTORSTORE_WEB = pdf, web
@@ -668,11 +675,9 @@ def run_extraction(schema, instruction: str, context: str):
 def cached(bid_no: str, revision: str, kind: str, refresh: bool, build) -> dict:
     key = (bid_no, revision, kind)
     fingerprint = BID_FINGERPRINTS.get((bid_no, revision))
-    entry = EXTRACT_CACHE.get(key)
-    # 그 공고의 문서가 바뀌었을 때만 다시 추출 (다른 공고 적재로는 지워지지 않음)
-    if refresh or entry is None or entry["fingerprint"] != fingerprint:
-        entry = EXTRACT_CACHE[key] = {"fingerprint": fingerprint, "data": build()}
-    return entry["data"]
+    if kind == "scoring" and fingerprint is not None:
+        fingerprint += ":separate-rule-context-percent-v2"
+    return EXTRACTIONS.get(key, fingerprint, build, refresh=refresh)
 
 def bid_documents(bid_no: str, revision: str) -> dict:
     """그 공고에 적재된 파일과 종류. 공고문만 적재(흐름 ③)인지, 제안요청서까지 적재(흐름 ⑥)인지 판단한다."""
@@ -810,7 +815,7 @@ def build_scoring(bid_no: str, revision: str) -> dict:
             "needs_review": True, "handoff": False, "latency_ms": elapsed_ms(t0)}
 
 @app.get("/bids/{bid_no}/scoring-table", summary="공고 채점표 추출 (3번 점수 계산용)", tags=["공고 추출"])
-async def scoring_table(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
+def scoring_table(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                         refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출"),
                         allow_partial: bool = Query(False, description="true면 제안요청서 없이 공고문만으로 추출 (채점표가 비거나 불완전할 수 있음)")):
     return run_endpoint(bid_no, revision, "scoring", refresh, build_scoring, needs_rfp=not allow_partial)
@@ -867,7 +872,7 @@ def build_required_docs(bid_no: str, revision: str) -> dict:
             "needs_review": False, "handoff": False, "latency_ms": elapsed_ms(t0)}
 
 @app.get("/bids/{bid_no}/required-docs", summary="공고 제출서류 · 일정 추출 (3번 체크리스트용)", tags=["공고 추출"])
-async def required_docs(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
+def required_docs(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                         refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
     return run_endpoint(bid_no, revision, "required_docs", refresh, build_required_docs)
 
@@ -901,7 +906,7 @@ def build_summary(bid_no: str, revision: str) -> dict:
             "needs_review": False, "handoff": bool(missing), "latency_ms": elapsed_ms(t0)}
 
 @app.get("/bids/{bid_no}/summary", summary="공고 요약 (항목별 출처 포함)", tags=["공고 추출"])
-async def bid_summary(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
+def bid_summary(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                       refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
     return run_endpoint(bid_no, revision, "summary", refresh, build_summary)
 

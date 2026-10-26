@@ -13,9 +13,11 @@ const flow = useFlowStore()
 const loading = ref(false)
 const error = ref('')
 const checked = ref(flow.selected.map(keyOf))
-const jobId = ref('')
+const jobId = ref(flow.documentsJobId || '')
 const opened = reactive({}) // 펼친 카드만 원문 PDF 목록을 불러옵니다.
 const docsJob = ref(null)
+const starting = ref(false)
+const startMessage = ref('')
 const saveNotice = ref('') // 요약을 내 계정(DB)에 저장한 결과 안내
 const changedRevisions = ref([]) // 정정공고로 차수가 바뀐 공고번호
 
@@ -46,7 +48,7 @@ function onDocsDone(job) {
   flow.selected = flow.selected
     .filter((s) => {
       const j = job.bids.find((b) => b.bid_no === s.bid_no)
-      return !j || isOk(j.status)
+      return j && isOk(j.status) && j.rfp_ready === true
     })
     .map((s) => {
       const j = job.bids.find((b) => b.bid_no === s.bid_no)
@@ -57,17 +59,25 @@ function onDocsDone(job) {
 
 // ⑤ 선택한 공고의 제안요청서 준비
 async function prepare() {
+  if (starting.value) return
   error.value = ''; docsJob.value = null
   const picked = flow.summaries.filter((r) => checked.value.includes(keyOf(r)))
   if (!picked.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; return }
+  starting.value = true
+  startMessage.value = '선택한 공고를 확인하는 중…'
   try {
     flow.selected = picked.map((r) => ({
       bid_no: r.bid_no, revision: r.revision, title: meta(r).title || r.summary?.title?.value || r.bid_no,
     }))
     flow.approved = []
+    startMessage.value = '제안요청서 준비 작업을 요청하는 중…'
     jobId.value = await fetchDocuments(flow.searchId, picked)
+    flow.documentsJobId = jobId.value
   } catch (e) {
     error.value = errorMessage(e)
+  } finally {
+    starting.value = false
+    startMessage.value = ''
   }
 }
 </script>
@@ -114,8 +124,8 @@ async function prepare() {
       </details>
     </div>
 
-    <button v-if="flow.summaries.length" class="primary" type="button" :disabled="!!jobId && !docsJob" @click="prepare">
-      선택한 {{ checked.length }}건 제안요청서 준비
+    <button v-if="flow.summaries.length" class="primary" type="button" :disabled="starting || (!!jobId && !docsJob)" @click="prepare">
+      {{ starting ? startMessage : `선택한 ${checked.length}건 제안요청서 준비` }}
     </button>
     <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="제안요청서를 받는 중" @done="onDocsDone" />
     <p v-if="changedRevisions.length" class="notice">정정공고로 차수가 바뀐 공고가 있어 최신 차수로 바꿨습니다: {{ changedRevisions.join(', ') }}</p>

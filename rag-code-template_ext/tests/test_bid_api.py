@@ -49,17 +49,19 @@ class ApiTest(unittest.TestCase):
         self.headers = {"Authorization": "Bearer fixture-only"}
 
     def test_unauthorized_all_routes_before_data_access(self):
-        for path in ("/bids?from=2026-10-01&to=2026-10-31",
+        for path in ("/bids?from=2026-10-01&to=2026-11-30",
                      "/bids/SYN-01/score?revision=00", "/bids/SYN-01/checklist?revision=00"):
             for headers in ({}, {"Authorization": "Bearer expired-or-invalid"}):
                 self.assertEqual(self.client.get(path, headers=headers).status_code, 401)
         self.assertEqual(self.calls, 0)
 
     def test_bids_aliases_and_schema(self):
-        response = self.client.get("/bids?from=2026-10-01&to=2026-10-31", headers=self.headers)
+        response = self.client.get("/bids?from=2026-10-01&to=2026-11-30", headers=self.headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["candidate_count"], 3)
+        self.assertEqual(response.json()["candidate_count"], 4)
         self.assertIn("reason", response.json()["bids"][0])
+        # 게시일이 이전 달이어도 마감일이 선택 기간 안이면 후보에 포함한다.
+        self.assertIn("SYN-07", {b["bid_no"] for b in response.json()["bids"]})
 
     def test_scores_and_checklist_json(self):
         response = self.client.get("/bids/SYN-01/score?revision=00", headers=self.headers)
@@ -83,7 +85,7 @@ class ApiTest(unittest.TestCase):
         def missing_profile():
             raise HTTPException(status_code=404, detail="프로필 등록 필요")
         self.app.dependency_overrides[self.arguments["profile_dependency"]] = missing_profile
-        self.assertEqual(self.client.get("/bids?from=2026-10-01&to=2026-10-31",
+        self.assertEqual(self.client.get("/bids?from=2026-10-01&to=2026-11-30",
                                          headers=self.headers).status_code, 404)
 
     def test_provider_failure_503(self):
@@ -92,17 +94,17 @@ class ApiTest(unittest.TestCase):
         args = {**self.arguments, "bids_provider": unavailable}
         app = FastAPI()
         app.include_router(create_bid_router(**args))
-        response = TestClient(app).get("/bids?from=2026-10-01&to=2026-10-31", headers=self.headers)
+        response = TestClient(app).get("/bids?from=2026-10-01&to=2026-11-30", headers=self.headers)
         self.assertEqual(response.status_code, 503)
         self.assertNotIn("credentials", response.text)
         def unavailable_search(*args):
             raise RuntimeError("벡터 저장소 준비 중")
         app = FastAPI()
         app.include_router(create_bid_router(**{**self.arguments, "search": unavailable_search}))
-        response = TestClient(app).get("/bids?from=2026-10-01&to=2026-10-31", headers=self.headers)
+        response = TestClient(app).get("/bids?from=2026-10-01&to=2026-11-30", headers=self.headers)
         self.assertEqual(response.status_code, 200)  # ②는 본문 저장소 없이 동작한다.
         response = TestClient(app).post("/bids/recheck", headers=self.headers, json={
-            "from": "2026-10-01", "to": "2026-10-31",
+            "from": "2026-10-01", "to": "2026-11-30",
             "bids": [{"bid_no": "SYN-05", "revision": "00"}]})
         self.assertEqual(response.status_code, 503)
 
@@ -112,7 +114,7 @@ class ApiTest(unittest.TestCase):
         client = TestClient(app)
         if path == "/bids/recheck":
             return client.post(path, headers=self.headers, json={
-                "from": "2026-10-01", "to": "2026-10-31",
+                "from": "2026-10-01", "to": "2026-11-30",
                 "bids": [{"bid_no": "SYN-05", "revision": "00"}]})
         return client.get(path, headers=self.headers)
 
@@ -126,7 +128,7 @@ class ApiTest(unittest.TestCase):
         wrong_revision = copy.deepcopy(self.table)
         wrong_revision["items"][0]["revision"] = "01"
         for path, overrides in (
-                ("/bids?from=2026-10-01&to=2026-10-31", {"bids_provider": broken_csv}),
+                ("/bids?from=2026-10-01&to=2026-11-30", {"bids_provider": broken_csv}),
                 ("/bids/recheck",
                  {"search": lambda q, k: faiss_hits(legacy, q, k)}),
                 ("/bids/SYN-01/score?revision=00", {"scoring_provider": lambda *a: wrong_revision})):
@@ -141,7 +143,7 @@ class ApiTest(unittest.TestCase):
             profile = {**load_cases()["profiles"][0], **change}
             self.app.dependency_overrides[self.arguments["profile_dependency"]] = lambda p=profile: p
             path = ("/bids/SYN-01/checklist?revision=00" if "owned_docs" in change
-                    else "/bids?from=2026-10-01&to=2026-10-31")
+                    else "/bids?from=2026-10-01&to=2026-11-30")
             with self.subTest(change=change):
                 self.assertEqual(self.client.get(path, headers=self.headers).status_code, 422)
 
@@ -181,7 +183,7 @@ class MainFileIntegrationTest(unittest.TestCase):
                               checklist_provider=lambda *a: extracted_checklist(),
                               clock=lambda: self.cases["now"])
         self.headers = {"Authorization": "Bearer fixture-only"}
-        self.url = "/bids?from=2026-10-01&to=2026-10-31"
+        self.url = "/bids?from=2026-10-01&to=2026-11-30"
 
     def test_explicit_registration_and_existing_route_preserved(self):
         @self.app.post("/rag-query")
@@ -197,7 +199,7 @@ class MainFileIntegrationTest(unittest.TestCase):
     def test_default_csv_location_and_all_three_routes(self):
         self.register(**self.arguments, search=lambda *a: [])
         client = TestClient(self.app)
-        self.assertEqual(client.get(self.url, headers=self.headers).json()["candidate_count"], 3)
+        self.assertEqual(client.get(self.url, headers=self.headers).json()["candidate_count"], 4)
         for suffix in ("score", "checklist"):
             self.assertEqual(client.get(f"/bids/SYN-01/{suffix}?revision=00",
                                          headers=self.headers).status_code, 200)
@@ -206,7 +208,7 @@ class MainFileIntegrationTest(unittest.TestCase):
         self.register(**self.arguments)
         client = TestClient(self.app)
         self.assertEqual(client.get(self.url, headers=self.headers).status_code, 200)
-        payload = {"from": "2026-10-01", "to": "2026-10-31",
+        payload = {"from": "2026-10-01", "to": "2026-11-30",
                    "bids": [{"bid_no": "SYN-05", "revision": "00"}]}
         self.assertEqual(client.post("/bids/recheck", headers=self.headers, json=payload).status_code, 503)
         from types import SimpleNamespace

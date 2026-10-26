@@ -24,7 +24,11 @@ function startJob(kind, bids) {
 // ---- 1번 · 4번 (서버에 아직 없는 API) ----
 export function handlePipeline({ config, url, method, body, ok, fail }) {
   // 실제 1번 API 는 32자리 16진수 search_id 를 돌려줍니다.
-  if (url === '/search-bids' && method === 'post') return ok(config, { search_id: 'a1b2c3d4'.repeat(4), items: [], cached: false })
+  if (url === '/search-bids' && method === 'post') return ok(config, {
+    search_id: 'a1b2c3d4'.repeat(4), items: [], cached: false,
+    publication_from: body.from, publication_to: iso(new Date()),
+    deadline_from: iso(new Date()), deadline_to: body.to,
+  })
 
   if (['/fetch-notices', '/fetch-documents'].includes(url) && method === 'post') {
     const kind = url === '/fetch-notices' ? 'notices' : 'documents'
@@ -38,17 +42,20 @@ export function handlePipeline({ config, url, method, body, ok, fail }) {
     const bids = j.bids.map((b, i) => {
       const bad = j.kind === 'notices' && b.bid_no === FAIL_NO
       if (i >= done) return { bid_no: b.bid_no, bid_order: b.revision, status: i === done ? 'running' : 'queued', error: null }
-      return { bid_no: b.bid_no, bid_order: b.revision, status: bad ? 'failed' : 'completed', error: bad ? '확인 필요: 첨부 변환에 실패했습니다.' : null }
+      return { bid_no: b.bid_no, bid_order: b.revision, status: bad ? 'failed' : 'completed',
+        download_complete: !bad, rfp_ready: !bad && j.kind === 'documents',
+        rfp_status: bad ? 'not_indexed' : j.kind === 'documents' ? 'ready' : 'not_requested',
+        error: bad ? '확인 필요: 첨부 변환에 실패했습니다.' : null }
     })
-    return ok(config, { status: done >= j.bids.length ? (bids.every((x) => x.status === 'failed') ? 'failed' : bids.some((x) => x.status === 'failed') ? 'partial_failed' : 'completed') : 'running', done, total: j.bids.length, bids })
+    return ok(config, { mode: j.kind, status: done >= j.bids.length ? (bids.every((x) => x.status === 'failed') ? 'failed' : bids.some((x) => x.status === 'failed') ? 'partial_failed' : 'completed') : 'running', done, total: j.bids.length, bids })
   }
   if (['/me/selections', '/me/approvals'].includes(url) && method === 'post') return ok(config, { saved: (body.bids || []).length })
   return null
 }
 
 // ---- 2번 · 3번 (서버에 이미 있는 API를 흉내) ----
-const pub = ({ bid_no, revision, title, agency, published_at, budget, deadline, regions, unknown, distance, needs_review, reason }) => ({
-  bid_no, revision, title, agency, published_at, budget, deadline, regions, unknown, distance, needs_review, reason,
+const pub = ({ bid_no, revision, title, agency, published_at, budget, deadline, regions, unknown, distance, needs_review, reason, notice_only = false, warnings = [] }) => ({
+  bid_no, revision, title, agency, published_at, budget, deadline, regions, unknown, distance, needs_review, reason, notice_only, warnings,
 })
 
 export function handleBidData({ config, url, method, body, profile, ok, fail }) {
@@ -59,7 +66,7 @@ export function handleBidData({ config, url, method, body, profile, ok, fail }) 
   if (url === '/bids' && method === 'get') {
     if (!profile) throw fail(config, 404, '프로필 없음')
     const { from, to } = params
-    const list = BIDS.filter((b) => (!from || b.published_at >= from) && (!to || b.published_at <= to))
+    const list = BIDS.filter((b) => b.deadline && (!from || b.deadline.slice(0, 10) >= from) && (!to || b.deadline.slice(0, 10) <= to))
     return ok(config, { bids: list.map(pub), excluded: [], candidate_count: list.length, needs_review: true })
   }
 

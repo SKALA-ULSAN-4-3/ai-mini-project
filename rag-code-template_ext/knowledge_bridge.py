@@ -8,6 +8,8 @@
 - 1번 bids.csv와 2번 추출 결과를 3번 입력 형식으로 바꾼다.
 """
 import csv
+import hashlib
+import copy
 import json
 import re
 import sys
@@ -33,6 +35,41 @@ from data_pipeline.knowledge import Embedder, KnowledgeStore  # noqa: E402
 BIDS_SOURCE = ROOT / "data" / "corpus" / "bids.csv"                 # 1번 산출물
 BIDS_FOR_BID_LOGIC = Path(__file__).resolve().parent / "data" / "bids.csv"  # 3번 기본 경로
 
+
+class ExtractionCache:
+    """공개 공고 추출 결과만 저장한다. 회사별 점수·프로필·실패 응답은 저장하지 않는다."""
+    def __init__(self, root, namespace):
+        self.root = Path(root)
+        self.namespace = namespace
+        self.entries = {}
+        self.locks = [threading.Lock() for _ in range(64)]
+
+    def get(self, key, fingerprint, build, refresh=False):
+        if fingerprint is None:
+            return build()
+        digest = hashlib.sha256(json.dumps([self.namespace, key], ensure_ascii=False).encode()).hexdigest()
+        with self.locks[int(digest[:8], 16) % len(self.locks)]:
+            entry = self.entries.get(digest)
+            path = self.root / (digest + ".json")
+            if not refresh and entry is None:
+                try:
+                    entry = json.loads(path.read_text())
+                except (OSError, ValueError):
+                    entry = None
+            if (refresh or not isinstance(entry, dict) or entry.get("fingerprint") != fingerprint
+                    or "data" not in entry):
+                entry = {"fingerprint": fingerprint, "data": build()}
+                try:
+                    self.root.mkdir(parents=True, exist_ok=True)
+                    temporary = path.with_suffix(".tmp")
+                    temporary.write_text(json.dumps(entry, ensure_ascii=False))
+                    temporary.replace(path)
+                except OSError:
+                    pass  # 캐시 저장 실패로 정상 응답을 실패 처리하지 않는다
+            if len(self.entries) >= 512:
+                self.entries.pop(next(iter(self.entries)))
+            self.entries[digest] = entry
+            return copy.deepcopy(entry["data"])
 
 # ---------------------------------------------------------------- 인덱스 어댑터
 class PipelineEmbeddings(Embeddings):
@@ -111,6 +148,7 @@ class StoreCache:
 #                          "[제안요청서] ….hwp", "(과업내용서) ….hwpx", "3. 과업지시서(…).hwp"
 NOTICE_WORDS = ("공고문", "공고서", "입찰공고", "재공고")
 RFP_WORDS = ("제안요청서", "제안요청", "과업지시서", "과업내용서", "규격서", "RFP")
+AGREEMENT_WORDS = ("협약서", "협약문서", "기술지원확약서")
 
 
 def classify_attachment(filename: str) -> set[str]:
@@ -118,6 +156,8 @@ def classify_attachment(filename: str) -> set[str]:
     import unicodedata
     name = unicodedata.normalize("NFC", filename or "")  # macOS 파일명(NFD)도 같게 비교
     kinds = {k for k, words in (("rfp", RFP_WORDS), ("notice", NOTICE_WORDS)) if any(w in name for w in words)}
+    if any(word in name for word in AGREEMENT_WORDS):
+        kinds.add("agreement")
     # "(최종)제안요청서(재공고)"처럼 "재공고"는 재공고 사실만 붙인 것이다. 제안요청서 이름에서는 공고문으로 보지 않는다
     # (1번이 공고문만 받을 때 이 함수로 고르므로, 공고문이 HWP뿐이면 제안요청서 PDF를 공고문으로 받게 됨)
     if "rfp" in kinds and not any(w in name.replace("재공고", "") for w in NOTICE_WORDS):
@@ -204,7 +244,8 @@ def search_results(search_id: str, profile: dict | None = None) -> dict | None:
     except search_jobs.SearchNotFound:
         return None
     public = search_jobs._public_search(saved, True)
-    return {"from": saved["request"]["from"], "to": saved["request"]["to"], "items": public["items"]}
+    return {"from": saved["request"].get("deadline_from", saved["request"]["from"]),
+            "to": saved["request"]["to"], "items": public["items"]}
 
 
 def sync_bids_csv() -> bool:

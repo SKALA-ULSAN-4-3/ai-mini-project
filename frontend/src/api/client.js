@@ -17,6 +17,7 @@ function makeClient(baseURL) {
   // [응답 직후] 401이면 토큰을 지우고 로그인 화면으로 (로그인 요청 자체는 제외)
   c.interceptors.response.use(
     (res) => {
+      if (['put', 'patch', 'post'].includes(res.config.method) && res.config.url === '/profile') invalidateApiCache()
       console.log(`[API 성공${res.config.mocked ? '·가짜 데이터' : '·실제 서버'}] ${res.status} ${res.config.baseURL}${res.config.url}`)
       return res
     },
@@ -57,6 +58,7 @@ export const rag = makeClient(RAG_URL) // RAG 서버(:8001): 공고·요약·채
 // 서버 오류를 사용자에게 보여줄 문장으로 바꿔 주는 도우미
 export function errorMessage(error, messages = {}) {
   const status = error.response?.status
+  if (['ECONNABORTED', 'ETIMEDOUT'].includes(error.code)) return '서버 응답 대기시간을 초과했습니다. 잠시 후 다시 확인해 주세요.'
   if (!error.response) return '서버에 연결할 수 없습니다. 서버가 켜져 있는지 확인해 주세요.'
   if (messages[status]) return messages[status]
   if (status === 400) return '입력값이 올바르지 않습니다. 내용을 다시 확인해 주세요.'
@@ -67,3 +69,30 @@ export function errorMessage(error, messages = {}) {
 }
 
 export default client
+
+// 완료된 공개 문서 응답은 짧게 재사용하고, 진행 중인 동일 요청은 한 번만 전송한다.
+const apiResponses = new Map()
+const apiPending = new Map()
+let cacheEpoch = 0
+export function invalidateApiCache() {
+  cacheEpoch += 1
+  apiResponses.clear()
+  apiPending.clear()
+}
+export function cachedApi(key, fetcher, ttl = 60000, cacheable = () => true) {
+  const identity = `${sessionStorage.getItem('token') || ''}:${key}`
+  const entry = apiResponses.get(identity)
+  const clone = (data) => JSON.parse(JSON.stringify(data))
+  if (entry && entry.until > Date.now()) return Promise.resolve(clone(entry.data))
+  if (apiPending.has(identity)) return apiPending.get(identity).then(clone)
+  const epoch = cacheEpoch
+  const promise = Promise.resolve().then(fetcher).then((data) => {
+    if (ttl > 0 && epoch === cacheEpoch && cacheable(data)) {
+      if (apiResponses.size >= 256) apiResponses.delete(apiResponses.keys().next().value)
+      apiResponses.set(identity, { data: clone(data), until: Date.now() + ttl })
+    }
+    return data
+  }).finally(() => { if (apiPending.get(identity) === promise) apiPending.delete(identity) })
+  apiPending.set(identity, promise)
+  return promise.then(clone)
+}

@@ -136,7 +136,7 @@ public final class WorkplaceApplication {
         register(
                 server,
                 "/api/auth/check",
-                new AuthCheckHandler(currentUserResolver, responses),
+                new AuthCheckHandler(currentUserResolver, userRepository, responses),
                 responses,
                 config
         );

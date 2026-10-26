@@ -1,30 +1,94 @@
 """확정 흐름의 검색 스냅샷 → 공고문 준비 → 선택 첨부 준비와 진행률."""
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date, datetime
 import importlib
 import json
 import os
 from pathlib import Path
 import re
+import signal
+import shutil
+import tempfile
+import subprocess
 import sys
 import time
 import unicodedata
 import uuid
 
 from . import collect_bids as collector
+from . import restrictions
 from . import convert_documents as converter
+from . import bid_progress
 from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY,
                      HWP_SUFFIXES, directory_lock, read_json, write_json,
                      read_jsonl, write_jsonl, read_csv, write_csv, stamp)
 from .knowledge import KnowledgeStore
-from .prepare_documents import prepare
+from .privacy import official_names
 
 CACHE_SECONDS = 300
+ACTIVE_JOBS = set()
+PREPARE_VERSION = hashlib.sha256(b"".join(
+    (Path(__file__).parent / name).read_bytes()
+    for name in ("prepare_documents.py", "privacy.py", "convert_documents.py"))).hexdigest()
 RESTRICTION_FIELDS = (
     "indstrytyLmtYn", "rgnLmtBidLocplcJdgmBssNm", "jntcontrctDutyRgnNm1",
     "jntcontrctDutyRgnNm2", "jntcontrctDutyRgnNm3", "cmmnSpldmdMethdNm",
-    "cntrctCnclsMthdNm", "presmptPrce", "asignBdgtAmt", "bidClseDt",
+    "cntrctCnclsMthdNm", "presmptPrce", "asignBdgtAmt", "bidClseDt", "opengDt",
 )
-ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name"]
+ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name", "source", "document_type"]
+
+
+def _enrich_restrictions(item, key):
+    """공고·차수별 공개 제한 정보를 잠시 재사용한다. 실패 결과는 캐시하지 않는다."""
+    bid_no, order = str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000")
+    folder = root_dir() / "restriction-cache"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / (collector.safe_name(f"{bid_no}_{order}") + ".json")
+    details = None
+    if path.is_file():
+        try:
+            cached = read_json(path)
+            if (cached.get("bid_no"), cached.get("bid_order"), cached.get("industry_flag")) == (
+                    bid_no, order, item.get("indstrytyLmtYn")) and time.time() - cached["created_epoch"] < CACHE_SECONDS:
+                details = cached["details"]
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+    if details is None:
+        details = restrictions.lookup_restrictions(item, key)
+        if all(d.get("lookup_status") == "complete" for d in details.values()):
+            write_json(path, {"bid_no": bid_no, "bid_order": order,
+                              "industry_flag": item.get("indstrytyLmtYn"),
+                              "created_epoch": time.time(), "details": details})
+    return {**item, **details}
+
+
+def _enrich_candidate(item, key):
+    # 검색에서는 자격 제한과 공고문 목록만 확인한다. e발주 전체 첨부는 사용자 선택 후 조회한다.
+    return _enrich_restrictions(item, key)
+
+
+def _enrich_eorder(item, key):
+    enriched = dict(item)
+    # 이전 결과가 남아 있어도 최신 조회가 실패하면 오래된 첨부를 준비 완료 근거로 쓰지 않는다.
+    enriched["eorder_attachments"] = []
+    try:
+        enriched["eorder_attachments"] = collector.lookup_eorder_attachments(
+            key, str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000"))
+        enriched["eorder_lookup_status"] = "complete"
+        enriched.pop("eorder_lookup_error", None)
+    except collector.CollectionError as exc:
+        enriched["eorder_lookup_status"] = "unavailable"
+        enriched["eorder_lookup_error"] = str(exc)
+    return enriched
+
+
+def _attachment_source(item, url):
+    for attachment in item.get("eorder_attachments", []):
+        if attachment["url"] == url and (attachment.get("bid_no"), attachment.get("bid_order")) == (
+                str(item["bidNtceNo"]), str(item.get("bidNtceOrd") or "000")):
+            return {"source": "eorder", "document_type": attachment.get("document_type", "")}
+    return {"source": "notice", "document_type": ""}
 
 
 def latest_notices(items):
@@ -88,48 +152,154 @@ def _snapshot(search_id):
     return read_json(path)
 
 
-def _public_search(saved, cached):
+def _public_search(saved, cached, now=None):
     items = []
     latest = latest_notices(saved["items"])
     for item in saved["items"]:
         if not is_active_notice(item, latest):
             continue
+        item = bid_progress.apply_progress(item, now)
+        if not item["bid_progress"]["recommendable"]:
+            continue
+        if saved["request"].get("date_basis") == "deadline" and not collector.deadline_in_period(
+                item, date.fromisoformat(saved["request"].get("deadline_from", saved["request"]["from"])),
+                date.fromisoformat(saved["request"]["to"])):
+            continue
         row = collector.notice_row(item, saved["request"]["queries"], saved["collected_at"])
         # 허용 목록으로만 응답한다. API 담당자 성명·연락처를 그대로 반환하지 않는다.
         row.update({field: item.get(field) for field in RESTRICTION_FIELDS})
+        row["bid_progress"] = item["bid_progress"]
+        row.update({field: item[field] for field in ("region_restriction", "industry_restriction") if field in item})
         row["attachments"] = [{"file_name": name, "url": url,
+                               **_attachment_source(item, url),
                                "kinds": sorted(classify_attachment(name)) if name != "standard_notice" else ["notice"]}
                               for name, url in collector.attachments(item)]
+        row["rfp_listed"] = any("rfp" in a["kinds"] and "cancel" not in a["kinds"]
+                                for a in row["attachments"])
+        row["attachment_lookup_status"] = item.get("eorder_lookup_status", "not_checked")
+        row["notice_only"] = row["attachment_lookup_status"] == "complete" and bool(row["attachments"]) and all(
+            a["kinds"] == ["notice"] for a in row["attachments"])
+        row["warnings"] = (["해당 공고는 공고문만 있다. 제공된 첨부 목록 기준이며 공고 상세 확인이 필요합니다."]
+                           if row["notice_only"] else [])
+        if row["attachment_lookup_status"] == "unavailable" and not row["rfp_listed"]:
+            row["warnings"].append("제안요청정보의 첨부 목록을 확인하지 못했습니다. 공고문만 있다고 단정할 수 없습니다.")
         items.append(row)
     return {"search_id": saved["search_id"], "items": items, "cached": cached,
+            "progress_excluded": saved.get("progress_excluded", []),
+            "search_coverage": saved.get("search_coverage"),
+            "publication_from": saved["request"].get("publication_from"),
+            "publication_to": saved["request"].get("publication_to"),
+            "deadline_from": saved["request"].get("deadline_from", saved["request"].get("from")),
+            "deadline_to": saved["request"].get("to"),
+            "date_basis": saved["request"].get("date_basis", "published_at"),
             "collected_at": saved["collected_at"], "cache_seconds": CACHE_SECONDS,
             "page_limit_reached": saved["page_limit_reached"]}
+
+
+def _cached_progress(key, bid_no, order):
+    # 다른 검색어로 재검색해도 같은 공고의 정상 조회 결과는 30초간 재사용한다.
+    folder = root_dir() / "progress-cache"
+    folder.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256((key + ":" + bid_no + ":" + order).encode()).hexdigest()
+    path = folder / (digest + ".json")
+    try:
+        cached = read_json(path)
+        if time.time() - cached["created_epoch"] < 30:
+            return cached["data"]
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    data = bid_progress.lookup_progress(key, bid_no, order)
+    if data.get("lookup_status") == "complete":
+        write_json(path, {"created_epoch": time.time(), "data": data})
+    return data
 
 
 def search_bids(start, end, queries, limit, key):
     queries = list(dict.fromkeys(q.strip() for q in queries))
     if start > end or not queries or not all(queries):
         raise ValueError("검색 기간과 검색어를 확인하세요.")
-    request = {"from": str(start), "to": str(end), "queries": queries, "limit": limit}
+    current_time = datetime.now(collector.KST)
+    discovery_start = start
+    discovery_end = current_time.date()
+    deadline_start = current_time.date()
+    if start > discovery_end:
+        raise ValueError("게시 시작일은 오늘 이전 또는 오늘이어야 합니다.")
+    if end < deadline_start:
+        raise ValueError("마감 종료일은 오늘 이후 또는 오늘이어야 합니다.")
+    request = {"from": str(start), "to": str(end), "queries": queries, "limit": limit,
+               "date_basis": "deadline", "discovery_strategy": "publication-start-deadline-end-v1",
+               "deadline_from": str(deadline_start),
+               "publication_from": str(discovery_start), "publication_to": str(discovery_end),
+               "restriction_sources": "region-license-v2",
+               "progress_source": "scsbid-v1",
+               "progress_key_configured": bool(os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()),
+               "attachment_sources": "notice+eorder-standard-name-v2"}
     digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
     with directory_lock(root_dir(), ".search.lock") as root:
         cache = root / f"cache-{digest}.json"
         if cache.exists():
             cached = read_json(cache)
             if time.time() - cached["created_epoch"] < CACHE_SECONDS:
-                return _public_search(_snapshot(cached["search_id"]), True)
+                return _public_search(_snapshot(cached["search_id"]), True, current_time)
         if not key:
             raise RuntimeError("DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.")
-        items, truncated = collector.search_candidates(key, start, end, queries, limit)
+        progress_key = os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()
+        progress_cache, progress_excluded = {}, {}
+
+        def current_candidate(item):
+            # 원래 마감이 지난 재입찰 허용 공고도 새 마감을 확인한 뒤 기간으로 거른다.
+            opening = bid_progress.parse_time(item.get("opengDt"))
+            elapsed_unknown = not item.get("bidClseDt") and opening is not None and opening <= (
+                current_time if current_time.tzinfo else current_time.replace(tzinfo=collector.KST))
+            if (not collector.deadline_in_period(item, deadline_start, end)
+                    and str(item.get("rbidPermsnYn") or "").upper() != "Y" and not elapsed_unknown):
+                return None
+            identity = (str(item.get("bidNtceNo") or ""), str(item.get("bidNtceOrd") or "000"))
+            if not identity[0] or any(w in str(item.get("ntceKindNm") or "") for w in ("취소", "철회")):
+                return None
+            if identity not in progress_cache:
+                try:
+                    progress_cache[identity] = _cached_progress(progress_key, *identity)
+                except bid_progress.ProgressRateLimitError:
+                    raise  # 전체 조회 한도 초과를 '검색 결과 0건'으로 숨기거나 캐시하지 않는다.
+                except collector.CollectionError as exc:
+                    progress_cache[identity] = {"lookup_status": "unavailable", "error": str(exc)}
+            current = bid_progress.apply_progress({**item, "bid_progress": progress_cache[identity]}, current_time)
+            if not current["bid_progress"]["recommendable"]:
+                state = current["bid_progress"]
+                progress_excluded[identity] = {"bid_no": identity[0], "bid_order": identity[1],
+                                               "status": state["state"], "label": state["label"],
+                                               "reason": state.get("reason") or state.get("error")}
+                return None
+            return current
+
+        items, truncated, coverage = collector.search_deadline_candidates(
+            key, discovery_start, discovery_end, deadline_start, end, queries, limit,
+            candidate_transform=current_candidate)
+        latest = latest_notices(items)
+        # 상세 제한을 조회하고, 일반 첨부에 RFP가 없으면 e발주 목록도 보완한다.
+        positions = [i for i, item in enumerate(items) if is_active_notice(item, latest)]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            enriched = executor.map(lambda i: _enrich_candidate(items[i], key), positions)
+            for i, item in zip(positions, enriched):
+                items[i] = item
         search_id = uuid.uuid4().hex
         folder = root / search_id
         folder.mkdir()
         saved = {"search_id": search_id, "request": request, "items": items,
+                 "progress_excluded": list(progress_excluded.values()),
+                 "search_coverage": coverage,
                  "collected_at": stamp(), "page_limit_reached": truncated}
         # 판별 함수 연결 오류가 나면 사용할 수 없는 결과를 캐시에 등록하지 않는다.
-        response = _public_search(saved, False)
+        response = _public_search(saved, False, current_time)
         write_json(folder / "search.json", saved)
-        write_json(cache, {"created_epoch": time.time(), "search_id": search_id})
+        latest = latest_notices(items)
+        details_complete = all(
+            all(item.get(field, {}).get("lookup_status") == "complete"
+                for field in ("region_restriction", "industry_restriction"))
+            for item in items if is_active_notice(item, latest))
+        if details_complete and not any(r["status"] == "unavailable" for r in progress_excluded.values()):
+            write_json(cache, {"created_epoch": time.time(), "search_id": search_id})
         return response
 
 
@@ -137,7 +307,8 @@ def select_items(search_id, bids):
     saved = _snapshot(search_id)
     latest = latest_notices(saved["items"])
     available = {(str(i["bidNtceNo"]), str(i.get("bidNtceOrd") or "000")): i
-                 for i in saved["items"] if is_active_notice(i, latest)}
+                 for i in saved["items"] if is_active_notice(i, latest)
+                 and bid_progress.apply_progress(i)["bid_progress"]["recommendable"]}
     keys = [(b["bid_no"], b["bid_order"]) for b in bids]
     if not 1 <= len(keys) <= 20 or len(set(keys)) != len(keys):
         raise ValueError("중복 없는 공고 1~20건을 지정하세요.")
@@ -148,14 +319,24 @@ def select_items(search_id, bids):
 
 def create_job(search_id, bids, mode):
     select_items(search_id, bids)
-    job_id = uuid.uuid4().hex
-    folder = root_dir() / "jobs"
-    folder.mkdir(parents=True, exist_ok=True)
-    job = {"job_id": job_id, "search_id": search_id, "mode": mode,
-           "status": "queued", "done": 0, "total": len(bids), "created_at": stamp(),
-           "bids": [{**bid, "status": "queued", "error": None} for bid in bids]}
-    write_json(folder / f"{job_id}.json", job)
-    return job
+    identity = sorted((b["bid_no"], b["bid_order"]) for b in bids)
+    with directory_lock(root_dir(), ".jobs.lock"):
+        folder = root_dir() / "jobs"
+        folder.mkdir(parents=True, exist_ok=True)
+        for path in folder.glob("*.json"):
+            old = read_json(path)
+            if (old.get("job_id") in ACTIVE_JOBS
+                    and old.get("mode") == mode
+                    and old.get("status") in {"queued", "running"}
+                    and sorted((b["bid_no"], b["bid_order"]) for b in old["bids"]) == identity):
+                return {**old, "reused": True}
+        job_id = uuid.uuid4().hex
+        job = {"job_id": job_id, "search_id": search_id, "mode": mode,
+               "status": "queued", "done": 0, "total": len(bids), "created_at": stamp(),
+               "bids": [{**bid, "status": "queued", "error": None} for bid in bids]}
+        write_json(folder / f"{job_id}.json", job)
+        ACTIVE_JOBS.add(job_id)
+        return job
 
 
 def get_job(job_id):
@@ -164,13 +345,25 @@ def get_job(job_id):
     path = root_dir() / "jobs" / f"{job_id}.json"
     if not path.is_file():
         raise SearchNotFound("작업이 없습니다.")
-    return read_json(path)
+    job = read_json(path)
+    for bid in job.get("bids", []):
+        if bid.get("status") != "converting":
+            continue
+        manifest = root_dir() / "documents" / collector.safe_name(
+            f"{bid['bid_no']}_{bid['bid_order']}") / "conversions.jsonl"
+        if manifest.is_file():
+            bid["conversion_progress"] = [{"file_name": Path(row["original_path"]).name,
+                "status": row.get("status"), "attempt": row.get("attempt"),
+                "max_attempts": row.get("max_attempts"), "timeout_seconds": row.get("timeout_seconds")}
+                for row in read_jsonl(manifest)]
+    return job
+
 
 
 def _notice_url(item):
     options = []
     for position, (name, url) in enumerate(collector.attachments(item)):
-        standard = name == "standard_notice"
+        standard = url == str(item.get("stdNtceDocUrl") or "").strip()
         kinds = {"notice"} if standard else classify_attachment(name)
         suffix = Path(name).suffix.lower()
         if "notice" in kinds and "cancel" not in kinds and (standard or suffix in {".pdf", ".hwp", ".hwpx"}):
@@ -183,6 +376,7 @@ def _attachment_rows(item, notice_url, full, previous):
     for position, (name, url) in enumerate(collector.attachments(item), 1):
         is_notice = url == notice_url
         row = {"bid_no": str(item["bidNtceNo"]), "bid_order": str(item.get("bidNtceOrd") or "000"),
+               **_attachment_source(item, url),
                "file_name": name, "url": url, "selected": full or is_notice,
                "status": "listed" if full or is_notice else "deferred", "local_path": "", "error": "",
                "role": "notice" if is_notice else "supporting",
@@ -194,8 +388,71 @@ def _attachment_rows(item, notice_url, full, previous):
     return rows
 
 
-def _prepare_selected(folder, rows):
-    """내부 적재용 공고문/RFP만 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
+class PrepareTimeout(RuntimeError):
+    pass
+
+
+def _run_prepare_worker(folder, convert_hwp, timeout, env):
+    """변환뿐 아니라 PDF 검증·텍스트 추출까지 별도 프로세스에서 시간 제한한다."""
+    command = [sys.executable, "-m", "data_pipeline.prepare_documents", "--run-dir", str(folder)]
+    if convert_hwp:
+        command.append("--convert-hwp")
+    process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, start_new_session=True, env=env)
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        # soffice 자식 프로세스도 종료해 변환 프로필·파일 잠금이 남지 않게 한다.
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.communicate()
+        raise PrepareTimeout(f"문서 변환·텍스트 추출이 {timeout}초를 초과해 중단했습니다. 원본은 보존되며 재시도 시 성공 파일을 재사용합니다.") from None
+    if process.returncode not in (0, 2):
+        raise RuntimeError("문서 변환·텍스트 추출 프로세스가 실패했습니다. 변환 도구 설정과 문서 형식을 확인하세요.")
+
+
+
+def _prepare_with_timeout(folder, convert_hwp, timeout=None):
+    if not convert_hwp:
+        return _run_prepare_worker(folder, False, timeout or 120, None)
+    if timeout is None:
+        per_file, attempts, overall_limit = converter.conversion_policy()
+        originals = {converter.sha256(Path(row["local_path"])) for row in read_csv(folder / "attachments.csv")
+                     if str(row.get("selected")).lower() == "true" and row.get("local_path")
+                     and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES
+                     and Path(row["local_path"]).is_file()}
+        # 120, 240, 360...초의 파일별 제한 합계와 PDF 추출 여유를 반영한다.
+        per_file_budget = per_file * attempts * (attempts + 1) // 2
+        timeout = min(overall_limit, max(180, len(originals) * per_file_budget + 180))
+    # 변환 프로필만 격리한다. 확장 파일은 재설치·재다운로드하지 않는다.
+    with tempfile.TemporaryDirectory(prefix="bid-office-") as temp:
+        profile = Path(temp) / "profile"
+        if converter.PROFILE.is_dir():
+            shutil.copytree(converter.PROFILE, profile,
+                            ignore=shutil.ignore_patterns(".lock", "*.lock", "lock"))
+        else:
+            raise RuntimeError("한글 변환 프로필이 없습니다. 변환 도구 설정을 확인하세요.")
+        env = {**os.environ, "BID_CONVERTER_PROFILE": str(profile)}
+        try:
+            return _run_prepare_worker(folder, True, timeout, env)
+        except PrepareTimeout:
+            # 성공한 변환 기록과 원본은 남겨 PDF 텍스트 추출만 이어간다.
+            # 실패·미변환 파일은 documents.jsonl에 남아 부분 실패로 안내된다.
+            return _run_prepare_worker(folder, False, 120, None)
+
+
+
+def _prepare_selected(folder, rows, full=False):
+    """공고문·제안요청서·협약문서를 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
     def stem(row):
         return unicodedata.normalize("NFC", Path(row["file_name"]).stem).casefold()
 
@@ -203,8 +460,10 @@ def _prepare_selected(folder, rows):
             and Path(row["local_path"]).suffix.lower() == ".pdf"}
     scoped = []
     for row in rows:
-        kinds = {"notice"} if row["file_name"] == "standard_notice" else classify_attachment(row["file_name"])
-        selected = row["selected"] and bool(kinds & {"notice", "rfp"}) and "cancel" not in kinds
+        kinds = {"notice"} if row.get("role") == "notice" else classify_attachment(row["file_name"])
+        selected = (row["selected"] and "cancel" not in kinds
+                    and ((full and Path(row["local_path"]).suffix.lower() in {".hwp", ".hwpx", ".pdf"})
+                         or bool(kinds & {"notice", "rfp", "agreement"})))
         if Path(row["file_name"]).suffix.lower() in HWP_SUFFIXES and stem(row) in pdfs:
             selected = False  # 원본은 보존하고 같은 이름의 PDF만 내부 적재에 쓴다.
         prepared = {**row, "selected": selected}
@@ -212,26 +471,94 @@ def _prepare_selected(folder, rows):
             # API에 이름이 없는 표준공고서도 RAG의 공통 판별 함수가 인식할 수 있게 한다.
             prepared["file_name"] = Path(row["local_path"]).name
         scoped.append(prepared)
+    selected = [row for row in scoped if row["selected"] and row["status"] in DOWNLOAD_SUCCESS]
+    config = converter.TOOLS / "converter.json"
+    inputs = {"version": PREPARE_VERSION,
+              "files": [(row["url"], row["file_name"], converter.sha256(Path(row["local_path"]))) for row in selected],
+              "bids": read_csv(folder / "bids.csv"),
+              "names": [official_names(item) for item in read_json(folder / "candidates.json").get("items", [])],
+              "converter": converter.sha256(config) if config.is_file() else None}
+    fingerprint = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
+    cache_file = folder / "prepared-cache.json"
+    try:
+        cached = read_json(cache_file)
+        if (cached["fingerprint"] == fingerprint and cached["outputs"]
+                and all((folder / name).is_file() and converter.sha256(folder / name) == digest
+                        for name, digest in cached["outputs"].items())):
+            return
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
     write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, scoped)
     try:
         if any(row["selected"] and row["status"] in DOWNLOAD_SUCCESS
                and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES for row in scoped):
             conversion_file = folder / "conversions.jsonl"
             cached = {row["original_path"]: row for row in read_jsonl(conversion_file)} if conversion_file.exists() else {}
-            with directory_lock(root_dir(), ".conversion.lock"):
-                converter.convert_run(folder)
+            _prepare_with_timeout(folder, True)
             cached.update({row["original_path"]: row for row in read_jsonl(conversion_file)})
             write_jsonl(conversion_file, cached.values())
-        prepare(folder)
+        else:
+            _prepare_with_timeout(folder, False)
+        documents = read_jsonl(folder / "processed/documents.jsonl")
+        if documents and all(doc["status"] in TEXT_READY for doc in documents):
+            outputs = {name: converter.sha256(folder / name) for name in (
+                "processed/pages.jsonl", "processed/chunks.jsonl", "processed/documents.jsonl")}
+            conversion_file = folder / "conversions.jsonl"
+            if conversion_file.is_file():
+                for record in read_jsonl(conversion_file):
+                    if (record.get("status") in ("converted", "existing")
+                            and record.get("original_path") in {str(Path(row["local_path"]).resolve()) for row in selected}):
+                        path = Path(record["pdf_path"]).resolve()
+                        if path.is_relative_to(folder.resolve()):
+                            outputs[str(path.relative_to(folder.resolve()))] = converter.sha256(path)
+            write_json(cache_file, {"fingerprint": fingerprint, "outputs": outputs})
     finally:
         write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, rows)
 
 
+def _document_readiness(item, rows, indexed_records, documents=()):
+    """다운로드와 실제 RFP 청크 적재를 구분한다. 파일명·URL만으로 준비 완료를 추정하지 않는다."""
+    files = []
+    for row in rows:
+        kinds = ({"notice"} if row.get("role") == "notice"
+                 else classify_attachment(row["file_name"]))
+        records = [r for r in indexed_records if r["source_url"] == row["url"]]
+        document = next((d for d in documents if d["source_url"] == row["url"]), {})
+        rfp_ready = "cancel" not in kinds and any(
+            "rfp" in classify_attachment(r["file_name"]) for r in records)
+        files.append({"file_name": row["file_name"], "url": row["url"],
+                      "source": row.get("source", "notice"), "document_type": row.get("document_type", ""),
+                      "status": row["status"], "kinds": sorted(kinds),
+                      "preparation_status": document.get("status", "not_processed"),
+                      "preparation_error": document.get("error", ""),
+                      "indexed_chunks": len(records), "rfp_ready": rfp_ready})
+    selected = [r for r in rows if r["selected"]]
+    download_complete = bool(selected) and all(
+        r["status"] in DOWNLOAD_SUCCESS and bool(r["local_path"])
+        and Path(r["local_path"]).is_file() and Path(r["local_path"]).stat().st_size > 0
+        for r in selected)
+    rfp_files = [f for f in files if "rfp" in f["kinds"] and "cancel" not in f["kinds"]]
+    rfp_ready = any(f["rfp_ready"] for f in rfp_files)
+    lookup_status = item.get("eorder_lookup_status", "not_checked")
+    rfp_status = ("ready" if rfp_ready else "lookup_failed" if not rfp_files and lookup_status == "unavailable"
+                  else "not_checked" if not rfp_files and lookup_status == "not_checked"
+                  else "not_listed" if not rfp_files
+                  else "download_failed" if any(f["status"] == "failed" for f in rfp_files)
+                  else "not_requested" if all(f["status"] == "deferred" for f in rfp_files)
+                  else "not_indexed")
+    return {"download_complete": download_complete, "rfp_ready": rfp_ready,
+            "attachment_lookup_status": lookup_status,
+            "rfp_status": rfp_status, "rfp_files": rfp_files, "files": files,
+            "detail_url": item.get("bidNtceDtlUrl") or item.get("bidNtceUrl", "")}
+
+
 def _process_bid(item, full, store, progress):
+    item = collector.resolve_standard_notice(item)
     bid_no = str(item["bidNtceNo"])
     order = str(item.get("bidNtceOrd") or "000")
     folder = root_dir() / "documents" / collector.safe_name(f"{bid_no}_{order}")
-    with directory_lock(folder, ".document.lock"):
+    progress("waiting_document")
+    with directory_lock(folder, ".document.lock", timeout=180):
         progress("downloading")
         notice_url = _notice_url(item)
         if not full and notice_url is None:
@@ -250,7 +577,13 @@ def _process_bid(item, full, store, progress):
         collected_at = read_csv(folder / "bids.csv")[0]["collected_at"] if published else stamp()
         write_csv(folder / "bids.csv", BID_FIELDS, [collector.notice_row(item, [], collected_at)])
         progress("converting")
-        _prepare_selected(folder, rows)
+        try:
+            _prepare_selected(folder, rows, full=full)
+        except Exception as exc:
+            # 변환 실패여도 이미 끝난 다운로드와 RFP 미적재 사실을 함께 전달한다.
+            message = str(exc) if isinstance(exc, (ValueError, RuntimeError)) else type(exc).__name__
+            return {"status": "failed", "error": "문서 준비 실패: " + message,
+                    "indexed_chunks": 0, **_document_readiness(item, rows, [])}
         documents = read_jsonl(folder / "processed/documents.jsonl")
         chunks = read_jsonl(folder / "processed/chunks.jsonl")
         ready = {(d["bid_no"], d["bid_order"], d["source_url"])
@@ -263,13 +596,23 @@ def _process_bid(item, full, store, progress):
             progress("indexing")
             store.upsert(records)  # 실시간 경로는 누적 적재만 허용한다.
         failures = [r["file_name"] for r in rows if r["selected"] and r["status"] == "failed"]
-        failures += [d["original_file_name"] for d in documents if d["status"] not in TEXT_READY]
+        failures += [f"{d['original_file_name']} ({d['status']}"
+                     + (f": {d['error']}" if d.get("error") else "") + ")"
+                     for d in documents if d["status"] not in TEXT_READY]
         if not records:
             failures.append("적재 가능한 공고문/제안요청서 텍스트가 없습니다.")
-        files = [{"file_name": r["file_name"], "status": r["status"]} for r in rows]
+        readiness = _document_readiness(item, rows, records, documents)
+        if full and readiness["attachment_lookup_status"] == "unavailable":
+            failures.append(item.get("eorder_lookup_error") or "제안요청정보 첨부 조회 실패")
+        if full and not readiness["rfp_ready"]:
+            failures.append("파일첨부·제안요청정보에 식별 가능한 제안요청서류가 없습니다. 공고 상세 첨부를 확인하세요."
+                            if readiness["rfp_status"] == "not_listed" else
+                            "제안요청정보 첨부 목록을 확인하지 못했습니다. 조회 상태를 확인한 뒤 다시 시도하세요."
+                            if readiness["rfp_status"] in {"lookup_failed", "not_checked"} else
+                            "제안요청서류가 아직 변환·텍스트 적재되지 않았습니다.")
         return {"status": "partial_failed" if failures and records else "failed" if failures else "completed",
                 "error": "확인 필요: " + ", ".join(dict.fromkeys(failures)) if failures else None,
-                "files": files, "indexed_chunks": len(records)}
+                **readiness, "indexed_chunks": len(records)}
 
 
 def run_job(job_id, key=None):
@@ -288,8 +631,9 @@ def run_job(job_id, key=None):
                 write_json(path, job)
 
             try:
-                if job["mode"] == "documents":
+                if job["mode"] == "documents" or (job["mode"] == "notices" and key):
                     # 전체 검색을 재실행하지 않고 선택된 공고번호만 조회한다.
+                    progress("checking_attachments")
                     current = collector.lookup_notice(key, bid["bid_no"])
                     latest_order = str(current.get("bidNtceOrd") or "000")
                     if int(latest_order) < int(bid["bid_order"]):
@@ -297,10 +641,18 @@ def run_job(job_id, key=None):
                     bid["requested_bid_order"] = bid["bid_order"]
                     bid["revision_changed"] = latest_order != bid["bid_order"]
                     bid["bid_order"] = latest_order
-                    if bid["revision_changed"]:
-                        item = current
-                        folder = root_dir() / job["search_id"]
-                        write_json(folder / f"revision-{collector.safe_name(bid['bid_no'])}-{latest_order}.json", current)
+                    # 같은 차수도 첨부 링크가 보완될 수 있으므로 재조회한 목록을 사용한다.
+                    progress("checking_attachments")
+                    if job["mode"] == "documents":
+                        item = _enrich_eorder(current, key)
+                    else:
+                        # 같은 차수의 e발주 조회 결과는 유지하되 일반 첨부는 최신 응답을 쓴다.
+                        extra = {field: item[field] for field in (
+                            "eorder_attachments", "eorder_lookup_status", "eorder_lookup_error")
+                            if field in item} if not bid["revision_changed"] else {}
+                        item = {**current, **extra}
+                    folder = root_dir() / job["search_id"]
+                    write_json(folder / f"revision-{collector.safe_name(bid['bid_no'])}-{latest_order}.json", item)
                 bid.update(_process_bid(item, job["mode"] == "documents", store, progress))
             except Exception as exc:
                 # SDK/네트워크 예외 원문은 인증키나 연락처를 포함할 수 있다.
@@ -316,3 +668,4 @@ def run_job(job_id, key=None):
         job.update(status="failed", error=type(exc).__name__)
     job["finished_at"] = stamp()
     write_json(path, job)
+    ACTIVE_JOBS.discard(job_id)

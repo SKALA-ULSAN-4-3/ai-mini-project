@@ -7,13 +7,16 @@ import csv
 from datetime import datetime, timezone
 import hashlib
 import json
+import signal
 from pathlib import Path
 import sys
 
 if __package__:
     from .privacy import mask_personal, extract_contacts, official_names
+    from . import convert_documents as converter
 else:
     from privacy import mask_personal, extract_contacts, official_names
+    import convert_documents as converter
 
 
 def read_csv(path):
@@ -161,17 +164,17 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
 
 
 def main():
+    def terminate(signum, frame):
+        converter.cancel_active_conversion()
+        raise SystemExit(128 + signum)
+    signal.signal(signal.SIGTERM, terminate)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", required=True, type=Path, help="attachments.csv가 있는 수집 실행 폴더")
     parser.add_argument("--convert-hwp", action="store_true", help="HWP/HWPX를 PDF로 변환한 후 정리")
     args = parser.parse_args()
     try:
         if args.convert_hwp:
-            if __package__:
-                from .convert_documents import convert_run
-            else:
-                from convert_documents import convert_run
-            convert_run(args.run_dir)
+            converter.convert_run(args.run_dir)
         result = prepare(args.run_dir)
     except ImportError:
         print("pypdf 설치 필요: python3 -m pip install -r data_pipeline/requirements.txt", file=sys.stderr)

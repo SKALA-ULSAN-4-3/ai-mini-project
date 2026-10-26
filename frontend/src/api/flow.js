@@ -2,7 +2,7 @@
 // 실제 서버 코드(2번 RAG · 3번 공고 로직)를 읽고 응답 모양을 맞췄습니다.
 // ★ 1번(/search-bids, /fetch-notices, /fetch-documents, /jobs)과 4번(/me/...)은 아직 서버에 없어서
 //   가이드 문서 기준의 "가정"입니다. 담당자의 실제 응답과 다르면 이 파일만 고치세요.
-import client, { rag } from './client'
+import client, { rag, cachedApi, invalidateApiCache } from './client'
 
 export const SUMMARY_LABELS = {
   title: '사업명', agency: '발주기관', period: '사업 기간', budget: '사업 예산',
@@ -30,13 +30,18 @@ export function toBid(b) {
     budget: b.budget ?? null, regions: b.regions || [],
     unknown: b.unknown || [], // 확인하지 못한 조건들 (제외하지 않고 "미확인"으로 표시)
     reason: b.reason || '',
+    notice_only: b.notice_only === true,
+    warnings: b.warnings || [],
+    region_restriction: b.region_restriction || null,
+    industry_restriction: b.industry_restriction || null,
     recheck: b.recheck || null, // ③' 공고문 적재 후 재확인 결과 { status, reasons, unknown }
   }
 }
 
 // ① 검색 (1번 — 아직 서버에 없음)
-export async function searchBids({ from, to, queries, limit = 20 }) {
-  return (await rag.post('/search-bids', { from, to, queries, limit })).data
+export async function searchBids({ from, to, queries, limit = 100 }) {
+  return cachedApi(`search:${JSON.stringify([from, to, queries, limit])}`, async () =>
+    (await rag.post('/search-bids', { from, to, queries, limit })).data, 0)
 }
 // ② 추린 공고 (3번): { bids, excluded, candidate_count, needs_review }
 // search_id 는 3번이 1번의 새 검색 결과를 읽도록 바뀌면 필요해질 값이라 미리 함께 보냅니다. (지금 서버는 무시)
@@ -53,18 +58,21 @@ export async function recheckBids(from, to, searchId, bids) {
 }
 // ③ 공고문 준비 / ⑤ 제안요청서 준비: 작업 번호(job_id)를 돌려줌 (1번 — 아직 서버에 없음)
 export async function fetchNotices(searchId, bids) {
-  return (await rag.post('/fetch-notices', { search_id: searchId, bids: pipelineRefs(bids) })).data.job_id
+  return (await rag.post('/fetch-notices', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
 }
 export async function fetchDocuments(searchId, bids) {
-  return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) })).data.job_id
+  return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
 }
 export async function getJob(id) {
-  const d = (await rag.get(`/jobs/${id}`)).data
+  const d = (await rag.get(`/jobs/${id}`, { timeout: 15000 })).data
+  if (isFinished(d.status)) invalidateApiCache()
   return { ...d, bids: (d.bids || []).map((b) => ({ ...b, revision: rev(b) })) }
 }
 // ④ 요약 여러 건 (2번): results[{status:'ok'|'error', summary, missing, ... | code, detail}]
 export async function fetchSummaries(bids) {
-  const d = (await rag.post('/bids/summaries', { bids: refs(bids) })).data
+  const d = await cachedApi(`summaries:${JSON.stringify(refs(bids))}`, async () =>
+    (await rag.post('/bids/summaries', { bids: refs(bids) })).data, 60000,
+    (result) => result.results?.length > 0 && result.results.every((row) => row.status === 'ok'))
   return (d.results || []).map((r, i) => ({ ...r, bid_no: r.bid_no ?? bids[i]?.bid_no, revision: rev({ ...bids[i], ...r }) }))
 }
 // ⑤⑧ 선택·승인: 팀 결정에 따라 서버(DB)에는 저장하지 않습니다. (DB에는 공고문 원본과 요약만 저장)
@@ -87,17 +95,34 @@ export async function saveSummaries(results) {
 }
 // ⑦ 채점표(2번) · 예상 점수(3번) / ⑨ 체크리스트(3번). 3번 경로는 revision 이 필수입니다.
 export async function fetchScoringTable(b) {
-  return (await rag.get(`/bids/${b.bid_no}/scoring-table`, { params: { revision: b.revision } })).data
+  return cachedApi(`table:${b.bid_no}:${rev(b)}`, async () =>
+    (await rag.get(`/bids/${b.bid_no}/scoring-table`, { params: { revision: b.revision } })).data)
 }
 export async function fetchScore(b) {
-  return (await rag.get(`/bids/${b.bid_no}/score`, { params: { revision: b.revision } })).data
+  return cachedApi(`score:${b.bid_no}:${rev(b)}`, async () =>
+    (await rag.get(`/bids/${b.bid_no}/score`, { params: { revision: b.revision } })).data, 0)
 }
 export async function fetchChecklist(b) {
-  return (await rag.get(`/bids/${b.bid_no}/checklist`, { params: { revision: b.revision } })).data
+  return cachedApi(`checklist:${b.bid_no}:${rev(b)}`, async () =>
+    (await rag.get(`/bids/${b.bid_no}/checklist`, { params: { revision: b.revision } })).data, 0)
 }
 // Q&A (2번): 요청은 prompt, 응답은 response (sources 는 문자열 목록)
 export async function askQuestion(prompt, bid) {
   const body = { prompt, source: 'pdf' }
   if (bid?.bid_no) { body.bid_no = bid.bid_no; body.revision = bid.revision }
   return (await rag.post('/rag-query', body)).data
+}
+
+export async function fetchJobFiles(jobId) {
+  return (await rag.get(`/jobs/${jobId}/files`)).data.files || []
+}
+
+export async function downloadJobFile(jobId, file) {
+  const { data } = await rag.get(`/jobs/${jobId}/files/${file.file_id}`, { responseType: 'blob' })
+  const url = URL.createObjectURL(data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = file.file_name
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

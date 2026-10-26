@@ -165,7 +165,7 @@ def review_guidance(item):
     requirements = item.get("requirements") or []
     texts = list(dict.fromkeys(r["text"] for r in requirements if r.get("text") and r.get("sources")))
     if texts:
-        return "확인·준비할 요소: " + " / ".join(texts)
+        return "평가 시 확인할 요소: " + " / ".join(texts)
     basis = item.get("basis")
     if basis:
         return "원문 평가 기준: " + basis

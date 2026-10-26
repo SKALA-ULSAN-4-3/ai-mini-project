@@ -29,6 +29,11 @@ def read_csv(path):
         return list(csv.DictReader(stream))
 
 
+def read_jsonl(path):
+    with Path(path).open(encoding='utf-8') as stream:
+        return [json.loads(line) for line in stream if line.strip()]
+
+
 def split_text(text, size=1000, overlap=200):
     """페이지 경계를 넘지 않는 문자 단위 청킹. 원문 공백/연락처 유지."""
     if size <= 0 or not 0 <= overlap < size:

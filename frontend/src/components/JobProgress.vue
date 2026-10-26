@@ -17,8 +17,9 @@ async function download(file) {
   catch (e) { fileError.value = errorMessage(e) }
 }
 const displayLabel = computed(() => job.value.mode === 'db_retry' ? 'DB 저장만 다시 시도하는 중' : props.label)
-const stages = { restoring_database: 'DB 저장 자료 확인·복원', saving_database: 'DB 파일 저장', checking_bid_progress: '선택 공고의 개찰·재입찰 상태 확인', waiting_document: '같은 공고의 문서 준비 완료 대기', queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
-  downloading: '첨부파일 다운로드', converting: '문서 변환·텍스트 추출', indexing: '검색 인덱스 적재',
+const stages = { waiting_for_notice_job: '진행 중인 공고문 준비 결과를 이어받는 중', restoring_database: 'DB 저장 자료 확인·복원', saving_database: 'DB 파일 저장', checking_bid_progress: '선택 공고의 개찰·재입찰 상태 확인', waiting_document: '같은 공고의 문서 준비 완료 대기', queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
+  downloading: '첨부파일 다운로드', download: '파일 다운로드 합계', conversion: 'HWP 변환',
+  text_extraction: 'PDF 텍스트 추출·전처리', converting: '문서 처리 합계', indexing: '검색 인덱스 적재',
   completed: '완료', partial_failed: '일부 실패', failed: '실패' }
 // 진행 중에는 "지금 처리 중인 공고 1건"만 보여 줍니다. (20건이어도 화면을 덮지 않게)
 const running = computed(() => !isFinished(job.value.status))
@@ -77,6 +78,12 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
     <p v-if="!running && failedBids.length" class="error">실패 {{ failedBids.length }}건: {{ failedBids[0].bid_no }} {{ failedBids[0].error || '실패했습니다.' }}<span v-if="failedBids.length > 1"> 외 {{ failedBids.length - 1 }}건</span></p>
     <details v-if="!running && job.bids?.length" class="jp-detail">
       <summary>공고별 결과 {{ job.bids.length }}건 보기</summary>
+      <details v-for="bid in job.bids.filter((row) => row.stage_timings_seconds && Object.keys(row.stage_timings_seconds).length)" :key="'timings-' + bid.bid_no">
+        <summary>{{ bid.bid_no }} 단계별 소요 시간 · 전체 {{ bid.total_elapsed_seconds || 0 }}초</summary>
+        <p v-for="(seconds, stage) in bid.stage_timings_seconds" :key="stage" class="meta">
+          {{ stages[stage] || stage }} · {{ seconds }}초
+        </p>
+      </details>
       <template v-if="job.mode === 'documents'">
         <p v-for="b in job.bids" :key="b.bid_no" class="meta">
           {{ b.bid_no }}:

@@ -57,13 +57,13 @@ export async function recheckBids(from, to, searchId, bids) {
 }
 // ③ 공고문 준비 / ⑤ 제안요청서 준비: 작업 번호(job_id)를 돌려줌 (1번 — 아직 서버에 없음)
 export async function fetchNotices(searchId, bids) {
-  return (await rag.post('/fetch-notices', { search_id: searchId, bids: pipelineRefs(bids) })).data.job_id
+  return (await rag.post('/fetch-notices', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
 }
 export async function fetchDocuments(searchId, bids) {
-  return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) })).data.job_id
+  return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
 }
 export async function getJob(id) {
-  const d = (await rag.get(`/jobs/${id}`)).data
+  const d = (await rag.get(`/jobs/${id}`, { timeout: 15000 })).data
   return { ...d, bids: (d.bids || []).map((b) => ({ ...b, revision: rev(b) })) }
 }
 // ④ 요약 여러 건 (2번): results[{status:'ok'|'error', summary, missing, ... | code, detail}]
@@ -74,10 +74,10 @@ export async function fetchSummaries(bids) {
 // ⑤⑧ 선택·승인 (4번 Java: POST /api/me/selections, /api/me/approvals, GET /api/me/pipeline)
 //   서버는 공고 1건씩 받고({bid_no, revision}, 차수는 "000" 같은 문자열 그대로), 누적 저장합니다. 승인은 선택 저장 뒤에만 가능(아니면 409).
 export async function saveSelections(bids) {
-  for (const b of bids) await client.post('/me/selections', { bid_no: b.bid_no, revision: String(b.revision) })
+  for (const b of bids) await client.post('/me/selections', { bid_no: b.bid_no, revision: String(b.revision) }, { timeout: 30000 })
 }
 export async function saveApprovals(bids) {
-  for (const b of bids) await client.post('/me/approvals', { bid_no: b.bid_no, revision: String(b.revision) })
+  for (const b of bids) await client.post('/me/approvals', { bid_no: b.bid_no, revision: String(b.revision) }, { timeout: 30000 })
 }
 // 로그인 직후: 서버에 저장된 선택·승인 목록 [{bid_no, revision, status:'selected'|'approved', ...}]
 export async function fetchPipeline() {

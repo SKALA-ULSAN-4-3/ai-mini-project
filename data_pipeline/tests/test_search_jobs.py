@@ -127,6 +127,91 @@ class DocumentReadinessTests(unittest.TestCase):
         self.assertFalse(result['rfp_ready'])
         self.assertEqual(result['status'], 'partial_failed')
 
+    def test_mislabeled_hwp_archive_converts_only_matching_original(self):
+        from zipfile import ZipFile
+        from data_pipeline import convert_documents as conversion
+        source = self.root / '03_과업지시서.hwp'
+        target = self.root / 'verified.pdf'
+        with ZipFile(source, 'w') as archive:
+            archive.writestr('../과업지시서.hwp', b'expected-original')
+            archive.writestr('긴급발주사유서.hwp', b'not-selected')
+        original = source.read_bytes()
+        def execute(args):
+            selected = Path(args[-1])
+            self.assertEqual(selected.name, '과업지시서.hwp')
+            self.assertEqual(selected.read_bytes(), b'expected-original')
+            output = Path(args[args.index('--outdir') + 1]) / (selected.stem + '.pdf')
+            output.write_bytes(self.pdf)
+            return ''
+        with patch.object(conversion, 'execute', side_effect=execute):
+            conversion.convert_one(source, target, 'mock-soffice')
+        self.assertEqual(source.read_bytes(), original)
+        self.assertTrue(target.is_file())
+        self.assertFalse((self.root / '과업지시서.hwp').exists())
+
+    def test_hwp_archive_does_not_choose_unrelated_member(self):
+        from zipfile import ZipFile
+        from data_pipeline import convert_documents as conversion
+        source = self.root / '과업지시서.hwp'
+        with ZipFile(source, 'w') as archive:
+            archive.writestr('다른서류.hwp', b'not-selected')
+        with patch.object(conversion, 'execute') as execute:
+            with self.assertRaisesRegex(RuntimeError, '이름이 일치'):
+                conversion.convert_one(source, self.root / 'bad.pdf', 'mock-soffice')
+            execute.assert_not_called()
+
+    def test_identical_attachments_reuse_converted_pdf(self):
+        from data_pipeline import convert_documents as conversion
+        from data_pipeline.common import write_csv
+        for name in ('one.hwp', 'two.hwp'):
+            (self.root / name).write_bytes(b'identical-original')
+        rows = [{'bid_no': 'B1', 'bid_order': '000', 'selected': True,
+                 'status': 'downloaded', 'local_path': str(self.root / name)}
+                for name in ('one.hwp', 'two.hwp')]
+        write_csv(self.root / 'attachments.csv', list(rows[0]), rows)
+        def convert(source, target, soffice):
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(self.pdf)
+        with patch.object(conversion, 'convert_one', side_effect=convert) as tool:
+            records = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=tool)
+        self.assertEqual(tool.call_count, 1)
+        self.assertEqual([r['status'] for r in records], ['converted', 'existing'])
+        self.assertEqual(records[0]['pdf_sha256'], records[1]['pdf_sha256'])
+        self.assertTrue(all(Path(r['pdf_path']).is_file() for r in records))
+
+    def test_soffice_timeout_kills_descendants_before_waiting_for_pipes(self):
+        import subprocess
+        from data_pipeline import convert_documents as conversion
+        with patch.object(conversion.subprocess, 'Popen') as popen, \
+                patch.object(conversion.os, 'killpg') as kill, \
+                patch.dict(os.environ, {'JAVA_HOME': '/tmp/test-java'}):
+            process = popen.return_value
+            process.pid = 54321
+            process.poll.return_value = None
+            process.communicate.side_effect = [subprocess.TimeoutExpired('soffice', 1), ('', '')]
+            with self.assertRaisesRegex(RuntimeError, '자식 프로세스'):
+                conversion.execute(['mock-soffice'], timeout=1)
+            kill.assert_called_once_with(54321, conversion.signal.SIGKILL)
+            self.assertIsNone(conversion.ACTIVE_PROCESS)
+
+    def test_document_worker_timeout_kills_process_group(self):
+        import subprocess
+        with patch.object(search_jobs.subprocess, 'Popen') as popen, patch.object(search_jobs.os, 'killpg') as kill:
+            process = popen.return_value
+            process.pid = 12345
+            process.communicate.side_effect = [subprocess.TimeoutExpired('worker', 1), ('', '')]
+            with self.assertRaisesRegex(RuntimeError, '1초'):
+                search_jobs._prepare_with_timeout(self.root, True, timeout=1)
+            kill.assert_called_once_with(12345, search_jobs.signal.SIGTERM)
+            self.assertTrue(popen.call_args.kwargs['start_new_session'])
+
+    def test_document_lock_wait_is_bounded(self):
+        from data_pipeline.common import directory_lock
+        with patch('data_pipeline.common.fcntl.flock', side_effect=BlockingIOError):
+            with self.assertRaisesRegex(RuntimeError, '다른 문서 준비 작업'):
+                with directory_lock(self.root, '.test.lock', timeout=0):
+                    self.fail('잠긴 작업을 실행하면 안 됩니다.')
+
     def test_eorder_hwpx_uses_conversion_before_becoming_ready(self):
         import hashlib
         from data_pipeline.common import write_jsonl
@@ -134,7 +219,8 @@ class DocumentReadinessTests(unittest.TestCase):
         self.item['eorder_attachments'] = [
             {'bid_no': 'B1', 'bid_order': '000', 'file_name': '제안요청서.hwpx',
              'url': 'https://www.g2b.go.kr/rfp', 'document_type': '제안요청서'}]
-        def convert(folder):
+        def convert(folder, convert_hwp):
+            self.assertTrue(convert_hwp)
             rows = read_csv(folder / 'attachments.csv')
             rfp = next(r for r in rows if r['file_name'] == '제안요청서.hwpx')
             self.assertEqual(rfp['selected'], 'True')
@@ -147,7 +233,9 @@ class DocumentReadinessTests(unittest.TestCase):
                 'original_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
                 'pdf_path': str(target), 'pdf_sha256': hashlib.sha256(self.pdf).hexdigest(),
                 'status': 'converted'}])
-        with patch.object(search_jobs.converter, 'convert_run', side_effect=convert) as tool:
+            from data_pipeline.prepare_documents import prepare
+            prepare(folder)
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=convert) as tool:
             result = self.process()
         tool.assert_called_once()
         self.assertTrue(result['rfp_ready'])
@@ -166,9 +254,9 @@ class DocumentReadinessTests(unittest.TestCase):
         self.item['ntceSpecFileNm2'] = '붙임 3-2. 제안요청서_상용SW_26년도_29년도_1001.hwp'
         self.item['stdNtceDocUrl'] = 'https://www.g2b.go.kr/converted-notice'
         with patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
-                patch.object(search_jobs.converter, 'convert_run') as converter:
+                patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as converter:
             result = self.process(full=False)
-        converter.assert_not_called()
+        self.assertFalse(converter.call_args.args[1])
         self.assertEqual(result['status'], 'completed')
         self.assertGreater(result['indexed_chunks'], 0)
         self.assertEqual(result['rfp_status'], 'not_requested')
@@ -222,7 +310,7 @@ class DocumentReadinessTests(unittest.TestCase):
 
     def test_conversion_failure_still_reports_download_complete(self):
         self.item['ntceSpecFileNm2'] = '제안요청서.hwpx'
-        with patch.object(search_jobs.converter, 'convert_run', side_effect=RuntimeError('변환 실패')):
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=RuntimeError('변환 실패')):
             result = self.process()
         self.assertTrue(result['download_complete'])
         self.assertFalse(result['rfp_ready'])
@@ -541,6 +629,29 @@ class BidProgressTests(unittest.TestCase):
         result, _ = self.run_search([self.item()], unavailable)
         self.assertFalse(result['items'])
         self.assertEqual(result['progress_excluded'][0]['status'], 'unavailable')
+
+    def test_rate_limit_stops_search_without_saving_empty_result(self):
+        def limited(*args):
+            raise bid_progress.ProgressRateLimitError('개찰·재입찰 API 요청 한도 초과 (HTTP 429)')
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(search_jobs, 'root_dir', return_value=Path(tmp)), \
+                patch.object(collector, 'fetch_page', return_value=([self.item()], 1)), \
+                patch.object(bid_progress, 'lookup_progress', side_effect=limited) as lookup, \
+                patch.object(collector.clock, 'sleep'):
+            with self.assertRaisesRegex(collector.CollectionError, '429'):
+                search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 20, 'key')
+            self.assertEqual(lookup.call_count, 1)
+            self.assertEqual(list(Path(tmp).glob('**/search.json')), [])
+            self.assertEqual(list(Path(tmp).glob('cache-*.json')), [])
+
+    def test_http_429_reports_quota_instead_of_service_approval(self):
+        from urllib.error import HTTPError
+        with patch.object(collector, 'build_opener') as opener:
+            opener.return_value.open.side_effect = HTTPError('https://example.test', 429, 'Too Many Requests', {}, None)
+            with self.assertRaisesRegex(bid_progress.ProgressRateLimitError, '요청 한도') as caught:
+                bid_progress.lookup_rows('secret-key', 'B1', '000', bid_progress.OPERATIONS[0])
+            self.assertNotIn('활용승인', str(caught.exception))
+            self.assertNotIn('secret-key', str(caught.exception))
 
     def test_past_opening_with_missing_deadline_is_recorded_as_closed(self):
         item = self.item(bidClseDt='', opengDt='2026-10-14 15:00')

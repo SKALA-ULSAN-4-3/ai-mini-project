@@ -57,6 +57,7 @@ export const rag = makeClient(RAG_URL) // RAG 서버(:8001): 공고·요약·채
 // 서버 오류를 사용자에게 보여줄 문장으로 바꿔 주는 도우미
 export function errorMessage(error, messages = {}) {
   const status = error.response?.status
+  if (['ECONNABORTED', 'ETIMEDOUT'].includes(error.code)) return '서버 응답 대기시간을 초과했습니다. 잠시 후 다시 확인해 주세요.'
   if (!error.response) return '서버에 연결할 수 없습니다. 서버가 켜져 있는지 확인해 주세요.'
   if (messages[status]) return messages[status]
   if (status === 400) return '입력값이 올바르지 않습니다. 내용을 다시 확인해 주세요.'

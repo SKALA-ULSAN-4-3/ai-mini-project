@@ -270,17 +270,23 @@ def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
     for i, it in enumerate([it for it in extraction["items"] if it.get("source_refs")], start=1):
         kind = KIND.get(it["eval_type"], "qualitative")
         rule = it.get("rule")
+        sources = list(it.get("source_refs", []))
+        extra_refs = list(it.get("rule_sources", []))
+        extra_refs.extend(ref for r in it.get("requirements", []) for ref in r.get("sources", []))
+        for ref in extra_refs:
+            if ref not in sources:
+                sources.append(ref)
         items.append({
             "bid_no": bid_no, "revision": revision, "id": f"item{i:02d}", "item": it["item"],
             "section": it.get("section", ""), "kind": kind, "max": it["max_score"],
             "basis": it.get("criteria") or f"{it.get('section', '')} · {it['item']}",
-            "sources": it.get("source_refs", []) + [ref for ref in it.get("rule_sources", [])
-                                                       if ref not in it.get("source_refs", [])],
+            "sources": sources,
             # 원문에 계산 규칙이 명시된 정량 항목만 metric · rule을 채운다. 없으면 3번이 '담당자 판단'으로 처리
             "metric": rule["metric"] if rule else None, "rule": rule["rule"] if rule else None,
             "rule_note": it.get("rule_note", ""),
+            "requirements": it.get("requirements", []),
         })
-    return {"bid_no": bid_no, "revision": revision, "items": items}
+    return {"bid_no": bid_no, "revision": revision, "notice_date": extraction.get("notice_date"), "items": items}
 
 
 def to_bid_logic_checklist(extraction: dict, bid_no: str, revision: str) -> dict:

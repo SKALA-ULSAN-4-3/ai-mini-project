@@ -79,7 +79,7 @@ export function invalidateApiCache() {
   apiResponses.clear()
   apiPending.clear()
 }
-export function cachedApi(key, fetcher, ttl = 60000) {
+export function cachedApi(key, fetcher, ttl = 60000, cacheable = () => true) {
   const identity = `${sessionStorage.getItem('token') || ''}:${key}`
   const entry = apiResponses.get(identity)
   const clone = (data) => JSON.parse(JSON.stringify(data))
@@ -87,7 +87,7 @@ export function cachedApi(key, fetcher, ttl = 60000) {
   if (apiPending.has(identity)) return apiPending.get(identity).then(clone)
   const epoch = cacheEpoch
   const promise = Promise.resolve().then(fetcher).then((data) => {
-    if (ttl > 0 && epoch === cacheEpoch) {
+    if (ttl > 0 && epoch === cacheEpoch && cacheable(data)) {
       if (apiResponses.size >= 256) apiResponses.delete(apiResponses.keys().next().value)
       apiResponses.set(identity, { data: clone(data), until: Date.now() + ttl })
     }

@@ -71,7 +71,8 @@ export async function getJob(id) {
 // ④ 요약 여러 건 (2번): results[{status:'ok'|'error', summary, missing, ... | code, detail}]
 export async function fetchSummaries(bids) {
   const d = await cachedApi(`summaries:${JSON.stringify(refs(bids))}`, async () =>
-    (await rag.post('/bids/summaries', { bids: refs(bids) })).data)
+    (await rag.post('/bids/summaries', { bids: refs(bids) })).data, 60000,
+    (result) => result.results?.length > 0 && result.results.every((row) => row.status === 'ok'))
   return (d.results || []).map((r, i) => ({ ...r, bid_no: r.bid_no ?? bids[i]?.bid_no, revision: rev({ ...bids[i], ...r }) }))
 }
 // ⑤⑧ 선택·승인 (4번 Java: POST /api/me/selections, /api/me/approvals, GET /api/me/pipeline)

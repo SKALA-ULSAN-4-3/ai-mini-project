@@ -475,3 +475,37 @@ html[data-theme="dark"] .bid-table .detail-row, html[data-theme="dark"] .bid-tab
 .action-bar .action-status { flex-basis: 100%; padding-top: 10px; border-top: 1px solid var(--line); }
 .action-bar .action-status p { margin: 4px 0; }
 .action-bar .action-status .back { display: inline-block; margin-top: 4px; }
+
+/* 작업 진행 표시: 한 줄 요약 + 지금 처리 중인 공고 1건만 */
+.job-progress { display: flex; flex-direction: column; gap: 6px; }
+.job-progress p { margin: 0; }
+.jp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.jp-count { color: var(--muted); font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.jp-now { color: var(--accent); font-size: 0.9rem; font-weight: 600; }
+.jp-detail { max-height: 180px; overflow: auto; font-size: 0.88rem; }
+.jp-id { color: var(--muted); font-size: 0.74rem; }
+.action-bar .action-status .job-progress { margin-bottom: 6px; }
+
+/* ===== 오른쪽 세로 패널: 프로필 · 진행 현황 · 이렇게 써 보세요 (좁게 해서 검색 결과 폭을 넓힘) ===== */
+.body-grid, .body-grid.no-help { grid-template-columns: minmax(0, 1fr) 290px; gap: 20px; }
+.body-grid.no-help { grid-template-columns: minmax(0, 1fr); }
+.body-main { order: 1; }
+.side-panel { order: 2; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; }
+.side-slot { display: contents; }
+.side-panel .panel { position: static; order: -1; padding: 16px 18px; }
+.side-panel .panel dl { grid-template-columns: 64px 1fr; gap: 4px 10px; }
+.side-panel .help-art { display: none; }
+.side-panel .help ul { margin: 8px 0 14px; }
+.p-search .layout { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1100px) { .body-grid { grid-template-columns: minmax(0, 1fr); } .side-panel { display: none; } }
+
+/* 표 머리글(공고명·발주기관·금액·마감일·구분)을 스크롤해도 위에 붙어 있게 */
+.table-wrap { overflow: visible; }
+.bid-table { min-width: 0; width: 100%; }
+.bid-table thead th { position: sticky; top: 0; z-index: 4; box-shadow: 0 1px 0 var(--line), 0 6px 10px -8px rgba(0, 0, 0, 0.25); }
+.table-wrap { border-radius: 8px; }
+
+/* 액션바의 "보러 가기" 버튼: 준비가 끝나면 이 버튼이 보라색으로 눈에 띔 */
+.action-bar a.cta { display: inline-block; padding: 11px 26px; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.action-bar a.cta:hover { background: var(--accent-dark); }
+.action-bar .action-status > button.small { margin-top: 8px; }

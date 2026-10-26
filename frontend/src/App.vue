@@ -109,7 +109,6 @@ function onLogout() {
 
       <main class="body">
         <div class="body-grid" :class="{ 'no-help': !hero }">
-          <div class="body-main" :class="pageClass"><router-view /></div>
           <aside v-if="hero" class="side-panel">
             <section class="status">
               <h3>진행 현황</h3>
@@ -142,7 +141,9 @@ function onLogout() {
                 </svg>
               </div>
             </section>
+            <div id="side-slot" class="side-slot"></div>
           </aside>
+          <div class="body-main" :class="pageClass"><router-view /></div>
         </div>
       </main>
     </div>

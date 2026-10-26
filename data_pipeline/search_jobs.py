@@ -531,7 +531,12 @@ def _run_prepare_worker(folder, convert_hwp, timeout, env):
             process.communicate()
         raise PrepareTimeout(f"문서 변환·텍스트 추출이 {timeout}초를 초과해 중단했습니다. 원본은 보존되며 재시도 시 성공 파일을 재사용합니다.") from None
     if process.returncode not in (0, 2):
-        raise RuntimeError("문서 변환·텍스트 추출 프로세스가 실패했습니다. 변환 도구 설정과 문서 형식을 확인하세요.")
+        # stderr 원문에는 경로·문서 내용이 들어갈 수 있어 알려진 예외 이름만 전달한다.
+        error_type = next((name for name in ("NameError", "ModuleNotFoundError", "ImportError",
+                                             "SyntaxError", "TypeError", "AttributeError")
+                           if re.search(rf"(?m)^{name}:", stderr or "")), None)
+        reason = f"프로그램 오류: {error_type}" if error_type else f"종료 코드: {process.returncode}"
+        raise RuntimeError(f"문서 변환·텍스트 추출 프로세스가 실패했습니다 ({reason}). 원본 파일은 보존했습니다.")
 
 
 def _prepare_with_timeout(folder, convert_hwp, timeout=None):

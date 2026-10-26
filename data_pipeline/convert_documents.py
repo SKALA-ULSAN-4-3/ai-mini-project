@@ -8,6 +8,7 @@ import os
 import re
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -39,6 +40,17 @@ def find_soffice(explicit=None):
     raise RuntimeError("LibreOffice가 없습니다. --soffice로 실행파일 경로를 지정하세요.")
 
 
+ACTIVE_PROCESS = None
+
+
+def cancel_active_conversion():
+    if ACTIVE_PROCESS is not None:
+        try:
+            os.killpg(ACTIVE_PROCESS.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
 def execute(args, timeout=45):
     args = list(args)
     java_home = os.environ.get("JAVA_HOME")
@@ -48,11 +60,23 @@ def execute(args, timeout=45):
             java_home = detected.stdout.strip()
     if java_home:
         args.insert(1, "-env:UNO_JAVA_JFW_JREHOME=" + Path(java_home).resolve().as_uri())
-    result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
-    if result.returncode:
-        detail = (result.stderr or result.stdout).strip()[-1500:]
-        raise RuntimeError(f"변환 도구 실행 실패 (종료 코드 {result.returncode}): {detail}")
-    return result.stdout
+    global ACTIVE_PROCESS
+    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, start_new_session=True)
+    ACTIVE_PROCESS = process
+    try:
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            cancel_active_conversion()
+            process.communicate()
+            raise RuntimeError(f"변환 도구가 {timeout}초 내에 응답하지 않아 자식 프로세스까지 종료했습니다.") from None
+        if process.returncode:
+            detail = (stderr or stdout).strip()[-1500:]
+            raise RuntimeError(f"변환 도구 실행 실패 (종료 코드 {process.returncode}): {detail}")
+        return stdout
+    finally:
+        ACTIVE_PROCESS = None
 
 
 def _install_macos_extension(soffice, extension):
@@ -272,9 +296,21 @@ def convert_run(run_dir, config=None, converter=convert_one):
                     and target.is_file() and cached.get("pdf_sha256") == sha256(target)):
                 record.update(pdf_path=str(target), pdf_sha256=cached["pdf_sha256"], status="existing")
             else:
-                print(f"PDF 변환: {path.name}", flush=True)
-                converter(path, target, config["soffice"])
-                record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted")
+                # 서로 다른 첨부 URL이 같은 원문을 제공해도 변환은 한 번만 수행한다.
+                equivalent = next((r for r in [*old.values(), *records[:-1]]
+                                   if r.get("original_sha256") == digest
+                                   and r.get("status") in ("converted", "existing")
+                                   and all(r.get(k) == config.get(k) for k in config)
+                                   and r.get("pdf_path") and Path(r["pdf_path"]).is_file()
+                                   and r.get("pdf_sha256") == sha256(Path(r["pdf_path"]))), None)
+                if equivalent:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(equivalent["pdf_path"], target)
+                    record.update(pdf_path=str(target), pdf_sha256=equivalent["pdf_sha256"], status="existing")
+                else:
+                    print(f"PDF 변환: {path.name}", flush=True)
+                    converter(path, target, config["soffice"])
+                    record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted")
         except Exception as exc:
             record.update(status="failed", error=(str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__))
         # 중간에 멈춰도 완료된 파일은 다음 실행에서 재사용한다.

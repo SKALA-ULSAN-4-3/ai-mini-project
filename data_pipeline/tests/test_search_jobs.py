@@ -160,6 +160,40 @@ class DocumentReadinessTests(unittest.TestCase):
                 conversion.convert_one(source, self.root / 'bad.pdf', 'mock-soffice')
             execute.assert_not_called()
 
+    def test_identical_attachments_reuse_converted_pdf(self):
+        from data_pipeline import convert_documents as conversion
+        from data_pipeline.common import write_csv
+        for name in ('one.hwp', 'two.hwp'):
+            (self.root / name).write_bytes(b'identical-original')
+        rows = [{'bid_no': 'B1', 'bid_order': '000', 'selected': True,
+                 'status': 'downloaded', 'local_path': str(self.root / name)}
+                for name in ('one.hwp', 'two.hwp')]
+        write_csv(self.root / 'attachments.csv', list(rows[0]), rows)
+        def convert(source, target, soffice):
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(self.pdf)
+        with patch.object(conversion, 'convert_one', side_effect=convert) as tool:
+            records = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=tool)
+        self.assertEqual(tool.call_count, 1)
+        self.assertEqual([r['status'] for r in records], ['converted', 'existing'])
+        self.assertEqual(records[0]['pdf_sha256'], records[1]['pdf_sha256'])
+        self.assertTrue(all(Path(r['pdf_path']).is_file() for r in records))
+
+    def test_soffice_timeout_kills_descendants_before_waiting_for_pipes(self):
+        import subprocess
+        from data_pipeline import convert_documents as conversion
+        with patch.object(conversion.subprocess, 'Popen') as popen, \
+                patch.object(conversion.os, 'killpg') as kill, \
+                patch.dict(os.environ, {'JAVA_HOME': '/tmp/test-java'}):
+            process = popen.return_value
+            process.pid = 54321
+            process.poll.return_value = None
+            process.communicate.side_effect = [subprocess.TimeoutExpired('soffice', 1), ('', '')]
+            with self.assertRaisesRegex(RuntimeError, '자식 프로세스'):
+                conversion.execute(['mock-soffice'], timeout=1)
+            kill.assert_called_once_with(54321, conversion.signal.SIGKILL)
+            self.assertIsNone(conversion.ACTIVE_PROCESS)
+
     def test_document_worker_timeout_kills_process_group(self):
         import subprocess
         with patch.object(search_jobs.subprocess, 'Popen') as popen, patch.object(search_jobs.os, 'killpg') as kill:
@@ -168,7 +202,7 @@ class DocumentReadinessTests(unittest.TestCase):
             process.communicate.side_effect = [subprocess.TimeoutExpired('worker', 1), ('', '')]
             with self.assertRaisesRegex(RuntimeError, '1초'):
                 search_jobs._prepare_with_timeout(self.root, True, timeout=1)
-            kill.assert_called_once_with(12345, search_jobs.signal.SIGKILL)
+            kill.assert_called_once_with(12345, search_jobs.signal.SIGTERM)
             self.assertTrue(popen.call_args.kwargs['start_new_session'])
 
     def test_document_lock_wait_is_bounded(self):

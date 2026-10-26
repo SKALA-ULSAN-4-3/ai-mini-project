@@ -172,6 +172,7 @@ class ExtractionToBidLogicTest(unittest.TestCase):
         self.assertEqual(kb.classify_attachment("[제안요청서] 2027년 침해신고센터.hwp"), {"rfp"})
         self.assertEqual(kb.classify_attachment("(과업내용서)2027년 용인시.hwpx"), {"rfp"})
         self.assertEqual(kb.classify_attachment("입찰참가_첨부양식(용역).hwp"), {"other"})
+        self.assertEqual(kb.classify_attachment("[붙임3] 기술지원협약서.pdf"), {"agreement"})
         self.assertIn("cancel", kb.classify_attachment("취소공고서.hwpx"))
         # 2026-10 실제 검색: 재공고 표시가 붙은 제안요청서는 공고문이 아님, 재공고 공고문은 그대로 공고문
         self.assertEqual(kb.classify_attachment("(최종)제안요청서(재공고)_설치류 수면 시 글림프시스템.pdf"), {"rfp"})
@@ -207,7 +208,7 @@ class SearchResultsAdapterTest(unittest.TestCase):
                  self.item("R4", "000", "취소된 플랫폼 공고", kind="취소공고"),
                  self.item("R5", "000", "마감된 플랫폼 구축", close="2026-10-21 10:00:00")]
         (folder / "search.json").write_text(json.dumps(
-            {"search_id": self.SID, "request": {"from": "2026-10-16", "to": "2026-10-22", "queries": ["플랫폼"],
+            {"search_id": self.SID, "request": {"from": "2026-10-16", "to": "2026-11-30", "queries": ["플랫폼"],
                                                 "limit": 100},
              "items": items, "collected_at": "2026-10-23T10:00:00+09:00", "page_limit_reached": False},
             ensure_ascii=False), encoding="utf-8")
@@ -221,7 +222,7 @@ class SearchResultsAdapterTest(unittest.TestCase):
 
     def test_adapter_returns_public_active_items_with_period(self):
         out = kb.search_results(self.SID, {})
-        self.assertEqual((out["from"], out["to"]), ("2026-10-16", "2026-10-22"))
+        self.assertEqual((out["from"], out["to"]), ("2026-10-16", "2026-11-30"))
         keys = {(i["bid_no"], i["bid_order"]) for i in out["items"]}
         self.assertEqual(keys, {("R1", "000"), ("R2", "000"), ("R3", "001"), ("R5", "000")})   # 취소 · 이전 차수 제외
         self.assertIsNone(kb.search_results("b" * 32, {}))
@@ -238,13 +239,13 @@ class SearchResultsAdapterTest(unittest.TestCase):
             search=lambda q, k: [], search_results_provider=kb.search_results, require_search_id=True,
             clock=lambda: "2026-10-23T12:00+09:00"))
         client = TestClient(app)
-        period = {"from": "2026-10-16", "to": "2026-10-22"}
+        period = {"from": "2026-10-16", "to": "2026-11-30"}
         body = client.get("/bids", params={**period, "limit": 20, "search_id": self.SID}).json()
         self.assertEqual(body["bids"][0]["bid_no"], "R1")            # 키워드와 가장 비슷한 공고명이 먼저
         self.assertEqual({b["bid_no"] for b in body["bids"]}, {"R1", "R2", "R3"})
         self.assertEqual([e["bid_no"] for e in body["excluded"]], ["R5"])   # 마감 공고는 사유와 함께 제외
         self.assertEqual(client.get("/bids", params={**period, "search_id": "f" * 32}).status_code, 404)
-        self.assertEqual(client.get("/bids", params={"from": "2026-10-01", "to": "2026-10-22",
+        self.assertEqual(client.get("/bids", params={"from": "2026-10-01", "to": "2026-11-30",
                                                       "search_id": self.SID}).status_code, 422)  # 검색 기간과 다름
         self.assertEqual(client.get("/bids", params=period).status_code, 422)                  # search_id 필수
 

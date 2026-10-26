@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .common import SEOUL, RequestError, calendar_date, identity, number, region, seoul_time
+from .list_restrictions import restriction_check
 from .notice_metadata import apply_notice_metadata, expired_deadline_reason
 
 # []는 명시적으로 제한 없음, None은 미확인. 배열 원소는 OR, 필드 사이는 AND.
@@ -112,7 +113,8 @@ def _profile_conditions(profile):
     return conditions
 
 
-def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=None, limit=5):
+def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=None, limit=5,
+                   date_basis="published_at"):
     """search(query, allowed_keys)는 L2 거리 목록을 반환하는 주입 가능한 함수.
 
     후보별 최소 청크 거리(작을수록 유사) 사용. 동점은 공고번호·차수 문자열 순.
@@ -122,6 +124,8 @@ def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=Non
     now = seoul_time(now or datetime.now(SEOUL))
     if start > end or limit < 1:
         raise RequestError("기간 또는 limit이 올바르지 않습니다.")
+    if date_basis not in ("published_at", "deadline"):
+        raise RequestError("기간 기준이 올바르지 않습니다.")
     lower, upper = profile.get("budget_min"), profile.get("budget_max")
     try:
         lower = number(lower) if lower is not None else None
@@ -142,20 +146,32 @@ def recommend_bids(bids, profile, start, end, *, now=None, hits=None, search=Non
         seen.add(key)
         reasons, unknown = [], []
         try:
-            if not start <= calendar_date(bid.get("published_at")) <= end:
-                reasons.append("공고일이 선택 기간 밖입니다.")
+            period_date = (seoul_time(bid.get("deadline")).date() if date_basis == "deadline"
+                           else calendar_date(bid.get("published_at")))
+            if not start <= period_date <= end:
+                reasons.append("입찰마감일이 선택 기간 밖입니다." if date_basis == "deadline"
+                               else "공고일이 선택 기간 밖입니다.")
         except (ValueError, TypeError):
             # 기간 포함 여부를 알 수 없으므로 결과에 섞지 않고 별도로 반환한다.
             excluded.append({"bid_no": key[0], "revision": key[1],
-                             "status": "unknown", "reasons": ["공고일 미확인"]})
+                             "status": "unknown", "reasons": ["입찰마감 일시 미확인" if date_basis == "deadline"
+                                                                else "공고일 미확인"]})
             continue
         try:
             if seoul_time(bid.get("deadline")) <= now:
                 reasons.append(expired_deadline_reason(bid))
         except (ValueError, TypeError):
             unknown.append("입찰마감 일시 미확인")
+        details, detail_unknown, detail_reasons = restriction_check(bid, profile)
+        unknown.extend(detail_unknown)
+        reasons.extend(detail_reasons)
+        bid = {**bid, **details}
         for field, (profile_field,) in RESTRICTIONS.items():
             restriction = bid.get(field)
+            if field == "regions" and "region_restriction" in details:
+                continue
+            if field in ("industries", "licenses") and "industry_restriction" in details and restriction is None:
+                continue
             if restriction is None:
                 unknown.append(f"{field} 제한 미확인")
                 continue

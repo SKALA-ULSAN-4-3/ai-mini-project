@@ -11,8 +11,8 @@ import RecheckBadge from '../components/RecheckBadge.vue'
 const flow = useFlowStore()
 
 // ① 검색 조건
-const to = ref(flow.period?.to || iso(new Date()))
-const from = ref(flow.period?.from || iso(addDays(new Date(), -30)))
+const to = ref(flow.period?.to || iso(addDays(new Date(), 30)))
+const from = ref(flow.period?.from || iso(new Date()))
 const queries = ref(flow.period?.queries || '')
 const queryList = computed(() => queries.value.split(',').map((s) => s.trim()).filter(Boolean))
 const loading = ref(false)
@@ -20,7 +20,7 @@ const error = ref('')
 const noProfile = ref(false)
 
 // ② 추린 공고 중 공고문을 받을 공고 (최대 20건)
-const checked = ref(flow.candidates.slice(0, 20).map(keyOf))
+const checked = ref(flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf))
 const jobId = ref('')
 const noticeJob = ref(null)
 
@@ -43,7 +43,7 @@ async function search() {
   jobId.value = ''; noticeJob.value = null
   try {
     // ① 나라장터 검색 (1번 API)
-    const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 20 })
+    const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 100 })
     flow.resetFrom(3)
     flow.searchId = d.search_id
     flow.period = { from: from.value, to: to.value, queries: queries.value }
@@ -52,7 +52,7 @@ async function search() {
       const r = await fetchCandidates(from.value, to.value, d.search_id)
       flow.candidates = r.bids
       flow.excluded = r.excluded
-      checked.value = flow.candidates.slice(0, 20).map(keyOf)
+      checked.value = flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf)
     } catch (e) {
       if (e.response?.status === 404) noProfile.value = true
       else throw e
@@ -98,7 +98,7 @@ async function onDone(job) {
   <div class="layout">
   <div class="card">
     <h1>공고 검색</h1>
-    <p class="sub">기간과 검색어로 나라장터 공고를 찾고, 우리 회사에 맞는 공고만 추립니다.</p>
+    <p class="sub">입찰 마감일이 시작일~종료일에 포함되는 공고를 검색합니다. 공고문만 있는 공고는 추천 순위를 낮추고 기본 선택에서 제외합니다.</p>
 
     <form @submit.prevent="search">
       <div class="row">
@@ -122,6 +122,10 @@ async function onDone(job) {
         <input v-model="checked" type="checkbox" :value="keyOf(b)" style="width: auto; margin-right: 8px" />
         <strong>{{ b.title }}</strong>
         <p class="meta">{{ b.agency }} · {{ won(b.budget) }} · 마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</p>
+        <p v-for="warning in b.warnings" :key="warning" class="notice">{{ warning }}</p>
+        <p v-if="b.region_restriction" class="meta">{{ b.region_restriction.summary }}</p>
+        <p v-if="b.industry_restriction" class="meta">{{ b.industry_restriction.summary }}</p>
+        <p v-if="b.industry_restriction?.note" class="meta">{{ b.industry_restriction.note }}</p>
         <p v-if="b.unknown.length" class="chips">
           <span v-for="u in b.unknown" :key="u" class="badge warn">미확인: {{ unknownLabel(u) }}</span>
         </p>

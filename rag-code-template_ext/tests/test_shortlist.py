@@ -138,12 +138,45 @@ class ShortlistTest(unittest.TestCase):
         result = self.shortlist([row("BAD", "시간", bidClseDt="2026-11-01 18:00garbage")])
         self.assertIsNone(result["bids"][0]["deadline"])
 
-    def test_publication_period_boundaries_and_unknown(self):
-        rows = [row(str(i), "웹", bidNtceDt=stamp) for i, stamp in enumerate(
+    def test_deadline_period_boundaries_and_unknown(self):
+        rows = [row(str(i), "웹", bidNtceDt="2026-08-01", bidClseDt=stamp) for i, stamp in enumerate(
             ("2026-10-01 00:00:00", "2026-10-31 23:59:59", "2026-09-30 12:00:00", ""))]
-        result = self.shortlist(rows, start="2026-10-01", end="2026-10-31")
+        result = self.shortlist(rows, start="2026-10-01", end="2026-10-31", now="2026-09-30T00:00:00+09:00")
         self.assertEqual({b["bid_no"] for b in result["bids"]}, {"0", "1"})
         self.assertEqual([b["status"] for b in result["excluded"]], ["excluded", "unknown"])
+
+    def test_deadline_period_ignores_publication_date_and_uses_seoul_timezone(self):
+        rows = [row('IN', '웹', bidNtceDt='', bidClseDt='2026-10-31T15:00:00Z'),
+                row('OUT', '웹', bidNtceDt='2026-11-01', bidClseDt='2026-10-31T14:59:59Z')]
+        result = self.shortlist(rows, start='2026-11-01', end='2026-11-01')
+        self.assertEqual([b['bid_no'] for b in result['bids']], ['IN'])
+
+    def test_notice_only_ranks_below_rfp_even_with_higher_similarity(self):
+        notice = [{'file_name': '공고문.pdf', 'kinds': ['notice']}]
+        rfp = [{'file_name': '제안요청서.pdf', 'kinds': ['rfp']}]
+        result = self.shortlist([row('A', '웹', attachments=notice), row('B', '웹', attachments=rfp)],
+                                similarity=lambda q, titles: [1, 0])
+        self.assertEqual([b['bid_no'] for b in result['bids']], ['B', 'A'])
+        fallback = result['bids'][1]
+        self.assertTrue(fallback['notice_only'])
+        self.assertEqual(fallback['recommendation_priority'], 'low')
+        self.assertIn('해당 공고는 공고문만 있다', fallback['warnings'][0])
+        self.assertEqual(self.shortlist([row('A', '웹', attachments=notice), row('B', '웹', attachments=rfp)],
+                                        limit=1)['bids'][0]['bid_no'], 'B')
+
+    def test_missing_or_unclassified_attachments_are_not_notice_only(self):
+        for attachments in (None, [], [{'file_name': '첨부.zip', 'kinds': ['other']}],
+                            [{'file_name': '공고문.pdf'}]):
+            with self.subTest(attachments=attachments):
+                result = self.shortlist([row('A', '웹', attachments=attachments)])
+                self.assertFalse(result['bids'][0]['notice_only'])
+
+    def test_eorder_lookup_failure_does_not_claim_notice_only_or_lose_warning(self):
+        result = self.shortlist([row('A', '웹', notice_only=False,
+                                     attachment_lookup_status='unavailable', warnings=['제안요청정보 조회 실패'],
+                                     attachments=[{'file_name': '공고문.pdf', 'kinds': ['notice']}])])
+        self.assertFalse(result['bids'][0]['notice_only'])
+        self.assertEqual(result['bids'][0]['warnings'], ['제안요청정보 조회 실패'])
 
     # ---------------- 순위 ----------------
 
@@ -219,7 +252,7 @@ class RecheckTest(unittest.TestCase):
         kwargs.setdefault("now", NOW)
         kwargs.setdefault("hits", [])
         return recheck_after_ingest(copy.deepcopy(self.shortlisted), self.bids, self.profile,
-                                    "2026-10-01", "2026-10-31", **kwargs)
+                                    "2026-10-01", "2026-11-30", **kwargs)
 
     def test_marks_disqualified_confirmed_and_missing(self):
         result = self.recheck()
@@ -238,10 +271,16 @@ class RecheckTest(unittest.TestCase):
         self.assertTrue(row_a["needs_review"])
         self.assertEqual(self.recheck()["stage"], "after_notice")
 
-    def test_unknown_published_date_is_not_disqualified(self):
+    def test_unknown_published_date_does_not_block_deadline_recheck(self):
         self.bids[0]["published_at"] = None
         row_a = next(b for b in self.recheck()["bids"] if b["bid_no"] == "A")
-        self.assertEqual(row_a["recheck"]["status"], "unknown")
+        self.assertEqual(row_a["recheck"]["status"], "confirmed")
+
+    def test_recheck_excludes_deadline_outside_selected_period(self):
+        self.bids[0]['deadline'] = '2026-12-01T00:00:00+09:00'
+        row_a = next(b for b in self.recheck()['bids'] if b['bid_no'] == 'A')
+        self.assertEqual(row_a['recheck']['status'], 'disqualified')
+        self.assertIn('입찰마감일이 선택 기간 밖입니다.', row_a['recheck']['reasons'])
 
     def test_limit_covers_all_shortlisted(self):
         # 기본 limit(5)으로 잘려서 통과 공고가 부적격으로 보이면 안 된다.

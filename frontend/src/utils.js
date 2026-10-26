@@ -6,9 +6,13 @@ export function addDays(base, n) {
   d.setDate(d.getDate() + n)
   return d
 }
-// 마감일까지 남은 날짜: 'D-12', 'D-day', '마감'
+// 날짜가 없거나 유효하지 않으면 '미확인'으로 구분한다.
 export function dday(dateStr) {
-  const diff = Math.round((new Date(String(dateStr).slice(0, 10)) - new Date(iso(new Date()))) / 86400000)
+  const day = String(dateStr ?? '').trim().slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return '미확인'
+  const timestamp = Date.parse(day)
+  if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== day) return '미확인'
+  const diff = Math.round((timestamp - new Date(iso(new Date()))) / 86400000)
   return diff > 0 ? `D-${diff}` : diff === 0 ? 'D-day' : '마감'
 }
 

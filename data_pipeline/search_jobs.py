@@ -15,6 +15,7 @@ import uuid
 from . import collect_bids as collector
 from . import convert_documents as converter
 from . import restrictions
+from . import bid_progress
 from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY,
                      HWP_SUFFIXES, directory_lock, read_json, write_json,
                      read_jsonl, write_jsonl, read_csv, write_csv, stamp)
@@ -25,7 +26,7 @@ CACHE_SECONDS = 300
 RESTRICTION_FIELDS = (
     "indstrytyLmtYn", "rgnLmtBidLocplcJdgmBssNm", "jntcontrctDutyRgnNm1",
     "jntcontrctDutyRgnNm2", "jntcontrctDutyRgnNm3", "cmmnSpldmdMethdNm",
-    "cntrctCnclsMthdNm", "presmptPrce", "asignBdgtAmt", "bidClseDt",
+    "cntrctCnclsMthdNm", "presmptPrce", "asignBdgtAmt", "bidClseDt", "opengDt",
 )
 ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name", "source", "document_type"]
 
@@ -145,11 +146,14 @@ def _snapshot(search_id):
     return read_json(path)
 
 
-def _public_search(saved, cached):
+def _public_search(saved, cached, now=None):
     items = []
     latest = latest_notices(saved["items"])
     for item in saved["items"]:
         if not is_active_notice(item, latest):
+            continue
+        item = bid_progress.apply_progress(item, now)
+        if not item["bid_progress"]["recommendable"]:
             continue
         if saved["request"].get("date_basis") == "deadline" and not collector.deadline_in_period(
                 item, date.fromisoformat(saved["request"]["from"]), date.fromisoformat(saved["request"]["to"])):
@@ -157,6 +161,7 @@ def _public_search(saved, cached):
         row = collector.notice_row(item, saved["request"]["queries"], saved["collected_at"])
         # 허용 목록으로만 응답한다. API 담당자 성명·연락처를 그대로 반환하지 않는다.
         row.update({field: item.get(field) for field in RESTRICTION_FIELDS})
+        row["bid_progress"] = item["bid_progress"]
         row.update({field: item[field] for field in ("region_restriction", "industry_restriction") if field in item})
         row["attachments"] = [{"file_name": name, "url": url,
                                **_attachment_source(item, url),
@@ -173,6 +178,7 @@ def _public_search(saved, cached):
             row["warnings"].append("제안요청정보의 첨부 목록을 확인하지 못했습니다. 공고문만 있다고 단정할 수 없습니다.")
         items.append(row)
     return {"search_id": saved["search_id"], "items": items, "cached": cached,
+            "progress_excluded": saved.get("progress_excluded", []),
             "date_basis": saved["request"].get("date_basis", "published_at"),
             "collected_at": saved["collected_at"], "cache_seconds": CACHE_SECONDS,
             "page_limit_reached": saved["page_limit_reached"]}
@@ -182,6 +188,7 @@ def search_bids(start, end, queries, limit, key):
     queries = list(dict.fromkeys(q.strip() for q in queries))
     if start > end or not queries or not all(queries):
         raise ValueError("검색 기간과 검색어를 확인하세요.")
+    current_time = datetime.now(collector.KST)
     # 공식 PPSSrch의 날짜 조회는 게시일/개찰일만 지원한다. 게시 후보를 넓혀 마감일로 직접 검증한다.
     lookback_days = int(os.environ.get("BID_SEARCH_LOOKBACK_DAYS", "180"))
     if not 1 <= lookback_days <= 3650:
@@ -189,6 +196,8 @@ def search_bids(start, end, queries, limit, key):
     request = {"from": str(start), "to": str(end), "queries": queries, "limit": limit,
                "date_basis": "deadline", "lookback_days": lookback_days,
                "restriction_sources": "region-license-v2",
+               "progress_source": "scsbid-v1",
+               "progress_key_configured": bool(os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()),
                "attachment_sources": "notice+eorder-v1"}
     digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
     with directory_lock(root_dir(), ".search.lock") as root:
@@ -196,14 +205,43 @@ def search_bids(start, end, queries, limit, key):
         if cache.exists():
             cached = read_json(cache)
             if time.time() - cached["created_epoch"] < CACHE_SECONDS:
-                return _public_search(_snapshot(cached["search_id"]), True)
+                return _public_search(_snapshot(cached["search_id"]), True, current_time)
         if not key:
             raise RuntimeError("DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.")
-        today = datetime.now(collector.KST).date()
+        today = current_time.date()
         discovery_end = min(end, today)
         discovery_start = min(start, today) - timedelta(days=lookback_days)
+        progress_key = os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()
+        progress_cache, progress_excluded = {}, {}
+
+        def current_candidate(item):
+            # 원래 마감이 지난 재입찰 허용 공고도 새 마감을 확인한 뒤 기간으로 거른다.
+            opening = bid_progress.parse_time(item.get("opengDt"))
+            elapsed_unknown = not item.get("bidClseDt") and opening is not None and opening <= (
+                current_time if current_time.tzinfo else current_time.replace(tzinfo=collector.KST))
+            if (not collector.deadline_in_period(item, start, end)
+                    and str(item.get("rbidPermsnYn") or "").upper() != "Y" and not elapsed_unknown):
+                return None
+            identity = (str(item.get("bidNtceNo") or ""), str(item.get("bidNtceOrd") or "000"))
+            if not identity[0] or any(w in str(item.get("ntceKindNm") or "") for w in ("취소", "철회")):
+                return None
+            if identity not in progress_cache:
+                try:
+                    progress_cache[identity] = bid_progress.lookup_progress(progress_key, *identity)
+                except collector.CollectionError as exc:
+                    progress_cache[identity] = {"lookup_status": "unavailable", "error": str(exc)}
+            current = bid_progress.apply_progress({**item, "bid_progress": progress_cache[identity]}, current_time)
+            if not current["bid_progress"]["recommendable"]:
+                state = current["bid_progress"]
+                progress_excluded[identity] = {"bid_no": identity[0], "bid_order": identity[1],
+                                               "status": state["state"], "label": state["label"],
+                                               "reason": state.get("reason") or state.get("error")}
+                return None
+            return current
+
         items, truncated = collector.search_candidates(
-            key, discovery_start, discovery_end, queries, limit, deadline_period=(start, end))
+            key, discovery_start, discovery_end, queries, limit, deadline_period=(start, end),
+            candidate_transform=current_candidate)
         latest = latest_notices(items)
         # 상세 제한을 조회하고, 일반 첨부에 RFP가 없으면 e발주 목록도 보완한다.
         positions = [i for i, item in enumerate(items) if is_active_notice(item, latest)]
@@ -215,16 +253,17 @@ def search_bids(start, end, queries, limit, key):
         folder = root / search_id
         folder.mkdir()
         saved = {"search_id": search_id, "request": request, "items": items,
+                 "progress_excluded": list(progress_excluded.values()),
                  "collected_at": stamp(), "page_limit_reached": truncated}
         # 판별 함수 연결 오류가 나면 사용할 수 없는 결과를 캐시에 등록하지 않는다.
-        response = _public_search(saved, False)
+        response = _public_search(saved, False, current_time)
         write_json(folder / "search.json", saved)
         latest = latest_notices(items)
         details_complete = all(
             all(item.get(field, {}).get("lookup_status") == "complete"
                 for field in ("region_restriction", "industry_restriction"))
             for item in items if is_active_notice(item, latest))
-        if details_complete:
+        if details_complete and not any(r["status"] == "unavailable" for r in progress_excluded.values()):
             write_json(cache, {"created_epoch": time.time(), "search_id": search_id})
         return response
 
@@ -233,7 +272,8 @@ def select_items(search_id, bids):
     saved = _snapshot(search_id)
     latest = latest_notices(saved["items"])
     available = {(str(i["bidNtceNo"]), str(i.get("bidNtceOrd") or "000")): i
-                 for i in saved["items"] if is_active_notice(i, latest)}
+                 for i in saved["items"] if is_active_notice(i, latest)
+                 and bid_progress.apply_progress(i)["bid_progress"]["recommendable"]}
     keys = [(b["bid_no"], b["bid_order"]) for b in bids]
     if not 1 <= len(keys) <= 20 or len(set(keys)) != len(keys):
         raise ValueError("중복 없는 공고 1~20건을 지정하세요.")

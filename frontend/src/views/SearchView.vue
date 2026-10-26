@@ -121,7 +121,7 @@ async function onDone(job) {
       <label v-for="b in flow.candidates" :key="keyOf(b)" class="item" style="cursor: pointer">
         <input v-model="checked" type="checkbox" :value="keyOf(b)" style="width: auto; margin-right: 8px" />
         <strong>{{ b.title }}</strong>
-        <p class="meta">{{ b.agency }} · {{ won(b.budget) }} · 마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</p>
+        <p class="meta">{{ b.agency }} · {{ won(b.budget) }} · <span v-if="dday(b.deadline) !== '미확인'">마감 {{ ymd(b.deadline) }} ({{ dday(b.deadline) }})</span><span v-else>기한 미확인</span></p>
         <p v-for="warning in b.warnings" :key="warning" class="notice">{{ warning }}</p>
         <p v-if="b.region_restriction" class="meta">{{ b.region_restriction.summary }}</p>
         <p v-if="b.industry_restriction" class="meta">{{ b.industry_restriction.summary }}</p>

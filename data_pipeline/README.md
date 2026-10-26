@@ -6,7 +6,7 @@
 
 ## 설정
 
-프로젝트 루트 `.env`의 `DATA_GO_KR_SERVICE_KEY`(조회), `OPENAI_API_KEY`(임베딩)를 사용합니다. 값을 출력하거나 산출물에 기록하지 않습니다.
+프로젝트 루트 `.env`의 `DATA_GO_KR_SERVICE_KEY`(입찰공고·첨부·제한 상세), `DATA_GO_KR_SCSBID_SERVICE_KEY`(개찰결과·재입찰), `OPENAI_API_KEY`(임베딩)를 사용합니다. 두 공공데이터 키는 별도 변수로 읽으며 서로 대체하지 않습니다. 값을 출력하거나 산출물에 기록하지 않습니다.
 
 macOS(Homebrew 필요) 또는 Ubuntu 24.04에서 다음 Bash로 Python 패키지·LibreOffice·JDK 21을 설치하고 H2Orestart를 프로젝트 프로필에 등록합니다. 스크립트 전체를 sudo로 실행하지 않습니다. Ubuntu에서는 시스템 패키지 설치 단계에서만 sudo를 사용합니다.
 
@@ -43,6 +43,25 @@ macOS 신규 프로필에서는 `unopkg`가 실행하는 보조 프로세스가 
 3. `GET /jobs/{job_id}`: 공고별 진행률·실패를 확인합니다.
 4. 담당자가 공고를 명시적으로 선택한 후 `POST /fetch-documents`: 선택한 공고번호의 차수만 재확인하고 저장한 링크로 나머지 첨부를 받습니다. 정정공고면 새 차수를 사용합니다.
 
+### 개찰·재입찰에 따른 추천 입력 제외
+
+`bid_progress.py`가 [나라장터 낙찰정보서비스](https://www.data.go.kr/data/15129397/openapi.do)의
+`getOpengResultListInfoServc`와 `getOpengResultListInfoRebid`를 공고번호로 조회하고 정확한 차수만 사용합니다.
+개찰결과가 있거나 개찰일시·입찰마감일시가 지난 공고는 `마감`으로 처리해 추천에 전달하지 않습니다.
+미래 개찰 예정일만 있는 공고는 개찰 완료로 처리하지 않습니다. 개찰결과 없이 예정일시만 지난 경우에는
+실제 개찰 확인과 구분하여 `opening_confirmed: false`와 사유를 남깁니다.
+
+같은 공고·차수·입찰분류의 최신 재입찰 회차에서 새 마감일시가 남아 있고, 그 회차가 이미 개찰완료·유찰된
+기록이 없으면 새 마감일을 검색 기간과 추천 판정에 사용합니다. 재공고 여부나 재입찰 허용 여부만으로
+재입찰 진행 중이라고 확정하지 않습니다. 원래 마감일은 `original_bidClseDt`에 보존합니다.
+재입찰 허용 공고는 기존 마감이 검색 기간 밖이어도 새 회차를 먼저 확인합니다.
+
+이 확인은 후보 수 제한 전에 수행합니다. 검색 스냅샷에는 공개 상태 근거만 보관하며 업체·투찰자 정보는 저장하지 않습니다.
+`/search-bids`의 `progress_excluded`에 마감·조회 실패로 제외한 공고와 이유를 반환합니다.
+조회 실패를 접수 가능으로 간주하지 않으며 실패 결과는 검색 캐시로 재사용하지 않습니다.
+완료된 재입찰 또는 캐시 확인 중 마감이 지난 회차도 추천에 넘기지 않습니다.
+키·코드를 변경한 뒤에는 서버를 재시작하고 새 검색을 실행하세요. 기존 브라우저 목록은 자동으로 다시 검색되지 않습니다.
+
 공고문 판별은 RAG의 `knowledge_bridge.classify_attachment`를 그대로 사용합니다. 공고문을 식별하지 못하면 다른 첨부로 대체하지 않습니다. 신청서 HWP·ZIP은 원본을 보존하고 공고문·제안요청서·협약문서만 내부 PDF 변환·적재합니다. 검색 응답에서 API 담당자 성명·연락처 필드는 제외하지만 원본과 추출된 공개 업무 연락처는 보존합니다.
 
 ### 파일첨부와 제안요청정보의 별도 조회
@@ -52,6 +71,9 @@ macOS 신규 프로필에서는 `unopkg`가 실행하는 보조 프로세스가 
 `getBidPblancListInfoEorderAtchFileInfo`에서 공고번호(`inqryDiv=2`)로 조회합니다.
 응답의 `bidNtceNo`·`bidNtceOrd`가 선택 공고·차수와 정확히 일치하는 첨부만 합칩니다.
 `eorderAtchFileNm`·`eorderAtchFileUrl`·`eorderDocDivNm`을 보존하며 URL 중복은 제거합니다.
+API 파일명이 비어 있으면 해당 공식 다운로드 주소의 `Content-Disposition`에서 파일명을 보완합니다.
+파일명을 확인할 때는 범위 GET 요청의 헤더만 읽고 닫으며 본문을 저장하지 않습니다.
+헤더에도 이름이 없거나 오류 페이지·비공식 주소이면 조회 실패로 남깁니다.
 현재 `DATA_GO_KR_SERVICE_KEY`를 사용하고, 공식 G2B/PPS 다운로드 주소만 허용합니다.
 
 검색에서는 일반 첨부에 RFP가 없는 후보에 e발주 목록을 보완 조회합니다(동시 최대 4건).
@@ -211,7 +233,7 @@ data_pipeline/.venv/bin/python -m unittest discover -s data_pipeline/tests -v
 | 실행 앱 / worker | `data_pipeline.render_rag_app:app` / 1 |
 | 헬스 | `/health` |
 | BACKEND_URL | `https://ai-service-mini-backend.onrender.com` |
-| 비밀 환경변수 | `DATA_GO_KR_SERVICE_KEY`, `OPENAI_API_KEY` |
+| 비밀 환경변수 | `DATA_GO_KR_SERVICE_KEY`, `DATA_GO_KR_SCSBID_SERVICE_KEY`, `OPENAI_API_KEY` |
 
 Dockerfile의 기본 실행 명령을 사용합니다. LibreOffice·Java·한글 글꼴·H2Orestart는 이미지에서 설치합니다.
 호스트 `.env`, 원문, 인덱스, 가상환경은 이미지에 포함하지 않습니다.

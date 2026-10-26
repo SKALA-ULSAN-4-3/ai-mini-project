@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from data_pipeline import search_jobs
 from data_pipeline import collect_bids as collector
+from data_pipeline import bid_progress
 from data_pipeline.common import read_csv, write_json
 from data_pipeline.knowledge import KnowledgeStore
 
@@ -254,10 +255,14 @@ class DeadlineSearchTests(unittest.TestCase):
                 patch.object(search_jobs, 'datetime') as clock, \
                 patch.dict(os.environ, {'BID_SEARCH_LOOKBACK_DAYS': '14'}), \
                 patch.object(collector, 'fetch_page', side_effect=fetch), \
+                patch.object(search_jobs.bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector, 'lookup_eorder_attachments', return_value=[]), \
                 patch.object(search_jobs.restrictions, 'lookup_restrictions', return_value={
                     'region_restriction': {'lookup_status': 'complete', 'status': 'not_listed'},
                     'industry_restriction': {'lookup_status': 'complete', 'status': 'none'}}), \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = datetime(2026, 10, 26, 10)
             result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
@@ -279,6 +284,179 @@ class DeadlineSearchTests(unittest.TestCase):
         self.assertEqual(found, items)
 
 
+class BidProgressTests(unittest.TestCase):
+    now = datetime(2026, 10, 26, 10, tzinfo=collector.KST)
+
+    def item(self, **changes):
+        return {'bidNtceNo': 'B1', 'bidNtceOrd': '000', 'bidNtceNm': '웹 개발',
+                'ntceKindNm': '등록공고', 'bidNtceDt': '2026-10-20 09:00',
+                'bidClseDt': '2026-11-15 18:00', 'opengDt': '2026-11-16 10:00',
+                'ntceSpecFileNm1': '공고문.pdf', 'ntceSpecDocUrl1': 'https://www.g2b.go.kr/notice',
+                **changes}
+
+    def row(self, round='000', **changes):
+        return {'bidNtceNo': 'B1', 'bidNtceOrd': '000', 'bidClsfcNo': '1',
+                'rbidNo': round, **changes}
+
+    def evaluate(self, *, openings=(), rebids=(), now=None, **changes):
+        item = self.item(**changes)
+        item['bid_progress'] = {'lookup_status': 'complete', 'opening_results': list(openings),
+                                'rebids': list(rebids)}
+        return bid_progress.apply_progress(item, now or self.now)
+
+    def test_opening_result_excludes_notice_even_if_original_deadline_is_future(self):
+        result = self.evaluate(openings=[self.row(progrsDivCdNm='개찰완료', opengDt='2026-10-14 15:00')])
+        self.assertFalse(result['bid_progress']['recommendable'])
+        self.assertEqual(result['bid_progress']['label'], '마감')
+
+    def test_future_opening_is_not_actual_completion(self):
+        result = self.evaluate()
+        self.assertTrue(result['bid_progress']['recommendable'])
+        self.assertFalse(result['bid_progress']['opening_confirmed'])
+
+    def test_elapsed_opening_excludes_unknown_deadline_without_claiming_actual_result(self):
+        result = self.evaluate(bidClseDt='', opengDt='2026-10-14 15:00')
+        self.assertEqual(result['bid_progress']['state'], 'closed')
+        self.assertFalse(result['bid_progress']['opening_confirmed'])
+
+    def test_active_rebid_uses_new_deadline_and_cached_result_expires(self):
+        result = self.evaluate(bidClseDt='2026-10-12 17:00', opengDt='2026-10-14 15:00',
+            openings=[self.row(progrsDivCdNm='재입찰', opengDt='2026-10-14 15:00')],
+            rebids=[self.row('001', bidClseDt='2026-11-05 18:00', opengDt='2026-11-06 10:00')])
+        self.assertEqual(result['bid_progress']['state'], 'rebidding')
+        self.assertEqual(result['bidClseDt'], '2026-11-05 18:00')
+        self.assertEqual(result['original_bidClseDt'], '2026-10-12 17:00')
+        after = bid_progress.apply_progress(result, datetime(2026, 11, 5, 18, tzinfo=collector.KST))
+        self.assertFalse(after['bid_progress']['recommendable'])
+
+    def test_completed_rebid_cannot_be_reopened_by_old_schedule(self):
+        result = self.evaluate(openings=[self.row('001', progrsDivCdNm='개찰완료')],
+            rebids=[self.row('001', bidClseDt='2026-11-05 18:00')])
+        self.assertFalse(result['bid_progress']['recommendable'])
+
+    def test_latest_rebid_round_wins_over_older_future_deadline(self):
+        result = self.evaluate(rebids=[self.row('001', bidClseDt='2026-11-05 18:00'),
+                                       self.row('002', bidClseDt='2026-10-25 18:00')])
+        self.assertFalse(result['bid_progress']['recommendable'])
+
+    def test_different_classification_does_not_close_active_rebid(self):
+        result = self.evaluate(openings=[self.row('001', bidClsfcNo='2', progrsDivCdNm='개찰완료')],
+            rebids=[self.row('001', bidClseDt='2026-11-05 18:00')])
+        self.assertEqual(result['bid_progress']['state'], 'rebidding')
+
+    def test_other_notice_or_revision_is_not_used(self):
+        for changed in ({'bidNtceNo': 'OTHER'}, {'bidNtceOrd': '001'}):
+            with self.subTest(changed=changed):
+                result = self.evaluate(openings=[self.row(progrsDivCdNm='개찰완료', **changed)])
+                self.assertTrue(result['bid_progress']['recommendable'])
+
+    def test_invalid_rebid_deadline_does_not_override_closed_notice(self):
+        for deadline in ('', 'invalid', '2026-11-05'):
+            with self.subTest(deadline=deadline):
+                result = self.evaluate(openings=[self.row(progrsDivCdNm='재입찰')],
+                    rebids=[self.row('001', bidClseDt=deadline)])
+                self.assertFalse(result['bid_progress']['recommendable'])
+
+    def test_lookup_filters_revision_and_never_stores_company_fields(self):
+        payload = {'response': {'header': {'resultCode': '00'}, 'body': {'totalCount': 3, 'items': [
+            self.row(opengCorpInfo='private company data'), self.row(bidNtceOrd='001'),
+            self.row(bidNtceNo='OTHER')]}}}
+        class Response(io.BytesIO):
+            def __enter__(self): return self
+            def __exit__(self, *args): self.close()
+        with patch.object(collector, 'build_opener') as opener:
+            opener.return_value.open.return_value = Response(json.dumps(payload).encode())
+            result = bid_progress.lookup_rows('result-test-key', 'B1', '000', bid_progress.OPERATIONS[0])
+            self.assertEqual(len(result), 1)
+            self.assertNotIn('opengCorpInfo', result[0])
+            request = opener.return_value.open.call_args.args[0]
+            from urllib.parse import parse_qs, urlparse
+            params = parse_qs(urlparse(request.full_url).query)
+            self.assertEqual(params['serviceKey'], ['result-test-key'])
+            self.assertEqual(params['inqryDiv'], ['4'])
+
+    def run_search(self, rows, lookup):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        with patch.object(search_jobs, 'root_dir', return_value=Path(temp.name)), \
+                patch.object(search_jobs, 'datetime') as clock, \
+                patch.dict(os.environ, {'DATA_GO_KR_SCSBID_SERVICE_KEY': 'separate-result-key',
+                                        'BID_SEARCH_LOOKBACK_DAYS': '7'}), \
+                patch.object(collector, 'fetch_page', return_value=(rows, len(rows))), \
+                patch.object(bid_progress, 'lookup_progress', side_effect=lookup) as progress_lookup, \
+                patch.object(search_jobs, '_enrich_candidate', side_effect=lambda item, key: item), \
+                patch.object(collector.clock, 'sleep'):
+            clock.now.return_value = self.now
+            result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 1, 'notice-key')
+            return result, progress_lookup.call_args_list
+
+    def test_search_checks_progress_before_limit_and_admits_rebid_outside_original_deadline(self):
+        closed = self.item(bidNtceNo='CLOSED')
+        rebid = self.item(bidNtceNo='REBID', bidClseDt='2026-10-12 17:00', rbidPermsnYn='Y')
+        def lookup(key, no, order):
+            self.assertEqual(key, 'separate-result-key')
+            common = dict(bidNtceNo=no, bidNtceOrd=order, bidClsfcNo='1')
+            return {'lookup_status': 'complete',
+                    'opening_results': [{**common, 'rbidNo': '000', 'progrsDivCdNm': '개찰완료'}],
+                    'rebids': [{**common, 'rbidNo': '001', 'bidClseDt': '2026-11-05 18:00'}] if no == 'REBID' else []}
+        result, calls = self.run_search([closed, rebid], lookup)
+        self.assertEqual([r['bid_no'] for r in result['items']], ['REBID'])
+        self.assertEqual(result['items'][0]['deadline'], '2026-11-05 18:00')
+        self.assertEqual(result['progress_excluded'][0]['bid_no'], 'CLOSED')
+        self.assertEqual(len(calls), 2)
+
+    def test_lookup_failure_is_excluded_instead_of_claiming_open(self):
+        def unavailable(*args): raise collector.CollectionError('개찰 조회 HTTP 403')
+        result, _ = self.run_search([self.item()], unavailable)
+        self.assertFalse(result['items'])
+        self.assertEqual(result['progress_excluded'][0]['status'], 'unavailable')
+
+    def test_past_opening_with_missing_deadline_is_recorded_as_closed(self):
+        item = self.item(bidClseDt='', opengDt='2026-10-14 15:00')
+        result, calls = self.run_search([item], lambda *args: {
+            'lookup_status': 'complete', 'opening_results': [], 'rebids': []})
+        self.assertFalse(result['items'])
+        self.assertEqual(result['progress_excluded'][0]['label'], '마감')
+        self.assertEqual(len(calls), 1)
+
+    def test_recommendation_api_omits_closed_notice_and_uses_new_rebid_deadline(self):
+        import sys
+        module_path = patch('sys.path', [str(collector.ROOT / 'rag-code-template_ext'), *sys.path])
+        module_path.start()
+        self.addCleanup(module_path.stop)
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from bid_logic.api import create_bid_router
+        import knowledge_bridge
+        closed = self.evaluate(openings=[self.row(progrsDivCdNm='개찰완료')])
+        active = self.evaluate(bidClseDt='2026-10-12 17:00',
+            openings=[self.row(progrsDivCdNm='재입찰')],
+            rebids=[self.row('001', bidClseDt='2026-11-05 18:00')])
+        # 별도 공고로 바꾸며 근거의 공고번호도 함께 대응시킨다.
+        closed['bidNtceNo'] = 'CLOSED'
+        closed['bid_progress']['opening_results'][0]['bidNtceNo'] = 'CLOSED'
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = root / ('a' * 32)
+            folder.mkdir()
+            write_json(folder / 'search.json', {'search_id': 'a' * 32, 'items': [closed, active],
+                'request': {'from': '2026-11-01', 'to': '2026-11-30', 'queries': ['웹'], 'date_basis': 'deadline'},
+                'collected_at': '2026-10-26', 'page_limit_reached': False})
+            app = FastAPI()
+            app.include_router(create_bid_router(profile_dependency=lambda: {'region': '서울', 'keywords': ['웹']},
+                bids_provider=lambda: [], scoring_provider=lambda *args: None,
+                checklist_provider=lambda *args: None, search=lambda *args, **kwargs: [],
+                search_results_provider=knowledge_bridge.search_results, require_search_id=True,
+                title_similarity=lambda query, titles: [1.0] * len(titles), clock=lambda: self.now))
+            public = search_jobs._public_search
+            with patch.object(search_jobs, 'root_dir', return_value=root), \
+                    patch.object(search_jobs, '_public_search', side_effect=lambda s, c: public(s, c, self.now)):
+                response = TestClient(app).get('/bids', params={
+                    'from': '2026-11-01', 'to': '2026-11-30', 'search_id': 'a' * 32})
+            self.assertEqual(response.status_code, 200, response.text)
+            bids = response.json()['bids']
+            self.assertEqual([row['bid_no'] for row in bids], ['B1'])
+            self.assertTrue(bids[0]['deadline'].startswith('2026-11-05'))
 
 
 if __name__ == '__main__':

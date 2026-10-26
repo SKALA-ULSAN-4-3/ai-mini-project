@@ -224,7 +224,7 @@ class SearchResultsAdapterTest(unittest.TestCase):
         out = kb.search_results(self.SID, {})
         self.assertEqual((out["from"], out["to"]), ("2026-10-16", "2026-11-30"))
         keys = {(i["bid_no"], i["bid_order"]) for i in out["items"]}
-        self.assertEqual(keys, {("R1", "000"), ("R2", "000"), ("R3", "001"), ("R5", "000")})   # 취소 · 이전 차수 제외
+        self.assertEqual(keys, {("R1", "000"), ("R2", "000"), ("R3", "001")})   # 취소 · 이전 차수 · 접수 종료 제외
         self.assertIsNone(kb.search_results("b" * 32, {}))
 
     def test_bid_logic_router_shortlists_saved_search(self):
@@ -243,7 +243,7 @@ class SearchResultsAdapterTest(unittest.TestCase):
         body = client.get("/bids", params={**period, "limit": 20, "search_id": self.SID}).json()
         self.assertEqual(body["bids"][0]["bid_no"], "R1")            # 키워드와 가장 비슷한 공고명이 먼저
         self.assertEqual({b["bid_no"] for b in body["bids"]}, {"R1", "R2", "R3"})
-        self.assertEqual([e["bid_no"] for e in body["excluded"]], ["R5"])   # 마감 공고는 사유와 함께 제외
+        self.assertEqual(body["excluded"], [])   # 접수 종료 공고는 데이터 어댑터에서 이미 제외됨
         self.assertEqual(client.get("/bids", params={**period, "search_id": "f" * 32}).status_code, 404)
         self.assertEqual(client.get("/bids", params={"from": "2026-10-01", "to": "2026-11-30",
                                                       "search_id": self.SID}).status_code, 422)  # 검색 기간과 다름

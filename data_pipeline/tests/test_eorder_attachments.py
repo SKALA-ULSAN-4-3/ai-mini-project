@@ -1,5 +1,6 @@
 import io
 import json
+from email.message import Message
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -22,8 +23,51 @@ def response(items, total=None, code='00'):
 
 
 class EorderAttachmentTests(unittest.TestCase):
+    def test_missing_api_name_uses_download_header_without_reading_body(self):
+        class HeaderResponse(io.BytesIO):
+            def __init__(self, disposition):
+                super().__init__(b'body must not be read')
+                self.headers = Message()
+                self.headers['Content-Type'] = 'application/octet-stream'
+                self.headers['Content-Disposition'] = disposition
+            def read(self, *args):
+                raise AssertionError('파일명 확인 단계에서 첨부 본문을 읽으면 안 됩니다.')
+        calls = []
+        def opened(request, timeout):
+            calls.append(request)
+            if 'getBidPblancListInfoEorderAtchFileInfo' in request.full_url:
+                return response([attachment(sequence=10), attachment(name='', sequence=13)])
+            return HeaderResponse('attachment;filename=%EC%A0%9C%EC%95%88%EC%9A%94%EC%B2%AD%EC%84%9C.hwpx;')
+        with patch.object(collector, 'build_opener', return_value=SimpleNamespace(open=opened)):
+            files = collector.lookup_eorder_attachments('test-key', 'B1', '000')
+        self.assertEqual(len(files), 2)
+        self.assertEqual(files[1]['file_name'], '제안요청서.hwpx')
+        self.assertEqual(calls[1].get_header('Range'), 'bytes=0-0')
 
+    def test_header_filename_accepts_rfc5987_and_rejects_unsafe_or_missing_names(self):
+        for disposition, expected in (("attachment; filename*=UTF-8''%EC%A0%9C%EC%95%88.hwpx", '제안.hwpx'),
+                                      ('attachment', None), ('attachment; filename="../bad.hwpx"', None)):
+            headers = Message()
+            headers['Content-Type'] = 'application/octet-stream'
+            headers['Content-Disposition'] = disposition
+            result = io.BytesIO()
+            result.headers = headers
+            with self.subTest(disposition=disposition), patch.object(collector, 'build_opener',
+                    return_value=SimpleNamespace(open=lambda request, timeout: result)):
+                if expected:
+                    self.assertEqual(collector.attachment_header_name('https://www.g2b.go.kr/file'), expected)
+                else:
+                    with self.assertRaises(collector.CollectionError):
+                        collector.attachment_header_name('https://www.g2b.go.kr/file')
 
+    def test_metadata_error_page_does_not_become_a_filename(self):
+        headers = Message()
+        headers['Content-Type'] = 'text/html'
+        result = io.BytesIO()
+        result.headers = headers
+        with patch.object(collector, 'build_opener', return_value=SimpleNamespace(open=lambda *args, **kwargs: result)):
+            with self.assertRaises(collector.CollectionError):
+                collector.attachment_header_name('https://www.g2b.go.kr/file')
 
     def test_exact_scope_and_source_fields(self):
         rfp = attachment()

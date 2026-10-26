@@ -5,6 +5,7 @@ Python 표준 라이브러리만 사용한다. 참가자격 판정·변환·RAG�
 import argparse
 import csv
 from datetime import date, datetime, timedelta
+from email.message import Message
 import json
 import os
 from pathlib import Path
@@ -131,7 +132,7 @@ def lookup_eorder_attachments(key, bid_no, bid_order):
                 raise CollectionError("제안요청정보 첨부가 공식 다운로드 주소가 아닙니다.")
             name = str(item.get("eorderAtchFileNm") or "").strip()
             if not name:
-                raise CollectionError("제안요청정보 첨부의 파일명을 확인할 수 없습니다.")
+                name = attachment_header_name(file_url)
             seen.add(file_url)
             found.append({"bid_no": str(bid_no), "bid_order": str(bid_order),
                           "file_name": name, "url": file_url,
@@ -141,6 +142,26 @@ def lookup_eorder_attachments(key, bid_no, bid_order):
     raise CollectionError("제안요청정보 첨부 조회 한도를 넘었습니다. 전체 목록 확인이 필요합니다.")
 
 
+def attachment_header_name(url):
+    """API 파일명 누락만 다운로드 헤더로 보완한다. 파일 본문은 읽거나 저장하지 않는다."""
+    if not allowed_download(url):
+        raise CollectionError("제안요청정보 첨부가 공식 다운로드 주소가 아닙니다.")
+    request = Request(url, headers={"User-Agent": "BidCollector/1.0", "Range": "bytes=0-0"})
+    try:
+        # 공식 다운로드 서버는 HEAD를 403으로 거부하므로 GET의 헤더만 읽고 닫는다.
+        with build_opener(OfficialRedirect()).open(request, timeout=20) as response:
+            if response.headers.get_content_type() in ("text/html", "application/json"):
+                raise CollectionError("제안요청정보 첨부 대신 안내/오류 페이지가 반환됐습니다.")
+            header = Message()
+            header["Content-Disposition"] = response.headers.get("Content-Disposition", "")
+            name = unquote(header.get_filename() or "").strip()
+    except HTTPError as exc:
+        raise CollectionError(f"제안요청정보 첨부 파일명 조회 HTTP {exc.code}") from None
+    except (URLError, TimeoutError, OSError):
+        raise CollectionError("제안요청정보 첨부 파일명 조회 연결 실패") from None
+    if (not name or name in (".", "..") or re.search(r'[\x00-\x1f/\\]', name)):
+        raise CollectionError("제안요청정보 첨부의 파일명을 확인할 수 없습니다.")
+    return name
 
 
 def safe_name(name):
@@ -213,7 +234,7 @@ def deadline_in_period(item, start, end):
         return False
 
 
-def search_candidates(key, start_date, end_date, queries, limit, *, deadline_period=None):
+def search_candidates(key, start_date, end_date, queries, limit, *, deadline_period=None, candidate_transform=None):
     """검색어와 공고일 기간으로 API 후보 목록을 수집한다."""
     found = {}
     truncated = False
@@ -233,6 +254,10 @@ def search_candidates(key, start_date, end_date, queries, limit, *, deadline_per
                 print(f"후보 수집: {start}~{end}, 요청 검색어 {query}, {page}페이지", flush=True)
                 items, total = fetch_page(key, start, end, query, page)
                 for item in items:
+                    if candidate_transform is not None:
+                        item = candidate_transform(item)
+                        if item is None:
+                            continue
                     if deadline_period is not None and not deadline_in_period(item, *deadline_period):
                         continue
                     identity = (str(item.get("bidNtceNo") or ""), str(item.get("bidNtceOrd") or "000"))

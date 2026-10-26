@@ -367,6 +367,8 @@ class DocumentReadinessTests(unittest.TestCase):
         current = {**self.item, 'stdNtceDocUrl': 'https://www.g2b.go.kr/converted-notice'}
         job = search_jobs.create_job(search_id, [{'bid_no': 'B1', 'bid_order': '000'}], 'notices')
         with patch.object(collector, 'lookup_notice', return_value=current) as lookup, \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
                 patch.object(collector, 'download_file', side_effect=self.download), \
                 patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
@@ -420,6 +422,8 @@ class DocumentReadinessTests(unittest.TestCase):
         write_json(folder / 'search.json', {'items': [old]})
         job = search_jobs.create_job(search_id, [{'bid_no': 'B1', 'bid_order': '000'}], 'documents')
         with patch.object(search_jobs.collector, 'lookup_notice', return_value=self.item), \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(search_jobs.collector, 'lookup_eorder_attachments', return_value=[]), \
                 patch.object(search_jobs.collector, 'download_file', side_effect=self.download), \
                 patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
@@ -444,21 +448,6 @@ class DeadlineSearchTests(unittest.TestCase):
             with self.subTest(raw=raw):
                 self.assertEqual(collector.deadline_in_period({'bidClseDt': raw},
                                  date(2026, 11, 1), date(2026, 11, 30)), expected)
-
-    def test_progress_cache_reuses_only_successful_results(self):
-        with tempfile.TemporaryDirectory() as temp, \
-                patch.object(search_jobs, 'root_dir', return_value=Path(temp)), \
-                patch.object(search_jobs.time, 'time', return_value=100) as clock, \
-                patch.object(bid_progress, 'lookup_progress', return_value={
-                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}) as lookup:
-            search_jobs._cached_progress('key', 'B1', '000')
-            search_jobs._cached_progress('key', 'B1', '000')
-            self.assertEqual(lookup.call_count, 1)
-            clock.return_value = 131
-            search_jobs._cached_progress('key', 'B1', '000')
-            self.assertEqual(lookup.call_count, 2)
-            search_jobs._cached_progress('other-key', 'B1', '000')
-            self.assertEqual(lookup.call_count, 3)
 
     def test_filter_happens_before_candidate_limit(self):
         items = [{'bidNtceNo': 'OLD', 'bidClseDt': '2026-10-01 12:00'},
@@ -486,14 +475,12 @@ class DeadlineSearchTests(unittest.TestCase):
                 patch.object(search_jobs, 'datetime') as clock, \
                 patch.dict(os.environ, {'BID_SEARCH_LOOKBACK_DAYS': 'unused-value'}), \
                 patch.object(collector, 'fetch_page', side_effect=fetch), \
-                patch.object(search_jobs.bid_progress, 'lookup_progress', return_value={
-                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}) as progress_lookup, \
                 patch.object(collector, 'lookup_eorder_attachments', return_value=[]) as eorder, \
                 patch.object(search_jobs.restrictions, 'lookup_restrictions', return_value={
                     'region_restriction': {'lookup_status': 'complete', 'status': 'not_listed'},
                     'industry_restriction': {'lookup_status': 'complete', 'status': 'none'}}), \
-                patch.object(bid_progress, 'lookup_progress', return_value={
-                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = datetime(2026, 10, 26, 10)
             result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
@@ -506,6 +493,7 @@ class DeadlineSearchTests(unittest.TestCase):
             self.assertEqual(result['deadline_from'], '2026-10-26')
             self.assertEqual(result['deadline_to'], '2026-11-30')
             self.assertEqual(result['search_coverage']['stop_reason'], 'candidate_limit')
+            progress_lookup.assert_not_called()
             # 같은 조건은 새 마감일 기준 스냅샷만 캐시로 재사용한다.
             cached = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertTrue(cached['cached'])
@@ -643,9 +631,9 @@ class BidProgressTests(unittest.TestCase):
         self.assertTrue(result['bid_progress']['recommendable'])
         self.assertFalse(result['bid_progress']['opening_confirmed'])
 
-    def test_elapsed_opening_excludes_unknown_deadline_without_claiming_actual_result(self):
+    def test_elapsed_scheduled_opening_with_unknown_deadline_requires_review(self):
         result = self.evaluate(bidClseDt='', opengDt='2026-10-14 15:00')
-        self.assertEqual(result['bid_progress']['state'], 'closed')
+        self.assertEqual(result['bid_progress']['state'], 'unknown')
         self.assertFalse(result['bid_progress']['opening_confirmed'])
 
     def test_active_rebid_uses_new_deadline_and_cached_result_expires(self):
@@ -718,40 +706,17 @@ class BidProgressTests(unittest.TestCase):
             result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'notice-key')
             return result, progress_lookup.call_args_list
 
-    def test_search_checks_progress_before_limit_and_admits_rebid_outside_original_deadline(self):
-        closed = self.item(bidNtceNo='CLOSED')
-        rebid = self.item(bidNtceNo='REBID', bidClseDt='2026-10-12 17:00', rbidPermsnYn='Y')
-        def lookup(key, no, order):
-            self.assertEqual(key, 'separate-result-key')
-            common = dict(bidNtceNo=no, bidNtceOrd=order, bidClsfcNo='1')
-            return {'lookup_status': 'complete',
-                    'opening_results': [{**common, 'rbidNo': '000', 'progrsDivCdNm': '개찰완료'}],
-                    'rebids': [{**common, 'rbidNo': '001', 'bidClseDt': '2026-11-05 18:00'}] if no == 'REBID' else []}
-        result, calls = self.run_search([closed, rebid], lookup)
-        self.assertEqual([r['bid_no'] for r in result['items']], ['REBID'])
-        self.assertEqual(result['items'][0]['deadline'], '2026-11-05 18:00')
-        self.assertEqual(result['progress_excluded'][0]['bid_no'], 'CLOSED')
-        self.assertEqual(len(calls), 2)
+    def test_search_does_not_query_progress_for_unselected_candidates(self):
+        result, calls = self.run_search([self.item()], lambda *args: self.fail('search must not check progress'))
+        self.assertEqual([r['bid_no'] for r in result['items']], ['B1'])
+        self.assertEqual(result['items'][0]['bid_progress']['state'], 'not_checked')
+        self.assertEqual(calls, [])
 
-    def test_lookup_failure_is_excluded_instead_of_claiming_open(self):
+    def test_progress_lookup_failure_does_not_remove_search_candidate(self):
         def unavailable(*args): raise collector.CollectionError('개찰 조회 HTTP 403')
-        result, _ = self.run_search([self.item()], unavailable)
-        self.assertFalse(result['items'])
-        self.assertEqual(result['progress_excluded'][0]['status'], 'unavailable')
-
-    def test_rate_limit_stops_search_without_saving_empty_result(self):
-        def limited(*args):
-            raise bid_progress.ProgressRateLimitError('개찰·재입찰 API 요청 한도 초과 (HTTP 429)')
-        with tempfile.TemporaryDirectory() as tmp, \
-                patch.object(search_jobs, 'root_dir', return_value=Path(tmp)), \
-                patch.object(collector, 'fetch_page', return_value=([self.item()], 1)), \
-                patch.object(bid_progress, 'lookup_progress', side_effect=limited) as lookup, \
-                patch.object(collector.clock, 'sleep'):
-            with self.assertRaisesRegex(collector.CollectionError, '429'):
-                search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 20, 'key')
-            self.assertEqual(lookup.call_count, 1)
-            self.assertEqual(list(Path(tmp).glob('**/search.json')), [])
-            self.assertEqual(list(Path(tmp).glob('cache-*.json')), [])
+        result, calls = self.run_search([self.item()], unavailable)
+        self.assertEqual([r['bid_no'] for r in result['items']], ['B1'])
+        self.assertEqual(calls, [])
 
     def test_http_429_reports_quota_instead_of_service_approval(self):
         from urllib.error import HTTPError
@@ -762,15 +727,15 @@ class BidProgressTests(unittest.TestCase):
             self.assertNotIn('활용승인', str(caught.exception))
             self.assertNotIn('secret-key', str(caught.exception))
 
-    def test_past_opening_with_missing_deadline_is_recorded_as_closed(self):
-        item = self.item(bidClseDt='', opengDt='2026-10-14 15:00')
+    def test_missing_deadline_is_separated_for_review_without_progress_lookup(self):
+        item = self.item(bidClseDt='')
         result, calls = self.run_search([item], lambda *args: {
             'lookup_status': 'complete', 'opening_results': [], 'rebids': []})
         self.assertFalse(result['items'])
-        self.assertEqual(result['progress_excluded'][0]['label'], '마감')
-        self.assertEqual(len(calls), 1)
+        self.assertEqual(result['deadline_unknown'][0]['bid_no'], 'B1')
+        self.assertEqual(calls, [])
 
-    def test_recommendation_api_omits_closed_notice_and_uses_new_rebid_deadline(self):
+    def test_search_does_not_use_progress_results_to_filter_deadline_candidates(self):
         import sys
         module_path = patch('sys.path', [str(collector.ROOT / 'rag-code-template_ext'), *sys.path])
         module_path.start()
@@ -780,7 +745,7 @@ class BidProgressTests(unittest.TestCase):
         from bid_logic.api import create_bid_router
         import knowledge_bridge
         closed = self.evaluate(openings=[self.row(progrsDivCdNm='개찰완료')])
-        active = self.evaluate(bidClseDt='2026-10-12 17:00',
+        active = self.evaluate(bidNtceNo='REBID', bidClseDt='2026-10-12 17:00',
             openings=[self.row(progrsDivCdNm='재입찰')],
             rebids=[self.row('001', bidClseDt='2026-11-05 18:00')])
         today = self.evaluate(bidNtceNo='TODAY', bidClseDt='2026-10-26 12:00', opengDt='2026-10-26 13:00')
@@ -810,13 +775,13 @@ class BidProgressTests(unittest.TestCase):
                     'from': '2026-10-01', 'to': '2026-11-30', 'search_id': 'a' * 32})
                 recheck = TestClient(app).post('/bids/recheck', json={
                     'from': '2026-10-26', 'to': '2026-11-30', 'search_id': 'a' * 32,
-                    'bids': [{'bid_no': 'B1', 'revision': '000'}, {'bid_no': 'TODAY', 'revision': '000'}]})
+                    'bids': [{'bid_no': 'CLOSED', 'revision': '000'}, {'bid_no': 'TODAY', 'revision': '000'}]})
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(mixed_period.status_code, 422)
             self.assertEqual(recheck.status_code, 200, recheck.text)
             bids = response.json()['bids']
-            self.assertEqual([row['bid_no'] for row in bids], ['B1', 'TODAY'])
-            self.assertTrue(bids[0]['deadline'].startswith('2026-11-05'))
+            self.assertEqual([row['bid_no'] for row in bids], ['CLOSED', 'TODAY'])
+            self.assertTrue(bids[0]['deadline'].startswith('2026-11-15'))
 
 
 if __name__ == '__main__':

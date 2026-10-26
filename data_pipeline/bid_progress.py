@@ -96,17 +96,20 @@ def apply_progress(item, now=None):
 
     openings = scoped(evidence.get("opening_results", []))
     rebids = scoped(evidence.get("rebids", []))
+    opening_completed = any(r.get("progrsDivCdNm") in ("개찰완료", "유찰") for r in openings)
     latest = {}
     for row in rebids:
         classification = str(row.get("bidClsfcNo") or "")
         if _round(row) >= 0 and (classification not in latest or _round(row) > _round(latest[classification])):
             latest[classification] = row
     active = []
+    resolved_rounds = []
     for classification, row in latest.items():
         due, opening = parse_time(row.get("bidClseDt")), parse_time(row.get("opengDt"))
         closed_round = any(str(r.get("bidClsfcNo") or "") == classification
                            and _round(r) >= _round(row)
                            and r.get("progrsDivCdNm") in ("개찰완료", "유찰") for r in openings)
+        resolved_rounds.append(closed_round or bool(due and due <= now))
         if due and due > now and (opening is None or opening > now) and not closed_round:
             active.append(row)
     if active and evidence.get("lookup_status") == "complete":
@@ -118,15 +121,23 @@ def apply_progress(item, now=None):
                         current_deadline=current["bidClseDt"], opening_confirmed=bool(openings))
     elif evidence.get("lookup_status") == "unavailable":
         evidence.update(state="unavailable", label="입찰진행정보 확인 실패", recommendable=False)
+    elif latest and (len(resolved_rounds) != len(latest) or not all(resolved_rounds)):
+        evidence.update(state="unknown", label="재입찰 일정 확인 필요", recommendable=False,
+                        reason="재입찰 회차의 진행·마감 일정을 확정할 수 없습니다.")
     else:
         due, opening = parse_time(original_due), parse_time(item.get("opengDt"))
-        closed = bool(openings or rebids) or bool(opening and opening <= now) or bool(due and due <= now)
-        evidence.update(state="closed" if closed else "open", label="마감" if closed else "접수 가능 여부 확인",
-                        recommendable=not closed, opening_confirmed=bool(openings))
+        if opening and opening <= now and not due and not opening_completed and not latest:
+            evidence.update(state="unknown", label="개찰 결과 확인 필요", recommendable=False,
+                            opening_confirmed=False,
+                            reason="개찰 예정 시각이 지났지만 완료 결과와 마감일을 확인하지 못했습니다.")
+            result["bid_progress"] = evidence
+            return result
+        closed = opening_completed or bool(due and due <= now) or bool(latest and all(resolved_rounds))
+        evidence.update(state="closed" if closed else "open", label="마감" if closed else "입찰 상태 확인됨",
+                        recommendable=not closed, opening_confirmed=opening_completed)
         if closed:
-            evidence["reason"] = ("개찰결과가 있으며 현재 접수 중인 재입찰이 없습니다." if openings else
-                                  "재입찰 마감일시가 지났거나 진행 회차를 확인할 수 없습니다." if rebids else
-                                  "개찰일시가 지났습니다. 현재 접수 중인 재입찰 확인이 필요합니다." if opening and opening <= now else
-                                  "입찰마감일시가 지났습니다.")
+            evidence["reason"] = ("개찰이 완료됐고 현재 접수 중인 재입찰이 없습니다." if opening_completed else
+                                  "재입찰 회차가 마감돼 현재 접수 중인 재입찰이 없습니다."
+                                  if latest and all(resolved_rounds) else "입찰마감일시가 지났습니다.")
     result["bid_progress"] = evidence
     return result

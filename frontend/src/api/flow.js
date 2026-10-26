@@ -63,6 +63,9 @@ export async function fetchNotices(searchId, bids) {
 export async function fetchDocuments(searchId, bids) {
   return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
 }
+export async function retryDbSave(searchId, bids) {
+  return (await rag.post('/retry-db-save', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
+}
 export async function getJob(id) {
   const d = (await rag.get(`/jobs/${id}`, { timeout: 15000 })).data
   if (isFinished(d.status)) invalidateApiCache()

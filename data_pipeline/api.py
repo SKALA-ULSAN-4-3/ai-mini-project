@@ -59,8 +59,8 @@ def enqueue_fetch(request, background_tasks, mode):
     try:
         load_env()
         key = os.environ.get("DATA_GO_KR_SERVICE_KEY", "")
-        if mode == "documents" and not key:
-            raise HTTPException(503, "공고 차수 재확인에 필요한 API 키가 없습니다.")
+        if mode in {"notices", "documents"} and not key:
+            raise HTTPException(503, "선택 공고의 최신 차수와 입찰 진행 상태 확인에 필요한 API 키가 없습니다.")
         job = search_jobs.create_job(request.search_id, [b.model_dump() for b in request.bids], mode)
     except search_jobs.SearchNotFound as exc:
         raise HTTPException(404, str(exc)) from None
@@ -80,6 +80,12 @@ def fetch_notices(request: FetchBidsRequest, background_tasks: BackgroundTasks):
 @router.post("/fetch-documents", status_code=202)
 def fetch_documents(request: FetchBidsRequest, background_tasks: BackgroundTasks):
     return enqueue_fetch(request, background_tasks, "documents")
+
+
+@router.post("/retry-db-save", status_code=202)
+def retry_db_save(request: FetchBidsRequest, background_tasks: BackgroundTasks):
+    """이미 로컬에 준비된 파일·전처리 결과의 DB 저장만 다시 시도합니다."""
+    return enqueue_fetch(request, background_tasks, "db_retry")
 
 
 @router.get("/jobs/{job_id}")

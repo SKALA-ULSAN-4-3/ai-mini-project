@@ -105,7 +105,7 @@ class IndexTests(unittest.TestCase):
 class IngestionApiTests(unittest.TestCase):
     def test_api_only_has_data_pipeline_routes(self):
         from data_pipeline.api import app
-        self.assertEqual(set(app.openapi()['paths']),{'/upload-paper','/upload-topic','/data-status','/search-bids','/fetch-notices','/fetch-documents','/jobs/{job_id}'})
+        self.assertEqual(set(app.openapi()['paths']),{'/upload-paper','/upload-topic','/data-status','/search-bids','/fetch-notices','/fetch-documents','/retry-db-save','/jobs/{job_id}','/jobs/{job_id}/files','/jobs/{job_id}/files/{file_id}'})
 
     @staticmethod
     def pdf_bytes():
@@ -187,7 +187,7 @@ class RenderVerificationTests(unittest.TestCase):
                 return httpx.Response(200, json={})
             if path == '/openapi.json':
                 return httpx.Response(200, json={'paths': {p: {} for p in (
-                    '/search-bids', '/fetch-notices', '/fetch-documents', '/jobs/{job_id}', '/bids', '/rag-query')}})
+                    '/search-bids', '/fetch-notices', '/fetch-documents', '/retry-db-save', '/jobs/{job_id}', '/bids', '/rag-query')}})
             if path == '/api/auth/check' or (path in ('/bids', '/search-bids') and 'authorization' not in request.headers):
                 return httpx.Response(401, headers=headers)
             if path == '/api/login':

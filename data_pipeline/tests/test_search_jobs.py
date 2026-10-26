@@ -4,6 +4,8 @@ from datetime import date, datetime
 import os
 from pathlib import Path
 import tempfile
+import shutil
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -33,6 +35,143 @@ def text_pdf():
 
 
 class DocumentReadinessTests(unittest.TestCase):
+    def test_only_timed_out_conversion_is_retried_and_successes_are_reused(self):
+        from data_pipeline import convert_documents as conversion
+        rows = []
+        for name in ('retry.hwp', 'success.hwp'):
+            path = self.root / name
+            path.write_bytes(name.encode())
+            rows.append({'bid_no': 'B1', 'bid_order': '000', 'selected': True,
+                         'status': 'downloaded', 'local_path': str(path)})
+        search_jobs.write_csv(self.root / 'attachments.csv', list(rows[0]), rows)
+        calls = []
+        def convert(source, target, soffice):
+            calls.append(source.name)
+            if source.name == 'retry.hwp' and calls.count(source.name) == 1:
+                raise conversion.ConversionTimeout('mock timeout')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(self.pdf)
+        first = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=convert)
+        self.assertEqual(calls, ['retry.hwp', 'retry.hwp', 'success.hwp'])
+        self.assertEqual(len(first[0]['attempt_history']), 2)
+        self.assertAlmostEqual(first[0]['elapsed_seconds'],
+                               sum(entry['elapsed_seconds'] for entry in first[0]['attempt_history']))
+        with patch.object(conversion, 'convert_one', side_effect=AssertionError('repeat successful conversion')) as tool:
+            reused = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=tool)
+        self.assertTrue(all(row['status'] == 'existing' for row in reused))
+        tool.assert_not_called()
+
+    def test_downloads_overlap_but_are_bounded_and_forms_are_not_converted(self):
+        self.item.update(ntceSpecFileNm3='신청서.hwp', ntceSpecDocUrl3='https://www.g2b.go.kr/form')
+        barrier = threading.Barrier(3)
+        lock = threading.Lock()
+        active, peak = 0, 0
+        def download(url, target):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            try:
+                barrier.wait(timeout=5)
+                self.download(url, target)
+            finally:
+                with lock: active -= 1
+        with patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as prepare:
+            result = self.process(downloader=download)
+        self.assertEqual(peak, 3)
+        self.assertTrue(result['download_complete'])
+        self.assertTrue(result['rfp_ready'])
+        self.assertTrue(all(call.args[1] is False for call in prepare.call_args_list))
+
+    def test_cold_document_folder_restores_complete_db_cache_without_download_or_prepare(self):
+        import httpx
+        from data_pipeline import persistence, cache_api
+        self.item.update(ntceSpecFileNm3='신청서.hwp', ntceSpecDocUrl3='https://www.g2b.go.kr/form')
+        self.item['stdNtceDocUrl'] = 'https://www.g2b.go.kr/standard'
+        blobs, cache = {}, {}
+        java_calls = []
+        def handler(request):
+            if request.url.host == 'storage.test':
+                return httpx.Response(200, content=blobs[request.url.path.strip('/')])
+            java_calls.append(request.method)
+            if request.method == 'GET':
+                signed = request.url.params.get('download_urls') == 'true'
+                return httpx.Response(200, json=[{'file_name': name,
+                    **({'download_url': 'https://storage.test/' + name} if signed else {})} for name in blobs])
+            name = request.url.params['file_name']
+            blobs[name] = request.content
+            return httpx.Response(201, json={'file_name': name})
+        def save(no, revision, state):
+            cache.update(state)
+            return {'status': 'saved'}
+        real_client = httpx.Client
+        with patch.dict(os.environ, {'BACKEND_URL': 'https://java.test', 'SERVICE_API_KEY': 'test'}), \
+                patch.object(search_jobs.collector, 'resolve_standard_notice', side_effect=lambda item: item), \
+                patch.object(persistence.httpx, 'Client', side_effect=lambda **kw: real_client(transport=httpx.MockTransport(handler))), \
+                patch.object(cache_api, 'save_rfp', side_effect=save), \
+                patch.object(cache_api, 'lookup_rfp', side_effect=lambda *args: {'cached': bool(cache), 'result': cache, 'status': 'hit' if cache else 'miss'}):
+            first = self.process()
+            self.assertTrue(first['rfp_ready'])
+            self.assertEqual(cache['schema'], 2)
+            shutil.rmtree(self.root / 'documents')
+            java_calls.clear()
+            with patch.object(search_jobs.collector, 'download_file', side_effect=AssertionError('external download')), \
+                    patch.object(search_jobs, '_prepare_with_timeout', side_effect=AssertionError('duplicate prepare')):
+                second = search_jobs._process_bid(self.item, True, self.store, lambda _: None)
+            self.assertTrue(second['rfp_ready'])
+            self.assertTrue(second['download_complete'])
+            self.assertEqual(second['rfp_cache']['status'], 'reused')
+            self.assertEqual(java_calls, ['GET', 'GET'])
+            self.item['ntceInsttOfclNm'] = '담당자변경'
+            with patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as worker:
+                changed = self.process()
+            self.assertTrue(changed['rfp_ready'])
+            worker.assert_called_once()
+
+    def test_job_batches_indexing_and_never_reports_ready_before_commit(self):
+        sid = 'a' * 32
+        folder = self.root / sid
+        folder.mkdir()
+        other = {**self.item, 'bidNtceNo': 'B2'}
+        write_json(folder / 'search.json', {'items': [self.item, other]})
+        refs = [{'bid_no': no, 'bid_order': '000'} for no in ['B1', 'B2']]
+        job = search_jobs.create_job(sid, refs, 'notices')
+        upsert = self.store.upsert
+        def commit(records):
+            snapshot = search_jobs.get_job(job['job_id'])
+            self.assertEqual(snapshot['done'], 0)
+            self.assertTrue(all(b['status'] == 'indexing' and b['preparation_status'] == 'pending_index' for b in snapshot['bids']))
+            return upsert(records)
+        with patch.object(search_jobs.collector, 'download_file', side_effect=self.download), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store), \
+                patch.object(self.store, 'upsert', side_effect=commit) as index:
+            search_jobs.run_job(job['job_id'])
+        index.assert_called_once()
+        final = search_jobs.get_job(job['job_id'])
+        self.assertEqual(final['done'], 2)
+        self.assertEqual(final['status'], 'completed')
+        self.assertTrue(all(b['preparation_status'] == 'ready' for b in final['bids']))
+
+    def test_failed_index_is_not_ready_and_retry_reuses_document_work(self):
+        sid = 'f' * 32
+        (self.root / sid).mkdir()
+        write_json(self.root / sid / 'search.json', {'items': [self.item]})
+        refs = [{'bid_no': 'B1', 'bid_order': '000'}]
+        first = search_jobs.create_job(sid, refs, 'notices')
+        with patch.object(search_jobs.collector, 'download_file', side_effect=self.download), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store), \
+                patch.object(self.store, 'upsert', side_effect=RuntimeError('index failure')):
+            search_jobs.run_job(first['job_id'])
+        failed = search_jobs.get_job(first['job_id'])
+        self.assertEqual(failed['status'], 'failed')
+        self.assertEqual(failed['bids'][0]['preparation_status'], 'failed')
+        retry = search_jobs.create_job(sid, refs, 'notices')
+        with patch.object(search_jobs.collector, 'download_file', side_effect=AssertionError('repeat download')), \
+                patch.object(search_jobs, '_prepare_with_timeout', side_effect=AssertionError('repeat prepare')), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
+            search_jobs.run_job(retry['job_id'])
+        self.assertEqual(search_jobs.get_job(retry['job_id'])['status'], 'completed')
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -55,6 +194,94 @@ class DocumentReadinessTests(unittest.TestCase):
     def process(self, full=True, downloader=None):
         with patch.object(search_jobs.collector, 'download_file', side_effect=downloader or self.download):
             return search_jobs._process_bid(self.item, full, self.store, lambda _: None)
+
+    def test_successful_preparation_reuses_text_and_invalidates_on_metadata_change(self):
+        with patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as worker:
+            first = self.process(full=False)
+            second = self.process(full=False)
+            self.assertEqual(first['status'], 'completed')
+            self.assertEqual(second['status'], 'completed')
+            self.assertEqual(worker.call_count, 1)
+            self.item['ntceInsttOfclNm'] = '새담당자'
+            self.process(full=False)
+            self.assertEqual(worker.call_count, 2)
+
+    def test_notice_stage_downloads_only_one_notice(self):
+        downloaded = []
+        def download(url, target):
+            downloaded.append(url)
+            self.download(url, target)
+        self.process(full=False, downloader=download)
+        self.assertEqual(downloaded, [self.item['ntceSpecDocUrl1']])
+
+    def test_duplicate_prepare_reuses_active_job(self):
+        sid = 'c' * 32
+        folder = self.root / sid
+        folder.mkdir()
+        write_json(folder / 'search.json', {'items': [self.item]})
+        refs = [{'bid_no': 'B1', 'bid_order': '000'}]
+        first = search_jobs.create_job(sid, refs, 'documents')
+        second = search_jobs.create_job(sid, refs, 'documents')
+        self.assertEqual(first['job_id'], second['job_id'])
+        self.assertTrue(second['reused'])
+        other_search = self.root / ('b' * 32)
+        other_search.mkdir()
+        write_json(other_search / 'search.json', {'items': [self.item]})
+        other = search_jobs.create_job('b' * 32, refs, 'documents')
+        self.assertEqual(other['job_id'], first['job_id'])
+        self.assertEqual(len(list((self.root / 'jobs').glob('*.json'))), 1)
+        search_jobs.ACTIVE_JOBS.discard(first['job_id'])
+        third = search_jobs.create_job(sid, refs, 'documents')
+        self.assertNotEqual(third['job_id'], first['job_id'])
+        search_jobs.ACTIVE_JOBS.discard(third['job_id'])
+
+    def test_conversion_profiles_are_isolated_without_global_lock(self):
+        search_jobs.write_csv(self.root / 'attachments.csv', search_jobs.ATTACHMENT_FIELDS, [])
+        profile = self.root / 'base-profile'
+        profile.mkdir()
+        (profile / '.lock').write_text('base profile in use')
+        (profile / 'registrymodifications.xcu').write_text('extension setup')
+        paths = []
+        def worker(folder, convert, timeout, env):
+            current = Path(env['BID_CONVERTER_PROFILE'])
+            self.assertTrue(current.is_dir())
+            self.assertFalse((current / '.lock').exists())
+            self.assertTrue((current / 'registrymodifications.xcu').exists())
+            paths.append(current)
+        with patch.object(search_jobs.converter, 'PROFILE', profile), \
+                patch.object(search_jobs, '_run_prepare_worker', side_effect=worker):
+            search_jobs._prepare_with_timeout(self.root, True)
+            search_jobs._prepare_with_timeout(self.root, True)
+        self.assertNotEqual(paths[0], paths[1])
+        self.assertTrue(all(not path.exists() for path in paths))
+        self.assertTrue((profile / '.lock').exists())
+
+    def test_job_files_include_selected_originals_and_reject_other_paths(self):
+        from data_pipeline import api
+        from fastapi.testclient import TestClient
+        self.process()
+        job_id = 'd' * 32
+        folder = self.root / 'jobs'
+        folder.mkdir()
+        write_json(folder / (job_id + '.json'), {'job_id': job_id, 'mode': 'documents',
+                   'bids': [{'bid_no': 'B1', 'bid_order': '000'}]})
+        manifest = self.root / 'documents/B1_000/attachments.csv'
+        rows = read_csv(manifest)
+        outside = self.root / 'private.pdf'
+        outside.write_bytes(self.pdf)
+        rows.append({**rows[0], 'url': 'https://www.g2b.go.kr/outside',
+                     'local_path': str(outside), 'file_name': 'outside.pdf'})
+        search_jobs.write_csv(manifest, search_jobs.ATTACHMENT_FIELDS, rows)
+        client = TestClient(api.app)
+        response = client.get('/jobs/' + job_id + '/files')
+        self.assertEqual(response.status_code, 200)
+        files = response.json()['files']
+        self.assertEqual(len(files), 2)
+        self.assertTrue(all('path' not in f for f in files))
+        downloaded = client.get('/jobs/' + job_id + '/files/' + files[0]['file_id'])
+        self.assertEqual(downloaded.content[:5], b'%PDF-')
+        self.assertEqual(client.get('/jobs/' + job_id + '/files/unknown').status_code, 404)
+        self.assertEqual(client.get('/jobs/' + 'e' * 32 + '/files').status_code, 404)
 
     def test_notice_download_does_not_mean_rfp_ready(self):
         self.item.pop('ntceSpecFileNm2')
@@ -127,6 +354,91 @@ class DocumentReadinessTests(unittest.TestCase):
         self.assertFalse(result['rfp_ready'])
         self.assertEqual(result['status'], 'partial_failed')
 
+    def test_mislabeled_hwp_archive_converts_only_matching_original(self):
+        from zipfile import ZipFile
+        from data_pipeline import convert_documents as conversion
+        source = self.root / '03_과업지시서.hwp'
+        target = self.root / 'verified.pdf'
+        with ZipFile(source, 'w') as archive:
+            archive.writestr('../과업지시서.hwp', b'expected-original')
+            archive.writestr('긴급발주사유서.hwp', b'not-selected')
+        original = source.read_bytes()
+        def execute(args, timeout=None):
+            selected = Path(args[-1])
+            self.assertEqual(selected.name, '과업지시서.hwp')
+            self.assertEqual(selected.read_bytes(), b'expected-original')
+            output = Path(args[args.index('--outdir') + 1]) / (selected.stem + '.pdf')
+            output.write_bytes(self.pdf)
+            return ''
+        with patch.object(conversion, 'execute', side_effect=execute):
+            conversion.convert_one(source, target, 'mock-soffice')
+        self.assertEqual(source.read_bytes(), original)
+        self.assertTrue(target.is_file())
+        self.assertFalse((self.root / '과업지시서.hwp').exists())
+
+    def test_hwp_archive_does_not_choose_unrelated_member(self):
+        from zipfile import ZipFile
+        from data_pipeline import convert_documents as conversion
+        source = self.root / '과업지시서.hwp'
+        with ZipFile(source, 'w') as archive:
+            archive.writestr('다른서류.hwp', b'not-selected')
+        with patch.object(conversion, 'execute') as execute:
+            with self.assertRaisesRegex(RuntimeError, '이름이 일치'):
+                conversion.convert_one(source, self.root / 'bad.pdf', 'mock-soffice')
+            execute.assert_not_called()
+
+    def test_identical_attachments_reuse_converted_pdf(self):
+        from data_pipeline import convert_documents as conversion
+        from data_pipeline.common import write_csv
+        for name in ('one.hwp', 'two.hwp'):
+            (self.root / name).write_bytes(b'identical-original')
+        rows = [{'bid_no': 'B1', 'bid_order': '000', 'selected': True,
+                 'status': 'downloaded', 'local_path': str(self.root / name)}
+                for name in ('one.hwp', 'two.hwp')]
+        write_csv(self.root / 'attachments.csv', list(rows[0]), rows)
+        def convert(source, target, soffice, **kwargs):
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(self.pdf)
+        with patch.object(conversion, 'convert_one', side_effect=convert) as tool:
+            records = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=tool)
+        self.assertEqual(tool.call_count, 1)
+        self.assertEqual([r['status'] for r in records], ['converted', 'existing'])
+        self.assertEqual(records[0]['pdf_sha256'], records[1]['pdf_sha256'])
+        self.assertTrue(all(Path(r['pdf_path']).is_file() for r in records))
+
+    def test_soffice_timeout_kills_descendants_before_waiting_for_pipes(self):
+        import subprocess
+        from data_pipeline import convert_documents as conversion
+        with patch.object(conversion.subprocess, 'Popen') as popen, \
+                patch.object(conversion.os, 'killpg') as kill, \
+                patch.dict(os.environ, {'JAVA_HOME': '/tmp/test-java'}):
+            process = popen.return_value
+            process.pid = 54321
+            process.poll.return_value = None
+            process.communicate.side_effect = [subprocess.TimeoutExpired('soffice', 1), ('', '')]
+            with self.assertRaisesRegex(RuntimeError, '자식 프로세스'):
+                conversion.execute(['mock-soffice'], timeout=1)
+            kill.assert_called_once_with(54321, conversion.signal.SIGKILL)
+            self.assertIsNone(conversion.ACTIVE_PROCESS)
+
+    def test_document_worker_timeout_kills_process_group(self):
+        import subprocess
+        with patch.object(search_jobs.subprocess, 'Popen') as popen, patch.object(search_jobs.os, 'killpg') as kill:
+            process = popen.return_value
+            process.pid = 12345
+            process.communicate.side_effect = [subprocess.TimeoutExpired('worker', 1), ('', '')]
+            with self.assertRaisesRegex(RuntimeError, '1초'):
+                search_jobs._run_prepare_worker(self.root, True, 1, None)
+            kill.assert_called_once_with(12345, search_jobs.signal.SIGTERM)
+            self.assertTrue(popen.call_args.kwargs['start_new_session'])
+
+    def test_document_lock_wait_is_bounded(self):
+        from data_pipeline.common import directory_lock
+        with patch('data_pipeline.common.fcntl.flock', side_effect=BlockingIOError):
+            with self.assertRaisesRegex(RuntimeError, '다른 문서 준비 작업'):
+                with directory_lock(self.root, '.test.lock', timeout=0):
+                    self.fail('잠긴 작업을 실행하면 안 됩니다.')
+
     def test_eorder_hwpx_uses_conversion_before_becoming_ready(self):
         import hashlib
         from data_pipeline.common import write_jsonl
@@ -134,7 +446,8 @@ class DocumentReadinessTests(unittest.TestCase):
         self.item['eorder_attachments'] = [
             {'bid_no': 'B1', 'bid_order': '000', 'file_name': '제안요청서.hwpx',
              'url': 'https://www.g2b.go.kr/rfp', 'document_type': '제안요청서'}]
-        def convert(folder):
+        def convert(folder, convert_hwp):
+            self.assertTrue(convert_hwp)
             rows = read_csv(folder / 'attachments.csv')
             rfp = next(r for r in rows if r['file_name'] == '제안요청서.hwpx')
             self.assertEqual(rfp['selected'], 'True')
@@ -147,7 +460,14 @@ class DocumentReadinessTests(unittest.TestCase):
                 'original_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
                 'pdf_path': str(target), 'pdf_sha256': hashlib.sha256(self.pdf).hexdigest(),
                 'status': 'converted'}])
-        with patch.object(search_jobs.converter, 'convert_run', side_effect=convert) as tool:
+            from data_pipeline.prepare_documents import prepare
+            prepare(folder)
+        original_lock = search_jobs.directory_lock
+        def lock(folder, name, **kwargs):
+            self.assertNotEqual(name, '.conversion.lock')
+            return original_lock(folder, name, **kwargs)
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=convert) as tool, \
+                patch.object(search_jobs, 'directory_lock', side_effect=lock):
             result = self.process()
         tool.assert_called_once()
         self.assertTrue(result['rfp_ready'])
@@ -166,9 +486,9 @@ class DocumentReadinessTests(unittest.TestCase):
         self.item['ntceSpecFileNm2'] = '붙임 3-2. 제안요청서_상용SW_26년도_29년도_1001.hwp'
         self.item['stdNtceDocUrl'] = 'https://www.g2b.go.kr/converted-notice'
         with patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
-                patch.object(search_jobs.converter, 'convert_run') as converter:
+                patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as converter:
             result = self.process(full=False)
-        converter.assert_not_called()
+        self.assertFalse(converter.call_args.args[1])
         self.assertEqual(result['status'], 'completed')
         self.assertGreater(result['indexed_chunks'], 0)
         self.assertEqual(result['rfp_status'], 'not_requested')
@@ -178,7 +498,7 @@ class DocumentReadinessTests(unittest.TestCase):
         _, records, _ = self.store.load()
         self.assertTrue(all(r['source_url'] == self.item['stdNtceDocUrl'] for r in records))
 
-    def test_notice_job_refreshes_same_revision_before_selecting_pdf(self):
+    def test_notice_job_uses_search_snapshot_without_additional_api_lookup(self):
         search_id = 'b' * 32
         folder = self.root / search_id
         folder.mkdir()
@@ -186,14 +506,16 @@ class DocumentReadinessTests(unittest.TestCase):
         current = {**self.item, 'stdNtceDocUrl': 'https://www.g2b.go.kr/converted-notice'}
         job = search_jobs.create_job(search_id, [{'bid_no': 'B1', 'bid_order': '000'}], 'notices')
         with patch.object(collector, 'lookup_notice', return_value=current) as lookup, \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
                 patch.object(collector, 'download_file', side_effect=self.download), \
                 patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
             search_jobs.run_job(job['job_id'], 'test-key')
-        lookup.assert_called_once_with('test-key', 'B1')
+        lookup.assert_not_called()
         bid = search_jobs.get_job(job['job_id'])['bids'][0]
         self.assertEqual(bid['status'], 'completed')
-        self.assertFalse(bid['revision_changed'])
+        self.assertFalse(bid.get('revision_changed', False))
 
     def test_downloaded_but_unreadable_rfp_is_not_ready(self):
         def download(url, target):
@@ -222,7 +544,7 @@ class DocumentReadinessTests(unittest.TestCase):
 
     def test_conversion_failure_still_reports_download_complete(self):
         self.item['ntceSpecFileNm2'] = '제안요청서.hwpx'
-        with patch.object(search_jobs.converter, 'convert_run', side_effect=RuntimeError('변환 실패')):
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=RuntimeError('변환 실패')):
             result = self.process()
         self.assertTrue(result['download_complete'])
         self.assertFalse(result['rfp_ready'])
@@ -239,6 +561,8 @@ class DocumentReadinessTests(unittest.TestCase):
         write_json(folder / 'search.json', {'items': [old]})
         job = search_jobs.create_job(search_id, [{'bid_no': 'B1', 'bid_order': '000'}], 'documents')
         with patch.object(search_jobs.collector, 'lookup_notice', return_value=self.item), \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(search_jobs.collector, 'lookup_eorder_attachments', return_value=[]), \
                 patch.object(search_jobs.collector, 'download_file', side_effect=self.download), \
                 patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
@@ -290,25 +614,25 @@ class DeadlineSearchTests(unittest.TestCase):
                 patch.object(search_jobs, 'datetime') as clock, \
                 patch.dict(os.environ, {'BID_SEARCH_LOOKBACK_DAYS': 'unused-value'}), \
                 patch.object(collector, 'fetch_page', side_effect=fetch), \
-                patch.object(search_jobs.bid_progress, 'lookup_progress', return_value={
-                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
-                patch.object(collector, 'lookup_eorder_attachments', return_value=[]), \
+                patch.object(bid_progress, 'lookup_progress', return_value={
+                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}) as progress_lookup, \
+                patch.object(collector, 'lookup_eorder_attachments', return_value=[]) as eorder, \
                 patch.object(search_jobs.restrictions, 'lookup_restrictions', return_value={
                     'region_restriction': {'lookup_status': 'complete', 'status': 'not_listed'},
                     'industry_restriction': {'lookup_status': 'complete', 'status': 'none'}}), \
-                patch.object(bid_progress, 'lookup_progress', return_value={
-                    'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = datetime(2026, 10, 26, 10)
             result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertEqual([r['bid_no'] for r in result['items']], ['EARLIER'])
             self.assertEqual(result['date_basis'], 'deadline')
-            self.assertTrue(result['items'][0]['notice_only'])
+            self.assertFalse(result['items'][0]['notice_only'])
+            eorder.assert_not_called()
             self.assertTrue(all(end <= date(2026, 10, 26) for start, end in windows))
             self.assertEqual(windows, [(date(2026, 10, 20), date(2026, 10, 26))])
             self.assertEqual(result['deadline_from'], '2026-10-26')
             self.assertEqual(result['deadline_to'], '2026-11-30')
             self.assertEqual(result['search_coverage']['stop_reason'], 'candidate_limit')
+            progress_lookup.assert_not_called()
             # 같은 조건은 새 마감일 기준 스냅샷만 캐시로 재사용한다.
             cached = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertTrue(cached['cached'])
@@ -446,9 +770,9 @@ class BidProgressTests(unittest.TestCase):
         self.assertTrue(result['bid_progress']['recommendable'])
         self.assertFalse(result['bid_progress']['opening_confirmed'])
 
-    def test_elapsed_opening_excludes_unknown_deadline_without_claiming_actual_result(self):
+    def test_elapsed_scheduled_opening_with_unknown_deadline_requires_review(self):
         result = self.evaluate(bidClseDt='', opengDt='2026-10-14 15:00')
-        self.assertEqual(result['bid_progress']['state'], 'closed')
+        self.assertEqual(result['bid_progress']['state'], 'unknown')
         self.assertFalse(result['bid_progress']['opening_confirmed'])
 
     def test_active_rebid_uses_new_deadline_and_cached_result_expires(self):
@@ -521,36 +845,36 @@ class BidProgressTests(unittest.TestCase):
             result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'notice-key')
             return result, progress_lookup.call_args_list
 
-    def test_search_checks_progress_before_limit_and_admits_rebid_outside_original_deadline(self):
-        closed = self.item(bidNtceNo='CLOSED')
-        rebid = self.item(bidNtceNo='REBID', bidClseDt='2026-10-12 17:00', rbidPermsnYn='Y')
-        def lookup(key, no, order):
-            self.assertEqual(key, 'separate-result-key')
-            common = dict(bidNtceNo=no, bidNtceOrd=order, bidClsfcNo='1')
-            return {'lookup_status': 'complete',
-                    'opening_results': [{**common, 'rbidNo': '000', 'progrsDivCdNm': '개찰완료'}],
-                    'rebids': [{**common, 'rbidNo': '001', 'bidClseDt': '2026-11-05 18:00'}] if no == 'REBID' else []}
-        result, calls = self.run_search([closed, rebid], lookup)
-        self.assertEqual([r['bid_no'] for r in result['items']], ['REBID'])
-        self.assertEqual(result['items'][0]['deadline'], '2026-11-05 18:00')
-        self.assertEqual(result['progress_excluded'][0]['bid_no'], 'CLOSED')
-        self.assertEqual(len(calls), 2)
+    def test_search_does_not_query_progress_for_unselected_candidates(self):
+        result, calls = self.run_search([self.item()], lambda *args: self.fail('search must not check progress'))
+        self.assertEqual([r['bid_no'] for r in result['items']], ['B1'])
+        self.assertEqual(result['items'][0]['bid_progress']['state'], 'not_checked')
+        self.assertEqual(calls, [])
 
-    def test_lookup_failure_is_excluded_instead_of_claiming_open(self):
+    def test_progress_lookup_failure_does_not_remove_search_candidate(self):
         def unavailable(*args): raise collector.CollectionError('개찰 조회 HTTP 403')
-        result, _ = self.run_search([self.item()], unavailable)
-        self.assertFalse(result['items'])
-        self.assertEqual(result['progress_excluded'][0]['status'], 'unavailable')
+        result, calls = self.run_search([self.item()], unavailable)
+        self.assertEqual([r['bid_no'] for r in result['items']], ['B1'])
+        self.assertEqual(calls, [])
 
-    def test_past_opening_with_missing_deadline_is_recorded_as_closed(self):
-        item = self.item(bidClseDt='', opengDt='2026-10-14 15:00')
+    def test_http_429_reports_quota_instead_of_service_approval(self):
+        from urllib.error import HTTPError
+        with patch.object(collector, 'build_opener') as opener:
+            opener.return_value.open.side_effect = HTTPError('https://example.test', 429, 'Too Many Requests', {}, None)
+            with self.assertRaisesRegex(bid_progress.ProgressRateLimitError, '요청 한도') as caught:
+                bid_progress.lookup_rows('secret-key', 'B1', '000', bid_progress.OPERATIONS[0])
+            self.assertNotIn('활용승인', str(caught.exception))
+            self.assertNotIn('secret-key', str(caught.exception))
+
+    def test_missing_deadline_is_separated_for_review_without_progress_lookup(self):
+        item = self.item(bidClseDt='')
         result, calls = self.run_search([item], lambda *args: {
             'lookup_status': 'complete', 'opening_results': [], 'rebids': []})
         self.assertFalse(result['items'])
-        self.assertEqual(result['progress_excluded'][0]['label'], '마감')
-        self.assertEqual(len(calls), 1)
+        self.assertEqual(result['deadline_unknown'][0]['bid_no'], 'B1')
+        self.assertEqual(calls, [])
 
-    def test_recommendation_api_omits_closed_notice_and_uses_new_rebid_deadline(self):
+    def test_search_does_not_use_progress_results_to_filter_deadline_candidates(self):
         import sys
         module_path = patch('sys.path', [str(collector.ROOT / 'rag-code-template_ext'), *sys.path])
         module_path.start()
@@ -560,7 +884,7 @@ class BidProgressTests(unittest.TestCase):
         from bid_logic.api import create_bid_router
         import knowledge_bridge
         closed = self.evaluate(openings=[self.row(progrsDivCdNm='개찰완료')])
-        active = self.evaluate(bidClseDt='2026-10-12 17:00',
+        active = self.evaluate(bidNtceNo='REBID', bidClseDt='2026-10-12 17:00',
             openings=[self.row(progrsDivCdNm='재입찰')],
             rebids=[self.row('001', bidClseDt='2026-11-05 18:00')])
         today = self.evaluate(bidNtceNo='TODAY', bidClseDt='2026-10-26 12:00', opengDt='2026-10-26 13:00')
@@ -590,13 +914,13 @@ class BidProgressTests(unittest.TestCase):
                     'from': '2026-10-01', 'to': '2026-11-30', 'search_id': 'a' * 32})
                 recheck = TestClient(app).post('/bids/recheck', json={
                     'from': '2026-10-26', 'to': '2026-11-30', 'search_id': 'a' * 32,
-                    'bids': [{'bid_no': 'B1', 'revision': '000'}, {'bid_no': 'TODAY', 'revision': '000'}]})
+                    'bids': [{'bid_no': 'CLOSED', 'revision': '000'}, {'bid_no': 'TODAY', 'revision': '000'}]})
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(mixed_period.status_code, 422)
             self.assertEqual(recheck.status_code, 200, recheck.text)
             bids = response.json()['bids']
-            self.assertEqual([row['bid_no'] for row in bids], ['B1', 'TODAY'])
-            self.assertTrue(bids[0]['deadline'].startswith('2026-11-05'))
+            self.assertEqual([row['bid_no'] for row in bids], ['CLOSED', 'TODAY'])
+            self.assertTrue(bids[0]['deadline'].startswith('2026-11-15'))
 
 
 if __name__ == '__main__':

@@ -157,4 +157,99 @@ CREATE TABLE IF NOT EXISTS user_bid_pipeline (
     CONSTRAINT chk_user_bid_pipeline_bid_no CHECK (bid_no ~ '^[A-Za-z0-9_-]{1,100}$'),
     CONSTRAINT chk_user_bid_pipeline_revision CHECK (revision ~ '^[A-Za-z0-9_-]{1,20}$')
 );
--- 선택·승인 저장: 사업자등록번호 외래키, 공고·차수별 유일성 보장.
+
+-- 회사별 공고 검색 결과 캐시입니다. 같은 기간·검색어라도 회사 프로필이 바뀌면
+-- 추천 결과가 달라질 수 있으므로 request_hash에는 정규화한 기간·검색어·조회 한도와
+-- 회사 프로필 지문을 모두 포함합니다. 결과 구조가 확장되어도 테이블 변경이 필요하지
+-- 않도록 프론트에 보여 줄 최종 응답을 JSONB로 저장합니다.
+CREATE TABLE IF NOT EXISTS bid_search_cache (
+    business_registration_number CHAR(10) NOT NULL,
+    request_hash CHAR(64) NOT NULL,
+    search_start_date DATE NOT NULL,
+    search_end_date DATE NOT NULL,
+    keywords JSONB NOT NULL,
+    result_limit SMALLINT NOT NULL,
+    profile_fingerprint CHAR(64) NOT NULL,
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ NOT NULL
+        DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours'),
+
+    PRIMARY KEY (business_registration_number, request_hash),
+
+    CONSTRAINT fk_bid_search_cache_user
+        FOREIGN KEY (business_registration_number)
+        REFERENCES users (business_registration_number)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_bid_search_cache_request_hash
+        CHECK (request_hash ~ '^[0-9a-f]{64}$'),
+
+    CONSTRAINT chk_bid_search_cache_profile_fingerprint
+        CHECK (profile_fingerprint ~ '^[0-9a-f]{64}$'),
+
+    CONSTRAINT chk_bid_search_cache_period
+        CHECK (search_start_date <= search_end_date),
+
+    CONSTRAINT chk_bid_search_cache_keywords
+        CHECK (jsonb_typeof(keywords) = 'array'),
+
+    CONSTRAINT chk_bid_search_cache_result_limit
+        CHECK (result_limit BETWEEN 1 AND 100),
+
+    CONSTRAINT chk_bid_search_cache_result
+        CHECK (jsonb_typeof(result) IN ('object', 'array')),
+
+    CONSTRAINT chk_bid_search_cache_expiration
+        CHECK (expires_at > created_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bid_search_cache_expiration
+    ON bid_search_cache (expires_at);
+
+-- 제안요청서 다운로드·변환 결과는 회사에 따라 달라지지 않으므로 모든 회사가
+-- 공고번호와 정정공고 차수를 기준으로 공유합니다. PDF/HWP 원본을 DB에 넣지 않고
+-- 외부 Storage 위치, 파일명, 처리 상태처럼 화면과 후속 작업에 필요한 결과만 JSONB로
+-- 저장합니다. 정정공고가 나오면 revision이 달라져 이전 문서와 섞이지 않습니다.
+CREATE TABLE IF NOT EXISTS bid_rfp_cache (
+    bid_no VARCHAR(100) NOT NULL,
+    revision VARCHAR(20) NOT NULL DEFAULT '000',
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ NOT NULL
+        DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours'),
+
+    PRIMARY KEY (bid_no, revision),
+
+    CONSTRAINT chk_bid_rfp_cache_bid_no
+        CHECK (bid_no ~ '^[A-Za-z0-9_-]{1,100}$'),
+
+    CONSTRAINT chk_bid_rfp_cache_revision
+        CHECK (revision ~ '^[A-Za-z0-9_-]{1,20}$'),
+
+    CONSTRAINT chk_bid_rfp_cache_result
+        CHECK (jsonb_typeof(result) IN ('object', 'array')),
+
+    CONSTRAINT chk_bid_rfp_cache_expiration
+        CHECK (expires_at > created_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bid_rfp_cache_expiration
+    ON bid_rfp_cache (expires_at);
+
+-- PostgreSQL은 행 단위 TTL을 자동 실행하지 않습니다. 애플리케이션 시작 시와 캐시
+-- 저장 시 이 함수를 호출하면 만료된 두 캐시를 한 번에 정리할 수 있습니다.
+CREATE OR REPLACE FUNCTION purge_expired_bid_caches()
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    DELETE FROM bid_search_cache
+    WHERE expires_at <= CURRENT_TIMESTAMP;
+
+    DELETE FROM bid_rfp_cache
+    WHERE expires_at <= CURRENT_TIMESTAMP;
+END;
+$$;

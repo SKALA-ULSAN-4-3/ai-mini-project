@@ -29,6 +29,7 @@ function validate(data) {
 }
 
 async function onSubmit() {
+  if (loading.value) return
   error.value = ''
   // 서버로 보낼 데이터 만들기: 사업자번호는 숫자만 남기고, 나머지는 앞뒤 공백 제거
   const data = {
@@ -50,6 +51,13 @@ async function onSubmit() {
   loading.value = true
   try {
     await client.post('/signup', data)
+    // 프로필 화면에서 미리 채우기 위해 가입 정보(비밀번호 제외)를 이 브라우저에 보관합니다.
+    try {
+      localStorage.setItem('signup_info_' + data.business_registration_number, JSON.stringify({
+        corporate_name: data.corporate_name, head_office_address: data.head_office_address,
+        business_type: data.business_type, business_item: data.business_item,
+      }))
+    } catch (e) { /* 저장소를 못 써도 가입은 계속 */ }
     alert('가입이 완료되었습니다. 로그인해 주세요.')
     router.push('/login')
   } catch (e) {

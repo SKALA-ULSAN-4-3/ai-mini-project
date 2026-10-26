@@ -251,3 +251,36 @@ class SearchResultsAdapterTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipIf(kb is None, "FAISS/LangChain 미설치")
+class ExtractionCacheTest(unittest.TestCase):
+    def test_concurrent_requests_build_once_and_persist(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from unittest.mock import Mock
+        import time
+        with tempfile.TemporaryDirectory() as temp:
+            cache = kb.ExtractionCache(temp, 'model-and-prompt-v1')
+            build = Mock(side_effect=lambda: (time.sleep(0.05) or {'items': ['one']}))
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                results = list(executor.map(lambda _: cache.get(('B1','000','table'), 'doc-v1', build), range(5)))
+            self.assertEqual(build.call_count, 1)
+            results[0]['items'].append('changed')
+            self.assertEqual(cache.get(('B1','000','table'), 'doc-v1', build)['items'], ['one'])
+            restored = kb.ExtractionCache(temp, 'model-and-prompt-v1')
+            self.assertEqual(restored.get(('B1','000','table'), 'doc-v1', build)['items'], ['one'])
+            self.assertEqual(build.call_count, 1)
+            restored.get(('B1','000','table'), 'doc-v2', build)
+            self.assertEqual(build.call_count, 2)
+            kb.ExtractionCache(temp, 'other-model').get(('B1','000','table'), 'doc-v2', build)
+            self.assertEqual(build.call_count, 3)
+
+    def test_failed_build_is_not_cached(self):
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temp:
+            cache = kb.ExtractionCache(temp, 'v1')
+            build = Mock(side_effect=[RuntimeError('failed'), {'ok': True}])
+            with self.assertRaises(RuntimeError):
+                cache.get(('B1','000','summary'), 'v1', build)
+            self.assertEqual(cache.get(('B1','000','summary'), 'v1', build), {'ok': True})
+            self.assertEqual(build.call_count, 2)

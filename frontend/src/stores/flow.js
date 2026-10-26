@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { searchBids } from '../api/flow'
 
 // 화면을 오가도 유지해야 하는 "작업 진행 상태" 보관소. 새로고침해도 남도록 sessionStorage에 저장합니다.
 export const useFlowStore = defineStore('flow', () => {
@@ -30,5 +31,35 @@ export const useFlowStore = defineStore('flow', () => {
     searchId.value = ''; period.value = null; candidates.value = []; excluded.value = []
     resetFrom(0)
   }
-  return { searchId, period, candidates, excluded, readyKeys, summaries, selected, approved, resetFrom, reset }
+  async function prepareWithSearchRecovery(prepare, bids) {
+    try {
+      return await prepare(searchId.value, bids)
+    } catch (error) {
+      // 서버 재시작으로 검색 파일이 사라진 경우만 복원한다. 다른 404·통신 오류는 재요청하지 않는다.
+      if (error.response?.status !== 404 || error.response?.data?.detail !== '검색 결과가 없습니다.') throw error
+      const savedPeriod = period.value
+      const queries = Array.isArray(savedPeriod?.search_queries)
+        ? savedPeriod.search_queries
+        : String(savedPeriod?.queries || '').split(',').map((query) => query.trim()).filter(Boolean)
+      if (!savedPeriod?.from || !savedPeriod?.to || !queries.length) {
+        error.recoveryMessage = '서버의 검색 기록이 만료됐습니다. 공고 검색에서 다시 검색해 주세요.'
+        throw error
+      }
+      // /search-bids는 DB 캐시를 먼저 조회하고 새 로컬 스냅샷과 search_id를 발급한다.
+      const restored = await searchBids({ from: savedPeriod.from, to: savedPeriod.to,
+        queries, limit: savedPeriod.limit ?? 20 })
+      if (!restored.search_id) {
+        error.recoveryMessage = '검색 기록을 복원하지 못했습니다. 공고 검색에서 다시 검색해 주세요.'
+        throw error
+      }
+      searchId.value = restored.search_id
+      period.value = { ...savedPeriod, search_queries: queries, limit: savedPeriod.limit ?? 20,
+        deadline_from: restored.deadline_from || savedPeriod.from,
+        deadline_to: restored.deadline_to || savedPeriod.to }
+      // 복원해도 작업을 만들 수 없으면 오류를 그대로 전달한다. 반복 복원은 하지 않는다.
+      return await prepare(searchId.value, bids)
+    }
+  }
+  return { searchId, period, candidates, excluded, readyKeys, summaries, selected, approved,
+    resetFrom, reset, prepareWithSearchRecovery }
 })

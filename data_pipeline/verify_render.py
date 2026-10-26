@@ -22,7 +22,7 @@ def _verify(args):
         record('health', response, 200)
         response = client.get(args.rag_url + '/openapi.json')
         row = record('routes', response, 200)
-        required = {'/search-bids', '/fetch-notices', '/fetch-documents', '/jobs/{job_id}', '/bids', '/rag-query'}
+        required = {'/search-bids', '/fetch-notices', '/fetch-documents', '/retry-db-save', '/jobs/{job_id}', '/bids', '/rag-query'}
         paths = response.json().get('paths', {}) if row['passed'] else {}
         row['missing_routes'] = sorted(required - paths.keys())
         row['passed'] &= not row['missing_routes']

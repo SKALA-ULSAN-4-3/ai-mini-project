@@ -16,6 +16,9 @@ def curate(dataset, assets):
         previous=json.loads((dataset/"gold.json").read_text())
         if any(row.get("review",{}).get("status")=="verified" for rows in previous.values() for row in rows):
             raise ValueError("사람이 검토 완료한 정답은 덮어쓰지 않습니다.")
+        # 일부만 사람이 확인한 정답도 다시 만들면 확인 범위 기록이 사라진다.
+        if any("human_scope" in row.get("review",{}) for rows in previous.values() for row in rows):
+            raise ValueError("사람 확인 범위가 기록된 정답은 덮어쓰지 않습니다.")
     blocks=json.loads((assets/"evidence.json").read_text())
     profiles=json.loads((dataset/"profiles.json").read_text())
     def source(no, page=None, rfp=False, locator=None):

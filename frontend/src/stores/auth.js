@@ -17,6 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
     })
     token.value = res.data.access_token
     sessionStorage.setItem('token', token.value)
+    sessionStorage.setItem('bn', String(businessNumber).replace(/\D/g, ''))
     await restoreFlow()
   }
 

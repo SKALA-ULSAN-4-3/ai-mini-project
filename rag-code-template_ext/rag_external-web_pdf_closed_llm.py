@@ -1,8 +1,9 @@
 #### 다음 실습 코드는 학습 목적으로만 사용 바랍니다. 문의 : audit@korea.ac.kr 임성열 Ph.D.
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
+from fastapi import Header, FastAPI, UploadFile, File, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import create_async_engine
 from fastapi.responses import JSONResponse
+from starlette.background import BackgroundTask
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
@@ -38,6 +39,7 @@ from typing import List, Dict, Any, Optional
 import os
 import re
 import json
+import hashlib
 import asyncio
 import tempfile
 import time
@@ -49,7 +51,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # 프로젝트 루트 .env(1·3번과 공통)를 먼저 읽고, 옮기는 동안만 이 폴더의 .env도 보조로 읽는다 (이미 있는 값은 덮지 않음)
-from knowledge_bridge import (StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
+from data_pipeline.persistence import summary_with_database
+from knowledge_bridge import (ExtractionCache, StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
                               classify_attachment, search_results)
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
@@ -89,25 +92,32 @@ VECTORSTORE_WEB = None
 VECTORSTORE_PDF = None
 STORES = StoreCache()
 STORE_STATE: dict[str, str | None] = {"pdf_generation": None, "web_generation": None, "embedding_model": None}
-EXTRACT_CACHE: dict[tuple[str, str, str], dict] = {}  # (bid_no, revision, 종류) → {지문, 결과}. 같은 공고 재요청 시 LLM 비용 절감
-BID_FINGERPRINTS: dict[tuple[str, str], int] = {}     # (bid_no, revision) → 적재된 조각 목록의 지문
+BID_FINGERPRINTS: dict[tuple[str, str], str] = {}     # (bid_no, revision) → 적재된 조각 목록의 지문
+
+EXTRACTIONS = ExtractionCache(
+    os.getenv("BID_EXTRACT_CACHE_DIR", str(Path(__file__).resolve().parents[1] / "data/cache/extractions")),
+    hashlib.sha256(Path(__file__).read_bytes()).hexdigest() + ":" + EXTRACT_LLM_MODEL
+    + ":" + os.getenv("OPENAI_BASE_URL", "default"))
 
 def refresh_stores():
     # 요청마다 1번 저장소의 현재 세대를 확인해, 업로드로 세대가 바뀌었을 때만 다시 읽는다
-    global VECTORSTORE_PDF, VECTORSTORE_WEB
+    global VECTORSTORE_PDF, VECTORSTORE_WEB, BID_FINGERPRINTS
     pdf, pdf_generation, manifest = STORES.get("pdf")
     web, web_generation, _ = STORES.get("web")
     if pdf_generation != STORE_STATE["pdf_generation"]:
         # 실시간 흐름에서는 공고를 자주 적재하므로 캐시를 통째로 지우지 않고, 공고별 문서 지문만 다시 계산한다.
         # 지문이 바뀐 공고(문서가 추가 · 교체된 공고)만 다음 요청 때 다시 추출된다.
-        BID_FINGERPRINTS.clear()
+        fingerprints = {}
         if pdf is not None:
             chunks: dict[tuple[str, str], list[str]] = {}
             for d in pdf.docstore._dict.values():
                 if d.metadata.get("bid_no"):
                     chunks.setdefault((d.metadata["bid_no"], d.metadata.get("revision", "")), []).append(
-                        d.metadata.get("chunk_id", ""))
-            BID_FINGERPRINTS.update({k: hash(tuple(sorted(v))) for k, v in chunks.items()})
+                        json.dumps([d.metadata.get("chunk_id", ""), d.page_content,
+                                    {key: d.metadata.get(key) for key in ("bid_no", "revision", "filename", "page",
+                                     "source_url", "sha256", "privacy_policy")}], sort_keys=True, default=str))
+            fingerprints = {k: hashlib.sha256(json.dumps(sorted(v)).encode()).hexdigest() for k, v in chunks.items()}
+        BID_FINGERPRINTS = fingerprints
     STORE_STATE.update(pdf_generation=pdf_generation, web_generation=web_generation,
                        embedding_model=(manifest or {}).get("embedding_model"))
     VECTORSTORE_PDF, VECTORSTORE_WEB = pdf, web
@@ -121,6 +131,185 @@ print(f"{'✅' if VECTORSTORE_PDF else '❌'} PDF 저장소 (세대 {STORE_STATE
 async def keep_stores_current(request, call_next):
     refresh_stores()
     return await call_next(request)
+
+
+def ensure_notice_job(search_jobs, search_id, recommendation):
+    """추천된 공고문 준비를 최대 20건 자동 시작하고 중복 작업은 재사용한다."""
+    rows = recommendation.get("bids") if isinstance(recommendation, dict) else None
+    if not isinstance(rows, list) or not rows:
+        return None, False
+    old_id = recommendation.get("notice_job_id")
+    if old_id:
+        try:
+            old = search_jobs.get_job(old_id)
+            if old.get("status") in {"completed", "partial_failed"} or old_id in search_jobs.ACTIVE_JOBS:
+                return old, False
+        except search_jobs.SearchNotFound:
+            pass
+    refs = [{"bid_no": str(row.get("bid_no") or ""),
+             "bid_order": str(row.get("revision") or row.get("bid_order") or "000")}
+            for row in rows[:20] if row.get("bid_no")]
+    if not refs:
+        return None, False
+    try:
+        job = search_jobs.create_job(search_id, refs, "notices")
+    except (search_jobs.SearchNotFound, ValueError, OSError):
+        return None, False
+    return job, not bool(job.get("reused"))
+
+
+@app.middleware("http")
+async def use_bid_search_cache(request, call_next):
+    """추천 응답 캐시를 재사용하고, 새 추천 결과는 DB에 저장한다."""
+    from data_pipeline import cache_api, search_jobs
+    from starlette.concurrency import run_in_threadpool
+
+    authorization = request.headers.get("authorization")
+    prepare_notices = request.query_params.get("prepare_notices", "true").lower() != "false"
+    if request.url.path == "/bids" and request.method == "GET":
+        search_id = request.query_params.get("search_id", "")
+        try:
+            snapshot = search_jobs._snapshot(search_id)
+        except search_jobs.SearchNotFound:
+            snapshot = None
+        cached = snapshot.get("cached_recommendation") if snapshot else None
+        if isinstance(cached, dict):
+            params = snapshot.get("request", {})
+            try:
+                profile = await run_in_threadpool(get_authenticated_profile, authorization)
+                profile_key = hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest()
+                matches = (request.query_params.get("from") in {
+                               params.get("deadline_from", params.get("from")), params.get("from")}
+                           and request.query_params.get("to") == params.get("to")
+                           and cached.get("_cache_profile") == profile_key
+                           and int(request.query_params.get("limit", "20")) == int(cached.get("_cache_limit", 20)))
+            except HTTPException as exc:
+                return JSONResponse({"detail": exc.detail}, status_code=exc.status_code,
+                                    headers=exc.headers)
+            except (TypeError, ValueError):
+                matches = False
+            if matches:
+                try:
+                    # 회사 프로필/JWT를 확인한 추천 결과만 재사용한다.
+                    result = {k: v for k, v in cached.items() if not k.startswith("_")}
+                    result["search_id"] = search_id
+                    job, start_job = (ensure_notice_job(search_jobs, search_id, result)
+                                      if prepare_notices else (None, False))
+                    if job:
+                        result["notice_job_id"] = job["job_id"]
+                        result["notice_job_status"] = job.get("status")
+                    elif result.get("bids") and prepare_notices:
+                        result["notice_job_error"] = ("DATA_GO_KR_SERVICE_KEY 설정을 확인해 주세요."
+                            if not os.environ.get("DATA_GO_KR_SERVICE_KEY", "").strip() else
+                            "추천 공고문 자동 준비 작업을 시작하지 못했습니다. 목록을 확인한 뒤 다시 시도하세요.")
+                    if snapshot.get("cache_saved") and not start_job:
+                        result["cache_sync"] = {"status": "reused"}
+                    elif snapshot.get("cache_auth_failed"):
+                        result["cache_sync"] = {"status": "failed", "auth_failed": True,
+                                                "error": "검색 캐시 인증 실패가 확인되어 저장 요청을 생략했습니다."}
+                    else:
+                        search_request = snapshot["request"]
+                        sync = await run_in_threadpool(cache_api.save_search,
+                            search_request["from"], search_request["to"], search_request["queries"],
+                            search_request["limit"],
+                            {"schema": 1, "snapshot": snapshot, "recommendation": cached,
+                             "recommendation_status": "completed"}, authorization)
+                        snapshot["cache_saved"] = sync.get("status") == "saved"
+                        snapshot["cache_auth_failed"] = bool(sync.get("auth_failed"))
+                        result["cache_sync"] = sync
+                    snapshot["cached_recommendation"] = {
+                        **cached,
+                        "notice_job_id": result.get("notice_job_id"),
+                        "notice_job_status": result.get("notice_job_status"),
+                        "notice_job_error": result.get("notice_job_error"),
+                    }
+                    if start_job or snapshot.get("cached_recommendation") != cached:
+                        snapshot["cache_saved"] = False
+                        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+                        if not snapshot.get("cache_auth_failed"):
+                            sync = await run_in_threadpool(cache_api.save_search,
+                                snapshot["request"]["from"], snapshot["request"]["to"],
+                                snapshot["request"]["queries"], snapshot["request"]["limit"],
+                                {"schema": 1, "snapshot": snapshot,
+                                 "recommendation": snapshot["cached_recommendation"],
+                                 "recommendation_status": "completed"}, authorization)
+                            snapshot["cache_saved"] = sync.get("status") == "saved"
+                            snapshot["cache_auth_failed"] = bool(sync.get("auth_failed"))
+                            search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+                            result["cache_sync"] = sync
+                    background = (BackgroundTask(search_jobs.run_job, job["job_id"],
+                                   os.environ.get("DATA_GO_KR_SERVICE_KEY", ""))
+                                  if start_job and job else None)
+                    return JSONResponse(result, background=background)
+                except HTTPException as exc:
+                    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code,
+                                        headers=exc.headers)
+
+    response = await call_next(request)
+    if (request.url.path == "/bids" and request.method == "GET"
+            and response.status_code >= 400 and response.status_code not in (401, 403, 404)):
+        try:
+            snapshot = search_jobs._snapshot(request.query_params.get("search_id", ""))
+            profile = await run_in_threadpool(get_authenticated_profile, authorization)
+            recommendation = {"status": "failed", "http_status": response.status_code}
+            sync = await run_in_threadpool(cache_api.save_search,
+                snapshot["request"]["from"], snapshot["request"]["to"],
+                snapshot["request"]["queries"], snapshot["request"]["limit"],
+                {"schema": 1, "snapshot": snapshot, "recommendation": None,
+                 "recommendation_status": recommendation}, authorization)
+            snapshot["recommendation_status"] = recommendation
+            snapshot["cache_saved"] = sync.get("status") == "saved"
+            search_jobs.write_json(search_jobs.root_dir() / snapshot["search_id"] / "search.json", snapshot)
+        except (search_jobs.SearchNotFound, KeyError, TypeError, ValueError, HTTPException):
+            pass
+        return response
+    if request.url.path != "/bids" or request.method != "GET" or response.status_code != 200:
+        return response
+    search_id = request.query_params.get("search_id", "")
+    try:
+        snapshot = search_jobs._snapshot(search_id)
+        chunks = [chunk async for chunk in response.body_iterator]
+        body = b"".join(chunks)
+        recommendation = json.loads(body)
+        search_request = snapshot["request"]
+        profile = await run_in_threadpool(get_authenticated_profile, authorization)
+        job, start_job = (ensure_notice_job(search_jobs, search_id, recommendation)
+                          if prepare_notices else (None, False))
+        if job:
+            recommendation["notice_job_id"] = job["job_id"]
+            recommendation["notice_job_status"] = job.get("status")
+        elif recommendation.get("bids") and prepare_notices:
+            recommendation["notice_job_error"] = ("DATA_GO_KR_SERVICE_KEY 설정을 확인해 주세요."
+                if not os.environ.get("DATA_GO_KR_SERVICE_KEY", "").strip() else
+                "추천 공고문 자동 준비 작업을 시작하지 못했습니다. 목록을 확인한 뒤 다시 시도하세요.")
+        recommendation_to_cache = {**recommendation,
+                                   "_cache_profile": hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest(),
+                                   "_cache_limit": int(request.query_params.get("limit", "20"))}
+        snapshot["cached_recommendation"] = recommendation_to_cache
+        snapshot["cache_saved"] = False
+        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+        result = {"schema": 1, "snapshot": snapshot,
+                  "recommendation": recommendation_to_cache,
+                  "recommendation_status": "completed"}
+        if snapshot.get("cache_auth_failed"):
+            sync = {"status": "failed", "auth_failed": True,
+                    "error": "검색 캐시 인증 실패가 확인되어 저장 요청을 생략했습니다."}
+        else:
+            sync = await run_in_threadpool(cache_api.save_search,
+                search_request["from"], search_request["to"], search_request["queries"],
+                search_request["limit"], result, authorization)
+        snapshot["cache_saved"] = sync.get("status") == "saved"
+        snapshot["cache_auth_failed"] = bool(snapshot.get("cache_auth_failed") or sync.get("auth_failed"))
+        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+        recommendation["cache_sync"] = sync
+        background = (BackgroundTask(search_jobs.run_job, job["job_id"],
+                       os.environ.get("DATA_GO_KR_SERVICE_KEY", ""))
+                      if start_job and job else None)
+        return JSONResponse(recommendation, status_code=response.status_code, background=background,
+                            headers={k: v for k, v in response.headers.items()
+                                     if k.lower() not in {"content-length", "content-type"}})
+    except (search_jobs.SearchNotFound, KeyError, TypeError, ValueError):
+        return response
 
 # ✅ 로그인 확인: BACKEND_URL(4번)이 있으면 /health 외 모든 API에 Bearer 토큰 필요 (기획서 03). 없으면 로컬 개발용으로 열어 둠
 from fastapi import Depends
@@ -686,11 +875,10 @@ def run_extraction(schema, instruction: str, context: str):
 def cached(bid_no: str, revision: str, kind: str, refresh: bool, build) -> dict:
     key = (bid_no, revision, kind)
     fingerprint = BID_FINGERPRINTS.get((bid_no, revision))
-    entry = EXTRACT_CACHE.get(key)
-    # 그 공고의 문서가 바뀌었을 때만 다시 추출 (다른 공고 적재로는 지워지지 않음)
-    if refresh or entry is None or entry["fingerprint"] != fingerprint:
-        entry = EXTRACT_CACHE[key] = {"fingerprint": fingerprint, "data": build()}
-    return entry["data"]
+    if kind == "scoring" and fingerprint is not None:
+        fingerprint += ":scoring-measurements-guidance-v3"
+    return EXTRACTIONS.get(key, fingerprint, build, refresh=refresh)
+
 
 def bid_documents(bid_no: str, revision: str) -> dict:
     """그 공고에 적재된 파일과 종류. 공고문만 적재(흐름 ③)인지, 제안요청서까지 적재(흐름 ⑥)인지 판단한다."""
@@ -726,6 +914,11 @@ EXTRACT_RULES = (
 )
 
 # ---- 채점표 ----
+class ScoringRequirement(BaseModel):
+    text: str = Field(description="항목의 평가요소·요구조건·증빙서류를 원문 그대로 인용. 없는 조건을 만들지 않음")
+    doc_no: int = Field(description="해당 요구조건이 적힌 [문서 n] 번호")
+
+
 class ScoringItem(BaseModel):
     category: str = Field(description="평가 구분 (예: 기술능력평가, 입찰가격평가)")
     section: str = Field(description="평가부문, 원문 그대로 (예: 웹툰 산업 및 서비스 이해). 부문이 없으면 category와 같게")
@@ -735,6 +928,8 @@ class ScoringItem(BaseModel):
     eval_type: Literal["정량", "정성", "가격"] = Field(
         description="정량: 실적 · 인력 · 인증 · 신용등급처럼 제출 서류로 점수를 계산할 수 있음, 정성: 평가위원이 판단, 가격: 입찰가격 산식")
     doc_no: int = Field(description="이 항목이 적힌 [문서 n]의 번호")
+    requirements: List[ScoringRequirement] = Field(default_factory=list,
+        description="정성 항목도 포함하여 각 항목의 구체적 평가요소와 갖춰야 할 조건·증빙을 빠짐없이 인용")
 
 class ScoringExtraction(BaseModel):
     items: List[ScoringItem]
@@ -752,19 +947,38 @@ class Band(BaseModel):
 
 class CategoryScore(BaseModel):
     value: str = Field(description="등급 표기 원문 그대로 (예: AAA, A+)")
-    score: float
+    score: float = Field(description="원문의 점수 또는 배점 대비 백분율 숫자. 배점의 95%이면 95, 직접 점수를 계산하지 않음")
+
+class ScoringRecordFilter(BaseModel):
+    field: Literal["category", "client_type", "related_training", "vat_included", "evidence_submitted",
+                   "training_experience", "insurance_verified"]
+    accepted_values: List[str] = Field(description="원문 인정 조건. boolean은 true/false 문자열. 기관유형은 national/local/public/private 사용")
 
 class QuantRule(BaseModel):
+    doc_no: Optional[int] = Field(default=None, description="산정표가 적힌 [문서 n] 번호. 확인할 수 없으면 null")
     explicit: bool = Field(description="이 항목의 점수 산정표(구간표 또는 등급표)가 숫자로 원문에 명시되어 있으면 true, 아니면 false")
-    metric_field: Literal["credit_rating", "track_records", "none"] = Field(
-        description="신용등급 등급표면 credit_rating, 수행 실적 건수 · 금액 구간표면 track_records, 그 외 none")
+    metric_field: Literal["credit_rating", "track_records", "personnel", "none"] = Field(
+        description="신용등급은 credit_rating, 실적은 track_records, 전문인력 인원수 구간표는 personnel, 판단만으로 점수를 매기는 정성 항목은 none")
     aggregate: Literal["count", "sum", "none"] = Field(description="실적이면 건수(count) 또는 금액 합계(sum)")
     unit: Literal["KRW", "천원", "백만원", "억원", "none"] = Field(description="금액 구간의 단위")
     period_from: str = Field(description="실적 인정 시작일 YYYY-MM-DD. 원문에 절대 날짜로 적혀 있을 때만, 아니면 빈 문자열")
     period_to: str = Field(description="실적 인정 종료일 YYYY-MM-DD. 원문에 절대 날짜로 적혀 있을 때만, 아니면 빈 문자열")
     rule_type: Literal["bands", "category", "none"]
+    category_score_unit: Literal["points", "percent"] = Field(default="points",
+        description="등급표가 고정 점수이면 points, 배점의 100%·95%처럼 비율이면 percent")
     bands: List[Band] = Field(default_factory=list)
     categories: List[CategoryScore] = Field(default_factory=list)
+    period_to_notice_date: bool = Field(default=False, description="인정기간 종료가 입찰공고일이면 true. 현재 날짜로 대체하지 않음")
+    record_filters: List[ScoringRecordFilter] = Field(default_factory=list,
+        description="원문에 명시된 인정 조건만. 공공 실적은 client_type=national/local/public, 연수 실적은 related_training=true 등")
+    min_record_amount: Optional[float] = Field(default=None, description="건별 인정 최소 계약금액, unit 단위. 원문 숫자를 그대로 옮김")
+    reference_amount: Optional[float] = Field(default=None,
+        description="실적금액을 비율(%)로 평가할 때 100%에 해당하는 기준금액. unit 단위, 없으면 null. 사업예산으로 추정하지 않음")
+    required_document: str = Field(default="", description="미제출시 특정 점수로 처리한다는 원문의 증빙서류명. 없으면 빈 문자열")
+    missing_document_score: Optional[float] = Field(default=None, description="위 증빙 미제출시 원문에 명시된 점수. 없으면 null")
+    credit_valid_on_notice: bool = Field(default=False, description="신용등급 유효기간이 입찰공고일을 포함해야 한다는 조건이 원문에 있으면 true")
+    credit_max_age_months: Optional[int] = Field(default=None, ge=1, le=120,
+        description="공고일 기준 최근 N개월 내 발급 신용등급만 인정할 때 N. 최근 1년이면 12. 조건 없으면 null")
 
 def build_rule(q: QuantRule, maximum: float) -> tuple[dict | None, str]:
     """LLM이 옮긴 규칙을 3번 형식으로 바꾸고, 3번 계산기가 거부할 규칙은 미리 걸러 '담당자 판단'으로 둔다."""
@@ -772,28 +986,150 @@ def build_rule(q: QuantRule, maximum: float) -> tuple[dict | None, str]:
         return None, "원문에 계산 가능한 산정표가 명시되지 않음"
     try:
         if q.metric_field == "credit_rating" and q.rule_type == "category" and q.categories:
-            values = {c.value: c.score for c in q.categories}
+            # 원문의 '배점의 95%'를 LLM이 계산하지 않도록 비율→점수 변환은 코드가 맡는다.
+            from decimal import Decimal
+            values = {}
+            for category in q.categories:
+                score = category.score
+                if q.category_score_unit == "percent":
+                    if not 0 <= score <= 100:
+                        return None, "등급표 비율이 0~100% 범위를 벗어남"
+                    score = float(Decimal(str(maximum)) * Decimal(str(score)) / Decimal(100))
+                scale = ['AAA', 'AA+', 'AA0', 'AA-', 'A+', 'A0', 'A-', 'BBB+', 'BBB0', 'BBB-',
+                         'BB+', 'BB0', 'BB-', 'B+', 'B0', 'B-', 'CCC+', 'CCC0', 'CCC-', 'CC', 'C', 'D']
+                for raw_label in re.split(r'[,，\n]+', category.value):
+                    label = re.sub(r'\s+', '', raw_label)
+                    if not label:
+                        continue
+                    labels = [label]
+                    if label.endswith('이하') and label[:-2] in scale:
+                        labels = scale[scale.index(label[:-2]):]
+                    for key in labels:
+                        if key in values and values[key] != score:
+                            return None, "같은 신용등급의 점수가 중복되어 원문 확인 필요"
+                        values[key] = score
             if any(not 0 <= v <= maximum for v in values.values()):
                 return None, "등급표 점수가 배점 범위를 벗어남"
-            return {"metric": {"field": "credit_rating"}, "rule": {"type": "category", "values": values}}, ""
-        if q.metric_field == "track_records" and q.rule_type == "bands" and q.bands and q.aggregate != "none":
-            if not (q.period_from and q.period_to):
-                return None, "실적 인정 기간이 절대 날짜로 명시되지 않음 (상대 기간은 추정하지 않음)"
-            calendar_date(q.period_from)  # 형식이 틀리면 ValueError
-            calendar_date(q.period_to)
+            metric = {"field": "credit_rating"}
+            if q.credit_valid_on_notice:
+                metric["credit_valid_on_notice"] = True
+            if q.credit_max_age_months:
+                metric["credit_max_age_months"] = q.credit_max_age_months
+            rule = {"type": "category", "values": values}
+            if q.required_document and q.missing_document_score is not None:
+                if not 0 <= q.missing_document_score <= maximum:
+                    return None, "증빙 미제출 점수가 배점 범위를 벗어남"
+                metric["required_document"] = ('신용평가등급확인서' if '신용평가등급확인서' in
+                    re.sub(r'\s+', '', q.required_document) else q.required_document)
+                rule["missing_document_score"] = q.missing_document_score
+            return {"metric": metric, "rule": rule}, ""
+        if q.metric_field == "personnel" and q.rule_type == "bands" and q.bands:
             bands = [b.model_dump() for b in q.bands]
             _validate_bands(bands, maximum)
-            metric = {"field": "track_records", "aggregate": q.aggregate, "from": q.period_from, "to": q.period_to}
-            if q.aggregate == "sum":
+            # 정수 인원수에서 3명 등의 구간이 빠지면 자동 계산하지 않고 재추출한다.
+            from bid_logic.scoring import _inside
+            boundaries = {0}
+            for band in bands:
+                for edge in (band.get('min'), band.get('max')):
+                    if edge is not None:
+                        boundaries.update(max(0, int(edge) + delta) for delta in (-1, 0, 1))
+            if any(sum(_inside(n, b) for b in bands) != 1 for n in boundaries):
+                return None, "인력 인원수 구간에 누락 또는 중복이 있음. '4명 미만'은 max=4, max_inclusive=false로 옮겨야 함"
+            return {"metric": {"field": "personnel", "aggregate": "count", "as_of_reference": "notice_date",
+                               "filters": {('training_experience' if f.field == 'related_training' else f.field):
+                                           f.accepted_values for f in q.record_filters}},
+                    "rule": {"type": "bands", "bands": bands}}, ""
+        aggregate = "sum" if q.metric_field == "track_records" and q.reference_amount is not None else q.aggregate
+        if q.metric_field == "track_records" and q.rule_type == "bands" and q.bands and aggregate != "none":
+            if not (q.period_from and (q.period_to or q.period_to_notice_date)):
+                return None, "실적 인정 기간이 절대 날짜로 명시되지 않음 (상대 기간은 추정하지 않음)"
+            calendar_date(q.period_from)  # 형식이 틀리면 ValueError
+            if q.period_to:
+                calendar_date(q.period_to)
+            bands = [b.model_dump() for b in q.bands]
+            _validate_bands(bands, maximum)
+            metric = {"field": "track_records", "aggregate": aggregate, "from": q.period_from, "to": q.period_to}
+            if q.period_to_notice_date:
+                metric["to_reference"] = "notice_date"
+            metric["filters"] = {f.field: f.accepted_values for f in q.record_filters}
+            if aggregate == "sum":
                 if q.unit == "none":
                     return None, "금액 구간의 단위가 명시되지 않음"
                 metric["unit"] = q.unit
+            for name in ("min_record_amount", "reference_amount"):
+                value = getattr(q, name)
+                if value is not None:
+                    if aggregate != "sum" or q.unit == "none" or value <= 0:
+                        return None, "금액 비율·건별 최소금액의 단위와 양수 기준이 필요함"
+                    metric[name] = value
             return {"metric": metric, "rule": {"type": "bands", "bands": bands}}, ""
     except (ValueError, KeyError, TypeError) as e:
         return None, f"산정표 형식 검증 실패: {e}"
     return None, "지원하지 않는 산정 방식"
 
 SCORING_KEYWORDS = ("배점", "평가항목", "평가 항목", "기술능력평가", "입찰가격평가", "합 계", "합계")
+
+def personnel_rule_from_sources(texts, maximum):
+    """'4명 미만 / 1점', '4~6명 / 3점'처럼 명시된 표만 코드로 옮긴다."""
+    from bid_logic.scoring import _inside
+    bands, source_ids = [], []
+    patterns = (
+        r'(?P<low>\d+)\s*[~∼～-]\s*(?P<high>\d+)\s*명\s*(?P<score>\d+(?:\.\d+)?)\s*점',
+        r'(?P<bound>\d+)\s*명\s*(?P<op>미만|이하|이상|초과)\s*(?P<score>\d+(?:\.\d+)?)\s*점')
+    for doc_no, text in texts.items():
+        for pattern in patterns:
+            for match in re.finditer(pattern, text):
+                data = match.groupdict()
+                band = {"score": float(data['score'])}
+                if data.get('low'):
+                    band.update(min=int(data['low']), max=int(data['high']), min_inclusive=True, max_inclusive=True)
+                else:
+                    value, op = int(data['bound']), data['op']
+                    if op in ('미만', '이하'):
+                        band.update(max=value, max_inclusive=op == '이하')
+                    else:
+                        band.update(min=value, min_inclusive=op == '이상')
+                if band not in bands:
+                    bands.append(band)
+                if doc_no not in source_ids:
+                    source_ids.append(doc_no)
+    if len(bands) < 2:
+        return None, []
+    try:
+        _validate_bands(bands, maximum)
+        boundaries = {0}
+        for band in bands:
+            for edge in (band.get('min'), band.get('max')):
+                if edge is not None:
+                    boundaries.update(max(0, int(edge) + d) for d in (-1, 0, 1))
+        if any(sum(_inside(n, b) for b in bands) != 1 for n in boundaries):
+            return None, []
+    except ValueError:
+        return None, []
+    joined = _squash(' '.join(texts[n] for n in source_ids))
+    filters = {}
+    if '경력' in joined and ('연수' in joined or '교육' in joined):
+        filters['training_experience'] = ['true']
+    if '4대보험' in joined:
+        filters['insurance_verified'] = ['true']
+    metric = {"field": "personnel", "aggregate": "count", "filters": filters}
+    if '공고일' in joined and '재직' in joined:
+        metric['as_of_reference'] = 'notice_date'
+    return {"metric": metric, "rule": {"type": "bands", "bands": bands}}, source_ids
+
+
+def scoring_rule_context(bid_no: str, revision: str, item: str):
+    # 항목 목록과 상세 산정표는 서로 다른 쪽에 있을 수 있다. 같은 공고·차수 안에서
+    # 항목별로 다시 고르고, 별도 문맥의 문서 번호와 출처를 함께 유지한다.
+    if any(word in _squash(item) for word in ("경영상태", "신용", "재무")):
+        keywords = ("신용평가등급", "신용평가 등급", "신용 평가 등급", "기업신용", "기업 신용", "회사채", "기업어음", "신용등급")
+    elif "실적" in item:
+        keywords = (item, "수행실적", "수행 실적", "실적평가", "실적 평가", "인정기간", "인정 기간")
+    elif any(word in item for word in ("인력", "인원")):
+        keywords = (item, "전문인력", "전문 인력", "재직", "상시근로자", "4대보험", "4대 보험")
+    else:
+        keywords = (item,)
+    return numbered_context(bid_chunks(bid_no, revision, keywords))
 
 def build_scoring(bid_no: str, revision: str) -> dict:
     t0 = time.perf_counter()
@@ -806,29 +1142,78 @@ def build_scoring(bid_no: str, revision: str) -> dict:
         "아래는 한 공고의 공고문 · 제안요청서 일부입니다. 제안서 평가 채점표의 평가 항목과 배점을 빠짐없이 옮기세요. "
         "세부 항목이 있으면 세부 항목 단위로 넣고, 소계 · 합계 행은 items에 넣지 마세요. 입찰가격평가도 하나의 항목으로 넣으세요. "
         "협상적격자 · 적격 통과 기준이 적혀 있으면 pass_rule에 원문 그대로 넣으세요. "
+        "정량 항목은 수행실적·전문인력·신용등급 등 세부 항목으로 분리하고 각 항목의 requirements에 "
+        "인정기간, 최소금액, 인정 기관, 증빙, 등급 조건을 원문 그대로 인용하세요. "
+        "정성 항목도 '담당자 판단'으로 요약하지 말고 평가표에 열거된 계획·구성·안전·보안 등의 "
+        "평가요소를 requirements에 각각 인용하세요. A~E 배점만으로 정성 점수를 예측하지 마세요. "
         + EXTRACT_RULES, context)
     items = []
     for it in result.items:
         n, ok = verified_source(it.item, it.doc_no, texts)
         row = {**it.model_dump(exclude={"doc_no"}), "source": labels.get(n or 0, "unknown"),
                "source_refs": [refs[n]] if ok and n in refs else [], "source_verified": ok,
-               "rule": None, "rule_note": ""}
+               "rule": None, "rule_note": "", "rule_sources": []}
+        row["requirements"] = [{"text": r.text, "sources": [refs[r.doc_no]]}
+            for r in it.requirements if r.doc_no in texts and _squash(r.text)
+            and _squash(r.text) in _squash(texts[r.doc_no])]
         if it.eval_type == "정량":
-            q = run_extraction(QuantRule,
-                f"아래 문서에서 평가 항목 '{it.item}'(배점 {it.max_score})의 점수 산정표를 찾아 옮기세요. "
-                "원문에 숫자로 된 구간표나 등급표가 없으면 explicit을 false로 하고, 추정하거나 계산하지 마세요.", context)
-            row["rule"], row["rule_note"] = build_rule(q, it.max_score)
+            rule_context, _, rule_texts, rule_refs = scoring_rule_context(bid_no, revision, it.item)
+            direct, direct_ids = personnel_rule_from_sources(rule_texts, it.max_score) if any(
+                w in it.item for w in ('인력', '인원')) else (None, [])
+            if not rule_context:
+                row["rule_note"] = "해당 항목의 상세 산정표를 문서에서 찾지 못했습니다. 원문을 확인해 주세요."
+            elif direct:
+                row["rule"] = direct
+                row["rule_sources"] = [rule_refs[n] for n in direct_ids]
+            else:
+                q = run_extraction(QuantRule,
+                    f"아래 문서에서 평가 항목 '{it.item}'(배점 {it.max_score})의 점수 산정표를 찾아 옮기세요. "
+                    "경영상태가 신용평가등급표를 참조하면 기업신용평가등급 열을 사용하세요. "
+                    "회사채·기업어음 등 다른 등급 체계의 열을 섞지 마세요. "
+                    "배점의 95% 같은 비율표는 category_score_unit=percent, score=95로 그대로 옮기세요. "
+                    "실적은 인정기간·건별 최소금액·완료 여부·인정 기관·VAT 포함·증빙 등의 조건을 보존하세요. "
+                    "2023.10.~입찰공고일처럼 월부터 시작하면 period_from=2023-10-01, period_to_notice_date=true로 옮기세요. "
+                    "실적 비율표의 100% 기준금액은 reference_amount에 쓰고 구간의 min/max는 % 숫자로 옮기세요. "
+                    "이 경우 aggregate=sum입니다. 국가·지자체·공공기관 실적만 인정하면 client_type 필터를 넣으세요. "
+                    "전문인력 인원수 구간표는 metric_field=personnel, aggregate=count로 옮기세요. "
+                    "4명 미만은 max=4, max_inclusive=false입니다. 4~6명은 min=4,max=6,max_inclusive=true입니다. "
+                    "경력·4대보험 조건은 record_filters로, 신용등급 증빙 미제출시 0점 등은 required_document와 "
+                    "missing_document_score로 옮기세요. 없는 조건은 추가하지 마세요. "
+                    "신용등급의 유효기간·최근 발급 조건은 credit_valid_on_notice와 credit_max_age_months로 옮기세요. "
+                    "다른 항목의 표나 배점 합계를 이 항목의 산정표로 사용하지 마세요. "
+                    "원문에 숫자로 된 구간표나 등급표가 없으면 explicit을 false로 하고, 추정하거나 계산하지 마세요. "
+                    "산정표가 있는 [문서 n] 번호를 doc_no로 넣으세요.", rule_context)
+                row["rule"], row["rule_note"] = build_rule(q, it.max_score)
+                if q.explicit and row["rule"] is None:
+                    q = run_extraction(QuantRule,
+                        f"평가항목 '{it.item}', 배점 {it.max_score}의 산정표를 원문 그대로 다시 옮기세요. "
+                        f"앞선 결과 검증 오류: {row['rule_note']}. 원문으로 오류를 바로잡으세요. "
+                        "인원수 미만·이하·이상을 정확히 구분하고, 공고일 기준·인정 조건을 보존하세요. "
+                        "금액 합산 비율은 aggregate=sum, 등급표는 기업신용평가등급 열을 사용하세요. "
+                        "원문에 없는 값을 채우지 말고 문서 번호도 넣으세요.", rule_context)
+                    row["rule"], row["rule_note"] = build_rule(q, it.max_score)
+                if row["rule"]:
+                    if q.doc_no in rule_refs:
+                        row["rule_sources"] = [rule_refs[q.doc_no]]
+                    else:
+                        row["rule"] = None
+                        row["rule_note"] = "산정표의 원문 출처를 확인하지 못했습니다. 원문을 확인해 주세요."
         items.append(row)
     total = round(sum(it["max_score"] for it in items), 2)
     # 옮겨 적은 배점의 합이 문서의 합계와 다르면 누락 · 중복이 있다는 뜻이므로 표시
     consistent = result.declared_total is None or abs(total - result.declared_total) < 0.01
-    return {"bid_no": bid_no, "revision": revision, "items": items, "total_max_score": total,
+    notice_date = None
+    csv_path = BASE_DIR / "data" / "bids.csv"
+    if csv_path.exists():
+        notice_date = next((r.get("published_at") for r in load_bids_csv(csv_path)
+                            if (r["bid_no"], r["revision"]) == (bid_no, revision)), None)
+    return {"bid_no": bid_no, "revision": revision, "notice_date": notice_date, "items": items, "total_max_score": total,
             "declared_total": result.declared_total, "consistent": consistent,
             "pass_rule": result.pass_rule, "pass_rule_source": labels.get(result.pass_rule_doc_no or 0, ""),
             "needs_review": True, "handoff": False, "latency_ms": elapsed_ms(t0)}
 
 @app.get("/bids/{bid_no}/scoring-table", dependencies=AUTH, summary="공고 채점표 추출 (3번 점수 계산용)", tags=["공고 추출"])
-async def scoring_table(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
+def scoring_table(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                         refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출"),
                         allow_partial: bool = Query(False, description="true면 제안요청서 없이 공고문만으로 추출 (채점표가 비거나 불완전할 수 있음)")):
     return run_endpoint(bid_no, revision, "scoring", refresh, build_scoring, needs_rfp=not allow_partial)
@@ -885,7 +1270,7 @@ def build_required_docs(bid_no: str, revision: str) -> dict:
             "needs_review": False, "handoff": False, "latency_ms": elapsed_ms(t0)}
 
 @app.get("/bids/{bid_no}/required-docs", dependencies=AUTH, summary="공고 제출서류 · 일정 추출 (3번 체크리스트용)", tags=["공고 추출"])
-async def required_docs(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
+def required_docs(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                         refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
     return run_endpoint(bid_no, revision, "required_docs", refresh, build_required_docs)
 
@@ -918,10 +1303,20 @@ def build_summary(bid_no: str, revision: str) -> dict:
     return {"bid_no": bid_no, "revision": revision, "summary": fields, "missing": missing,
             "needs_review": False, "handoff": bool(missing), "latency_ms": elapsed_ms(t0)}
 
+def summary_result(bid_no, revision, refresh=False, authorization=None):
+    revision = resolve_revision(bid_no, revision)
+    return summary_with_database(
+        bid_no, revision, authorization, BID_FINGERPRINTS.get((bid_no, revision)),
+        hashlib.sha256(EXTRACTIONS.namespace.encode()).hexdigest(),
+        lambda: cached(bid_no, revision, "summary", refresh, lambda: build_summary(bid_no, revision)),
+        refresh=refresh)
+
+
 @app.get("/bids/{bid_no}/summary", dependencies=AUTH, summary="공고 요약 (항목별 출처 포함)", tags=["공고 추출"])
-async def bid_summary(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
-                      refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
-    return run_endpoint(bid_no, revision, "summary", refresh, build_summary)
+def bid_summary(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
+                      refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출"),
+                      authorization: Optional[str] = Header(default=None)):
+    return summary_result(bid_no, revision, refresh, authorization)
 
 # ---- 흐름 ③ · ⑥ 진행 확인: 공고별로 무엇이 적재되었는지 ----
 @app.get("/bids/{bid_no}/documents", dependencies=AUTH, summary="공고별 적재 문서 · 단계 (none / notice_only / full)", tags=["공고 추출"])
@@ -938,7 +1333,7 @@ class SummaryBatchRequest(BaseModel):
     refresh: bool = False
 
 @app.post("/bids/summaries", dependencies=AUTH, summary="공고 여러 건 요약 (흐름 ④, 최대 20건 · 동시 5건)", tags=["공고 추출"])
-def bid_summaries(req: SummaryBatchRequest):
+def bid_summaries(req: SummaryBatchRequest, authorization: Optional[str] = Header(default=None)):
     # LLM 호출을 공고마다 순서대로 하면 20건에 1분 이상 걸려 5건씩 동시에 처리한다. 한 건이 실패해도 나머지는 돌려준다
     from concurrent.futures import ThreadPoolExecutor
     t0 = time.perf_counter()
@@ -946,7 +1341,7 @@ def bid_summaries(req: SummaryBatchRequest):
     def one(key: BidKey) -> dict:
         try:
             revision = resolve_revision(key.bid_no, key.revision)
-            data = cached(key.bid_no, revision, "summary", req.refresh, lambda: build_summary(key.bid_no, revision))
+            data = summary_result(key.bid_no, revision, req.refresh, authorization)
             return {"status": "ok", **data, "documents": bid_documents(key.bid_no, revision)["stage"]}
         except HTTPException as e:
             return {"bid_no": key.bid_no, "revision": key.revision, "status": "error", "code": e.status_code, "detail": e.detail}

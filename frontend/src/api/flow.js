@@ -1,5 +1,8 @@
-// 검색·추천·문서 준비 API 호출과 화면 응답 정규화를 모읍니다.
-import client, { rag, cachedApi, invalidateApiCache } from './client'
+// 새 흐름(검색 → 요약 → 채점 → 승인 → 체크리스트)의 API 호출 모음.
+// 실제 서버 코드(2번 RAG · 3번 공고 로직)를 읽고 응답 모양을 맞췄습니다.
+// ★ 1번(/search-bids, /fetch-notices, /fetch-documents, /jobs)과 4번(/me/...)은 아직 서버에 없어서
+//   가이드 문서 기준의 "가정"입니다. 담당자의 실제 응답과 다르면 이 파일만 고치세요.
+import client, { rag } from './client'
 
 export const SUMMARY_LABELS = {
   title: '사업명', agency: '발주기관', period: '사업 기간', budget: '사업 예산',
@@ -27,31 +30,19 @@ export function toBid(b) {
     budget: b.budget ?? null, regions: b.regions || [],
     unknown: b.unknown || [], // 확인하지 못한 조건들 (제외하지 않고 "미확인"으로 표시)
     reason: b.reason || '',
-    notice_only: b.notice_only === true,
-    warnings: b.warnings || [],
-    region_restriction: b.region_restriction || null,
-    industry_restriction: b.industry_restriction || null,
     recheck: b.recheck || null, // ③' 공고문 적재 후 재확인 결과 { status, reasons, unknown }
   }
 }
 
-// ① 나라장터 검색. 로그인 토큰으로 회사별 DB 캐시를 조회합니다.
-export async function searchBids({ from, to, queries, limit = 100 }) {
-  return cachedApi(`search:${JSON.stringify([from, to, queries, limit])}`, async () =>
-    (await rag.post('/search-bids', { from, to, queries, limit })).data, 0)
+// ① 검색 (1번 — 아직 서버에 없음)
+export async function searchBids({ from, to, queries, limit = 20 }) {
+  return (await rag.post('/search-bids', { from, to, queries, limit })).data
 }
-// ② 추린 공고: 저장된 search_id로 검색 원본·회사별 추천 캐시를 연결합니다.
-export async function fetchCandidates(from, to, searchId, { prepareNotices = true } = {}) {
-  const d = (await rag.get('/bids', { params: { from, to, limit: 20, search_id: searchId, prepare_notices: prepareNotices } })).data
-  return { bids: (d.bids || []).map(toBid), excluded: d.excluded || [], cacheSync: d.cache_sync || null,
-    noticeJobId: d.notice_job_id || null, noticeJobStatus: d.notice_job_status || null,
-    noticeJobError: d.notice_job_error || null }
-}
-export async function retrySearchCache(searchId) {
-  return (await rag.post('/retry-search-cache', { search_id: searchId }, { timeout: 30000 })).data
-}
-export async function retryRestrictions(searchId, bids) {
-  return (await rag.post('/retry-restrictions', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 120000 })).data
+// ② 추린 공고 (3번): { bids, excluded, candidate_count, needs_review }
+// search_id 는 3번이 1번의 새 검색 결과를 읽도록 바뀌면 필요해질 값이라 미리 함께 보냅니다. (지금 서버는 무시)
+export async function fetchCandidates(from, to, searchId) {
+  const d = (await rag.get('/bids', { params: { from, to, limit: 20, search_id: searchId } })).data
+  return { bids: (d.bids || []).map(toBid), excluded: d.excluded || [] }
 }
 // ③' 공고문 준비가 끝난 뒤 재확인 (3번): 본문까지 보고 부적격인 공고를 표시합니다. (삭제하지 않고 표시만)
 // 응답: { bids:[{...공고, recheck:{status: confirmed|disqualified|unknown|not_evaluated, reasons, unknown}}], disqualified, not_evaluated }
@@ -62,33 +53,27 @@ export async function recheckBids(from, to, searchId, bids) {
 }
 // ③ 공고문 준비 / ⑤ 제안요청서 준비: 작업 번호(job_id)를 돌려줌 (1번 — 아직 서버에 없음)
 export async function fetchNotices(searchId, bids) {
-  return (await rag.post('/fetch-notices', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
+  return (await rag.post('/fetch-notices', { search_id: searchId, bids: pipelineRefs(bids) })).data.job_id
 }
 export async function fetchDocuments(searchId, bids) {
-  return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
-}
-export async function retryDbSave(searchId, bids) {
-  return (await rag.post('/retry-db-save', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
+  return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) })).data.job_id
 }
 export async function getJob(id) {
-  const d = (await rag.get(`/jobs/${id}`, { timeout: 15000 })).data
-  if (isFinished(d.status)) invalidateApiCache()
+  const d = (await rag.get(`/jobs/${id}`)).data
   return { ...d, bids: (d.bids || []).map((b) => ({ ...b, revision: rev(b) })) }
 }
 // ④ 요약 여러 건 (2번): results[{status:'ok'|'error', summary, missing, ... | code, detail}]
 export async function fetchSummaries(bids) {
-  const d = await cachedApi(`summaries:${JSON.stringify(refs(bids))}`, async () =>
-    (await rag.post('/bids/summaries', { bids: refs(bids) })).data, 60000,
-    (result) => result.results?.length > 0 && result.results.every((row) => row.status === 'ok'))
+  const d = (await rag.post('/bids/summaries', { bids: refs(bids) })).data
   return (d.results || []).map((r, i) => ({ ...r, bid_no: r.bid_no ?? bids[i]?.bid_no, revision: rev({ ...bids[i], ...r }) }))
 }
 // ⑤⑧ 선택·승인 (4번 Java: POST /api/me/selections, /api/me/approvals, GET /api/me/pipeline)
 //   서버는 공고 1건씩 받고({bid_no, revision}, 차수는 "000" 같은 문자열 그대로), 누적 저장합니다. 승인은 선택 저장 뒤에만 가능(아니면 409).
 export async function saveSelections(bids) {
-  for (const b of bids) await client.post('/me/selections', { bid_no: b.bid_no, revision: String(b.revision) }, { timeout: 30000 })
+  for (const b of bids) await client.post('/me/selections', { bid_no: b.bid_no, revision: String(b.revision) })
 }
 export async function saveApprovals(bids) {
-  for (const b of bids) await client.post('/me/approvals', { bid_no: b.bid_no, revision: String(b.revision) }, { timeout: 30000 })
+  for (const b of bids) await client.post('/me/approvals', { bid_no: b.bid_no, revision: String(b.revision) })
 }
 // 로그인 직후: 서버에 저장된 선택·승인 목록 [{bid_no, revision, status:'selected'|'approved', ...}]
 export async function fetchPipeline() {
@@ -103,33 +88,20 @@ export async function saveSummary(r) {
   return (await client.put(`/bids/${encodeURIComponent(r.bid_no)}/summary`, body)).data
 }
 // 성공한 요약만 저장하고, 실패한 건수를 돌려줍니다. (저장 실패가 화면 흐름을 막지 않도록 예외는 던지지 않습니다)
-export async function saveSummaries(results, { retry = false } = {}) {
+export async function saveSummaries(results) {
   const targets = results.filter((r) => r.status === 'ok' && r.summary && typeof r.summary === 'object')
-  const pending = targets.filter((r) => !['saved', 'reused'].includes(r.db_persistence?.status)
-    && (retry || r.db_persistence?.status !== 'failed'))
-  await Promise.allSettled(pending.map(async (row) => {
-    try {
-      await saveSummary(row)
-      row.db_persistence = { status: 'saved' }
-    } catch (e) {
-      row.db_persistence = { status: 'failed' }
-      throw e
-    }
-  }))
-  return { total: targets.length, failed: targets.filter((r) => r.db_persistence?.status === 'failed').length }
+  const settled = await Promise.allSettled(targets.map(saveSummary))
+  return { total: targets.length, failed: settled.filter((x) => x.status === 'rejected').length }
 }
 // ⑦ 채점표(2번) · 예상 점수(3번) / ⑨ 체크리스트(3번). 3번 경로는 revision 이 필수입니다.
 export async function fetchScoringTable(b) {
-  return cachedApi(`table:${b.bid_no}:${rev(b)}`, async () =>
-    (await rag.get(`/bids/${b.bid_no}/scoring-table`, { params: { revision: b.revision } })).data)
+  return (await rag.get(`/bids/${b.bid_no}/scoring-table`, { params: { revision: b.revision } })).data
 }
 export async function fetchScore(b) {
-  return cachedApi(`score:${b.bid_no}:${rev(b)}`, async () =>
-    (await rag.get(`/bids/${b.bid_no}/score`, { params: { revision: b.revision } })).data, 0)
+  return (await rag.get(`/bids/${b.bid_no}/score`, { params: { revision: b.revision } })).data
 }
 export async function fetchChecklist(b) {
-  return cachedApi(`checklist:${b.bid_no}:${rev(b)}`, async () =>
-    (await rag.get(`/bids/${b.bid_no}/checklist`, { params: { revision: b.revision } })).data, 0)
+  return (await rag.get(`/bids/${b.bid_no}/checklist`, { params: { revision: b.revision } })).data
 }
 // Q&A (2번): 요청은 prompt, 응답은 response (sources 는 문자열 목록)
 export async function askQuestion(prompt, bid) {
@@ -153,17 +125,4 @@ export async function transcribe(blob) {
 }
 export async function synthesize(text) {
   return (await rag.post('/tts', { text }, { responseType: 'blob' })).data
-}
-
-export async function fetchJobFiles(jobId) {
-  return (await rag.get(`/jobs/${jobId}/files`)).data.files || []
-}
-export async function downloadJobFile(jobId, file) {
-  const { data } = await rag.get(`/jobs/${jobId}/files/${file.file_id}`, { responseType: 'blob' })
-  const url = URL.createObjectURL(data)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = file.file_name
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

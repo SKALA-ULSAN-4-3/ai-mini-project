@@ -33,6 +33,7 @@ async def require_login(request: Request, call_next):
                        if len(parts) == 2 and parts[0].lower() == "bearer" else None)
         try:
             await run_in_threadpool(authenticated, credentials)
+            request.state.verified_authorization = authorization
         except HTTPException as exc:
             return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail},
                                 headers=exc.headers)

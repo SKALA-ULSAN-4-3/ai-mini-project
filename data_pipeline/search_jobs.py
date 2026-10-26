@@ -8,6 +8,8 @@ import os
 from pathlib import Path
 import re
 import signal
+import shutil
+import tempfile
 import subprocess
 import sys
 import time
@@ -16,6 +18,7 @@ import uuid
 
 from . import collect_bids as collector
 from . import restrictions
+from . import convert_documents as converter
 from . import bid_progress
 from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY,
                      HWP_SUFFIXES, directory_lock, read_json, write_json,
@@ -23,6 +26,7 @@ from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY
 from .knowledge import KnowledgeStore
 
 CACHE_SECONDS = 300
+ACTIVE_JOBS = set()
 RESTRICTION_FIELDS = (
     "indstrytyLmtYn", "rgnLmtBidLocplcJdgmBssNm", "jntcontrctDutyRgnNm1",
     "jntcontrctDutyRgnNm2", "jntcontrctDutyRgnNm3", "cmmnSpldmdMethdNm",
@@ -56,10 +60,8 @@ def _enrich_restrictions(item, key):
 
 
 def _enrich_candidate(item, key):
-    enriched = _enrich_restrictions(item, key)
-    if not any("rfp" in classify_attachment(name) for name, _ in collector.attachments(item)):
-        enriched = _enrich_eorder(enriched, key)
-    return enriched
+    # 검색에서는 자격 제한과 공고문 목록만 확인한다. e발주 전체 첨부는 사용자 선택 후 조회한다.
+    return _enrich_restrictions(item, key)
 
 
 def _enrich_eorder(item, key):
@@ -175,7 +177,7 @@ def _public_search(saved, cached, now=None):
             a["kinds"] == ["notice"] for a in row["attachments"])
         row["warnings"] = (["해당 공고는 공고문만 있다. 제공된 첨부 목록 기준이며 공고 상세 확인이 필요합니다."]
                            if row["notice_only"] else [])
-        if row["attachment_lookup_status"] != "complete" and not row["rfp_listed"]:
+        if row["attachment_lookup_status"] == "unavailable" and not row["rfp_listed"]:
             row["warnings"].append("제안요청정보의 첨부 목록을 확인하지 못했습니다. 공고문만 있다고 단정할 수 없습니다.")
         items.append(row)
     return {"search_id": saved["search_id"], "items": items, "cached": cached,
@@ -188,6 +190,24 @@ def _public_search(saved, cached, now=None):
             "date_basis": saved["request"].get("date_basis", "published_at"),
             "collected_at": saved["collected_at"], "cache_seconds": CACHE_SECONDS,
             "page_limit_reached": saved["page_limit_reached"]}
+
+
+def _cached_progress(key, bid_no, order):
+    # 다른 검색어로 재검색해도 같은 공고의 정상 조회 결과는 30초간 재사용한다.
+    folder = root_dir() / "progress-cache"
+    folder.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256((key + ":" + bid_no + ":" + order).encode()).hexdigest()
+    path = folder / (digest + ".json")
+    try:
+        cached = read_json(path)
+        if time.time() - cached["created_epoch"] < 30:
+            return cached["data"]
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    data = bid_progress.lookup_progress(key, bid_no, order)
+    if data.get("lookup_status") == "complete":
+        write_json(path, {"created_epoch": time.time(), "data": data})
+    return data
 
 
 def search_bids(start, end, queries, limit, key):
@@ -235,7 +255,7 @@ def search_bids(start, end, queries, limit, key):
                 return None
             if identity not in progress_cache:
                 try:
-                    progress_cache[identity] = bid_progress.lookup_progress(progress_key, *identity)
+                    progress_cache[identity] = _cached_progress(progress_key, *identity)
                 except bid_progress.ProgressRateLimitError:
                     raise  # 전체 조회 한도 초과를 '검색 결과 0건'으로 숨기거나 캐시하지 않는다.
                 except collector.CollectionError as exc:
@@ -295,14 +315,24 @@ def select_items(search_id, bids):
 
 def create_job(search_id, bids, mode):
     select_items(search_id, bids)
-    job_id = uuid.uuid4().hex
-    folder = root_dir() / "jobs"
-    folder.mkdir(parents=True, exist_ok=True)
-    job = {"job_id": job_id, "search_id": search_id, "mode": mode,
-           "status": "queued", "done": 0, "total": len(bids), "created_at": stamp(),
-           "bids": [{**bid, "status": "queued", "error": None} for bid in bids]}
-    write_json(folder / f"{job_id}.json", job)
-    return job
+    identity = sorted((b["bid_no"], b["bid_order"]) for b in bids)
+    with directory_lock(root_dir(), ".jobs.lock"):
+        folder = root_dir() / "jobs"
+        folder.mkdir(parents=True, exist_ok=True)
+        for path in folder.glob("*.json"):
+            old = read_json(path)
+            if (old.get("job_id") in ACTIVE_JOBS
+                    and old.get("search_id") == search_id and old.get("mode") == mode
+                    and old.get("status") in {"queued", "running"}
+                    and sorted((b["bid_no"], b["bid_order"]) for b in old["bids"]) == identity):
+                return {**old, "reused": True}
+        job_id = uuid.uuid4().hex
+        job = {"job_id": job_id, "search_id": search_id, "mode": mode,
+               "status": "queued", "done": 0, "total": len(bids), "created_at": stamp(),
+               "bids": [{**bid, "status": "queued", "error": None} for bid in bids]}
+        write_json(folder / f"{job_id}.json", job)
+        ACTIVE_JOBS.add(job_id)
+        return job
 
 
 def get_job(job_id):
@@ -342,13 +372,13 @@ def _attachment_rows(item, notice_url, full, previous):
     return rows
 
 
-def _prepare_with_timeout(folder, convert_hwp, timeout=120):
+def _run_prepare_worker(folder, convert_hwp, timeout, env):
     """변환뿐 아니라 PDF 검증·텍스트 추출까지 별도 프로세스에서 시간 제한한다."""
     command = [sys.executable, "-m", "data_pipeline.prepare_documents", "--run-dir", str(folder)]
     if convert_hwp:
         command.append("--convert-hwp")
     process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, start_new_session=True)
+                               text=True, start_new_session=True, env=env)
     try:
         stdout, stderr = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -370,7 +400,22 @@ def _prepare_with_timeout(folder, convert_hwp, timeout=120):
         raise RuntimeError("문서 변환·텍스트 추출 프로세스가 실패했습니다. 변환 도구 설정과 문서 형식을 확인하세요.")
 
 
-def _prepare_selected(folder, rows):
+def _prepare_with_timeout(folder, convert_hwp, timeout=120):
+    if not convert_hwp:
+        return _run_prepare_worker(folder, False, timeout, None)
+    # 변환 프로필만 격리한다. 확장 파일은 재설치·재다운로드하지 않는다.
+    with tempfile.TemporaryDirectory(prefix="bid-office-") as temp:
+        profile = Path(temp) / "profile"
+        if converter.PROFILE.is_dir():
+            shutil.copytree(converter.PROFILE, profile,
+                            ignore=shutil.ignore_patterns(".lock", "*.lock", "lock"))
+        else:
+            raise RuntimeError("한글 변환 프로필이 없습니다. 변환 도구 설정을 확인하세요.")
+        env = {**os.environ, "BID_CONVERTER_PROFILE": str(profile)}
+        return _run_prepare_worker(folder, True, timeout, env)
+
+
+def _prepare_selected(folder, rows, full=False):
     """공고문·제안요청서·협약문서를 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
     def stem(row):
         return unicodedata.normalize("NFC", Path(row["file_name"]).stem).casefold()
@@ -380,7 +425,8 @@ def _prepare_selected(folder, rows):
     scoped = []
     for row in rows:
         kinds = {"notice"} if row.get("role") == "notice" else classify_attachment(row["file_name"])
-        selected = row["selected"] and bool(kinds & {"notice", "rfp", "agreement"}) and "cancel" not in kinds
+        selected = (row["selected"] and "cancel" not in kinds
+                    and (full or bool(kinds & {"notice", "rfp", "agreement"})))
         if Path(row["file_name"]).suffix.lower() in HWP_SUFFIXES and stem(row) in pdfs:
             selected = False  # 원본은 보존하고 같은 이름의 PDF만 내부 적재에 쓴다.
         prepared = {**row, "selected": selected}
@@ -394,8 +440,7 @@ def _prepare_selected(folder, rows):
                and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES for row in scoped):
             conversion_file = folder / "conversions.jsonl"
             cached = {row["original_path"]: row for row in read_jsonl(conversion_file)} if conversion_file.exists() else {}
-            with directory_lock(root_dir(), ".conversion.lock", timeout=30):
-                _prepare_with_timeout(folder, True)
+            _prepare_with_timeout(folder, True)
             cached.update({row["original_path"]: row for row in read_jsonl(conversion_file)})
             write_jsonl(conversion_file, cached.values())
         else:
@@ -445,7 +490,8 @@ def _process_bid(item, full, store, progress):
     bid_no = str(item["bidNtceNo"])
     order = str(item.get("bidNtceOrd") or "000")
     folder = root_dir() / "documents" / collector.safe_name(f"{bid_no}_{order}")
-    with directory_lock(folder, ".document.lock", timeout=30):
+    progress("waiting_document")
+    with directory_lock(folder, ".document.lock", timeout=180):
         progress("downloading")
         notice_url = _notice_url(item)
         if not full and notice_url is None:
@@ -465,7 +511,7 @@ def _process_bid(item, full, store, progress):
         write_csv(folder / "bids.csv", BID_FIELDS, [collector.notice_row(item, [], collected_at)])
         progress("converting")
         try:
-            _prepare_selected(folder, rows)
+            _prepare_selected(folder, rows, full=full)
         except Exception as exc:
             # 변환 실패여도 이미 끝난 다운로드와 RFP 미적재 사실을 함께 전달한다.
             message = str(exc) if isinstance(exc, (ValueError, RuntimeError)) else type(exc).__name__
@@ -555,3 +601,4 @@ def run_job(job_id, key=None):
         job.update(status="failed", error=type(exc).__name__)
     job["finished_at"] = stamp()
     write_json(path, job)
+    ACTIVE_JOBS.discard(job_id)

@@ -2,7 +2,7 @@
 // 실제 서버 코드(2번 RAG · 3번 공고 로직)를 읽고 응답 모양을 맞췄습니다.
 // ★ 1번(/search-bids, /fetch-notices, /fetch-documents, /jobs)과 4번(/me/...)은 아직 서버에 없어서
 //   가이드 문서 기준의 "가정"입니다. 담당자의 실제 응답과 다르면 이 파일만 고치세요.
-import client, { rag } from './client'
+import client, { rag, cachedApi, invalidateApiCache } from './client'
 
 export const SUMMARY_LABELS = {
   title: '사업명', agency: '발주기관', period: '사업 기간', budget: '사업 예산',
@@ -40,7 +40,8 @@ export function toBid(b) {
 
 // ① 검색 (1번 — 아직 서버에 없음)
 export async function searchBids({ from, to, queries, limit = 100 }) {
-  return (await rag.post('/search-bids', { from, to, queries, limit })).data
+  return cachedApi(`search:${JSON.stringify([from, to, queries, limit])}`, async () =>
+    (await rag.post('/search-bids', { from, to, queries, limit })).data, 0)
 }
 // ② 추린 공고 (3번): { bids, excluded, candidate_count, needs_review }
 // search_id 는 3번이 1번의 새 검색 결과를 읽도록 바뀌면 필요해질 값이라 미리 함께 보냅니다. (지금 서버는 무시)
@@ -64,11 +65,13 @@ export async function fetchDocuments(searchId, bids) {
 }
 export async function getJob(id) {
   const d = (await rag.get(`/jobs/${id}`, { timeout: 15000 })).data
+  if (isFinished(d.status)) invalidateApiCache()
   return { ...d, bids: (d.bids || []).map((b) => ({ ...b, revision: rev(b) })) }
 }
 // ④ 요약 여러 건 (2번): results[{status:'ok'|'error', summary, missing, ... | code, detail}]
 export async function fetchSummaries(bids) {
-  const d = (await rag.post('/bids/summaries', { bids: refs(bids) })).data
+  const d = await cachedApi(`summaries:${JSON.stringify(refs(bids))}`, async () =>
+    (await rag.post('/bids/summaries', { bids: refs(bids) })).data)
   return (d.results || []).map((r, i) => ({ ...r, bid_no: r.bid_no ?? bids[i]?.bid_no, revision: rev({ ...bids[i], ...r }) }))
 }
 // ⑤⑧ 선택·승인 (4번 Java: POST /api/me/selections, /api/me/approvals, GET /api/me/pipeline)
@@ -99,13 +102,16 @@ export async function saveSummaries(results) {
 }
 // ⑦ 채점표(2번) · 예상 점수(3번) / ⑨ 체크리스트(3번). 3번 경로는 revision 이 필수입니다.
 export async function fetchScoringTable(b) {
-  return (await rag.get(`/bids/${b.bid_no}/scoring-table`, { params: { revision: b.revision } })).data
+  return cachedApi(`table:${b.bid_no}:${rev(b)}`, async () =>
+    (await rag.get(`/bids/${b.bid_no}/scoring-table`, { params: { revision: b.revision } })).data)
 }
 export async function fetchScore(b) {
-  return (await rag.get(`/bids/${b.bid_no}/score`, { params: { revision: b.revision } })).data
+  return cachedApi(`score:${b.bid_no}:${rev(b)}`, async () =>
+    (await rag.get(`/bids/${b.bid_no}/score`, { params: { revision: b.revision } })).data, 0)
 }
 export async function fetchChecklist(b) {
-  return (await rag.get(`/bids/${b.bid_no}/checklist`, { params: { revision: b.revision } })).data
+  return cachedApi(`checklist:${b.bid_no}:${rev(b)}`, async () =>
+    (await rag.get(`/bids/${b.bid_no}/checklist`, { params: { revision: b.revision } })).data, 0)
 }
 // Q&A (2번): 요청은 prompt, 응답은 response (sources 는 문자열 목록)
 export async function askQuestion(prompt, bid) {
@@ -129,4 +135,17 @@ export async function transcribe(blob) {
 }
 export async function synthesize(text) {
   return (await rag.post('/tts', { text }, { responseType: 'blob' })).data
+}
+
+export async function fetchJobFiles(jobId) {
+  return (await rag.get(`/jobs/${jobId}/files`)).data.files || []
+}
+export async function downloadJobFile(jobId, file) {
+  const { data } = await rag.get(`/jobs/${jobId}/files/${file.file_id}`, { responseType: 'blob' })
+  const url = URL.createObjectURL(data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = file.file_name
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

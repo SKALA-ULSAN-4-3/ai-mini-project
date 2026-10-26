@@ -27,6 +27,7 @@ class BackendStore:
         self.key = os.environ.get('SERVICE_API_KEY', '').strip()
         self.configured = bool(self.base and self.key)
         self.documents = None
+        self.download_urls_loaded = False
         self.blocked = False
         self.auth_failed = False
         self.errors, self.saved, self.reused = [], 0, 0
@@ -90,6 +91,28 @@ class BackendStore:
         if not row or not self.configured:
             return None
         url = row.get('download_url')
+        if not url and not self.download_urls_loaded and not self.blocked:
+            # 여러 파일을 복원해도 서명 URL 발급은 공고별 한 번만 요청한다.
+            self.download_urls_loaded = True
+            try:
+                response = self.client.get(self.base + '/api/bids/' + quote(self.bid_no, safe='') + '/documents',
+                    params={'revision': self.revision, 'download_urls': 'true'},
+                    headers={'X-Service-Key': self.key})
+                if response.status_code == 200:
+                    entries = response.json()
+                    if not isinstance(entries, list):
+                        raise ValueError('invalid document list')
+                    by_name = {entry['file_name']: entry for entry in entries}
+                    for document in self.list():
+                        document.update(by_name.get(document.get('file_name'), {}))
+                    row.update(by_name.get(row.get('file_name'), {}))
+                    url = row.get('download_url')
+                else:
+                    self._error('DB 다운로드 주소 발급 실패', response.status_code)
+            except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                self._error('DB 다운로드 주소 발급 연결 실패')
+        if self.blocked:
+            return None
         if not url:
             try:
                 response = self.client.get(self.base + '/api/bids/' + quote(self.bid_no, safe='') + '/documents',
@@ -181,6 +204,31 @@ class BackendStore:
             self._error('DB 파일 저장 연결 실패')
             return self._failed_file(kind, name)
 
+    def put_file(self, kind, key, name, path, source_url='', digest=None):
+        """저장된 해시를 먼저 비교해 재사용 파일의 본문을 다시 메모리에 읽지 않는다."""
+        if not self.configured:
+            return False
+        if self.blocked:
+            return self._failed_file(kind, name)
+        path = Path(path)
+        size = path.stat().st_size
+        if not size or size > MAX_BYTES:
+            self._error('DB 저장 파일 크기 확인 실패')
+            return self._failed_file(kind, name)
+        if digest is None:
+            hasher = hashlib.sha256()
+            with path.open('rb') as source:
+                for block in iter(lambda: source.read(1024 * 1024), b''):
+                    hasher.update(block)
+            digest = hasher.hexdigest()
+        row = self.find(kind, key)
+        if row and str(row.get('file_name', '')).startswith(f'dp1_{kind}_{key}_{digest}_'):
+            self.reused += 1
+            if kind != 'state':
+                self.files.append({'file_name': name, 'kind': kind, 'status': 'reused'})
+            return True
+        return self.put(kind, key, name, path.read_bytes(), source_url)
+
     def restore(self, kind, key, target, legacy_name='', source_url=''):
         row = self.find(kind, key)
         if row is None and kind == 'original' and legacy_name.lower().endswith('.pdf'):
@@ -247,6 +295,9 @@ class BackendStore:
         if not self.configured or not cache.is_file() or self.errors:
             return
         fingerprint = read_json(cache)['fingerprint']
+        if self.find('state', fingerprint[:24]):
+            self.reused += 1
+            return
         state = {'format': 1, 'fingerprint': fingerprint}
         for name in ('pages', 'chunks', 'documents', 'needs_attention'):
             path = folder / 'processed' / (name + '.jsonl')

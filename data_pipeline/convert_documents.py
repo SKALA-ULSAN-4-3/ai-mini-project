@@ -378,7 +378,8 @@ def convert_run(run_dir, config=None, converter=convert_one):
                             elapsed = round(time.perf_counter() - attempt_started, 3)
                             record["attempt_history"][-1]["elapsed_seconds"] = elapsed
                             record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted",
-                                          error="", elapsed_seconds=elapsed)
+                                          error="", elapsed_seconds=sum(
+                                              entry.get('elapsed_seconds', 0) for entry in record['attempt_history']))
                             break
                         except ConversionTimeout as exc:
                             record["attempt_history"].append({"attempt": attempt,
@@ -387,6 +388,8 @@ def convert_run(run_dir, config=None, converter=convert_one):
                                 "error": str(exc),
                                 "elapsed_seconds": round(time.perf_counter() - attempt_started, 3)})
                             record.update(status="timeout", error=str(exc))
+                            record['elapsed_seconds'] = round(sum(
+                                entry.get('elapsed_seconds', 0) for entry in record['attempt_history']), 3)
                             _save_conversion_records(manifest, records)
                             if attempt == max_attempts:
                                 raise
@@ -400,7 +403,8 @@ def convert_run(run_dir, config=None, converter=convert_one):
                                     "status": "failed", "error": str(exc)})
             record.update(status="failed", error=(str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__))
             if record.get("attempt"):
-                record["elapsed_seconds"] = round(time.perf_counter() - attempt_started, 3)
+                record["elapsed_seconds"] = round(sum(
+                    entry.get('elapsed_seconds', 0) for entry in record.get('attempt_history', [])), 3)
         # 중간에 멈춰도 완료된 파일은 다음 실행에서 재사용한다.
         _save_conversion_records(manifest, records)
     if not records:

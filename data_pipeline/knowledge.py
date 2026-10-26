@@ -119,9 +119,29 @@ class KnowledgeStore:
             temporary.replace(self.path / "current.json")
             return {**manifest, "added_chunks": len(pending)}
 
+    def batch(self):
+        return IndexBatch(self)
+
     def status(self):
         _, _, manifest = self.load()
         return manifest or {"chunks": 0, "documents": 0, "bids": 0, "topics": []}
+
+
+class IndexBatch:
+    """한 작업의 성공 문서를 모아 임베딩·FAISS 세대 저장을 한 번만 수행한다."""
+    def __init__(self, store):
+        self.store = store
+        self.records = {}
+
+    def upsert(self, records):
+        self.records.update((record['chunk_id'], record) for record in records)
+
+    def flush(self):
+        if not self.records:
+            return None
+        result = self.store.upsert(list(self.records.values()))
+        self.records.clear()
+        return result
 
 
 def ingest_processed(run_dir, store=None):

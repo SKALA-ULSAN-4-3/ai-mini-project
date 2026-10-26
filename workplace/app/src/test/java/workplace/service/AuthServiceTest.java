@@ -40,6 +40,19 @@ class AuthServiceTest {
     }
 
     @Test
+    void returnsSignupFieldsForAuthenticatedUser() {
+        RecordingUserRepository repository = new RecordingUserRepository();
+        AuthService service = new AuthService(repository);
+        service.signUp(signupRequest("1234567890", "부"));
+
+        User user = service.getAuthenticatedUser("1234567890");
+
+        assertEquals("울산광역시 남구", user.headOfficeAddress());
+        assertEquals("정보통신업", user.businessType());
+        assertEquals("소프트웨어 개발 및 공급업", user.businessItem());
+    }
+
+    @Test
     void rejectsInvalidUnitTaxpayerValue() {
         AuthService service = new AuthService(new RecordingUserRepository());
 

@@ -75,6 +75,22 @@ public final class AuthService {
         return user;
     }
 
+    /**
+     * JWT 검증을 마친 사용자의 최신 가입 정보를 조회합니다.
+     *
+     * <p>주소·업태·업종을 토큰에 중복 저장하지 않고 DB에서 조회하므로,
+     * 기존에 발급한 토큰도 그대로 사용할 수 있고 회원정보가 변경되면
+     * 다음 인증 확인 요청부터 최신 값이 반영됩니다.</p>
+     */
+    public User getAuthenticatedUser(String businessRegistrationNumber) {
+        return userRepository.findByBusinessRegistrationNumber(
+                        businessRegistrationNumber
+                )
+                .orElseThrow(() -> new UnauthorizedException(
+                        "인증된 사용자 정보를 찾을 수 없습니다."
+                ));
+    }
+
     private String normalizeBusinessRegistrationNumber(String rawNumber) {
         String number = rawNumber == null
                 ? ""

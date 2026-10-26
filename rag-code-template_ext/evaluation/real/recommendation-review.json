@@ -223,7 +223,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J1",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01751013",
@@ -249,7 +256,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J2",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01751013",
@@ -275,7 +289,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J3",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01661818",
@@ -553,7 +574,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J4",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01753451",
@@ -579,7 +607,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J5",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01753451",
@@ -605,7 +640,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J6",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01662752",
@@ -1423,7 +1465,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J10",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01753530",
@@ -1458,7 +1507,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J11",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01753530",
@@ -1493,7 +1549,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J12",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01754897",
@@ -1519,7 +1582,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": false,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "hold",
+        "case_id": "J7",
+        "note": "검토자가 판단을 보류함. 원문 추가 확인 필요. AI 판정과 정답 목록은 변경하지 않음."
+      }
     },
     {
       "bid_no": "R26BK01754897",
@@ -1545,7 +1615,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J8",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01754897",
@@ -1571,7 +1648,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J9",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01757019",
@@ -1597,7 +1681,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J13",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01757019",
@@ -1623,7 +1714,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J14",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01757019",
@@ -1649,7 +1747,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J15",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01760198",
@@ -1677,7 +1782,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J16",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01760198",
@@ -1705,7 +1817,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J17",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     },
     {
       "bid_no": "R26BK01760198",
@@ -1731,7 +1850,14 @@
           "collected_at": "2026-10-23T16:36:01.914892+09:00"
         }
       ],
-      "human_verified": false
+      "human_verified": true,
+      "human_review": {
+        "reviewer": "정하윤",
+        "reviewed_at": "2026-10-26",
+        "decision": "agree",
+        "case_id": "J18",
+        "note": "AI 판정과 사유에 동의. 별도 사유 기재 없음."
+      }
     }
   ],
   "input_change": "정답 라벨만 갱신. 추천 코드, profiles, bids.csv, hits, 저장 공고명 순위, 재생 시각은 변경하지 않음.",

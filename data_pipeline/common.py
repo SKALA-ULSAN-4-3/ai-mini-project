@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from datetime import datetime
 import fcntl
 import json
+import time
 from pathlib import Path
 
 from .collect_bids import ROOT, KST, BID_FIELDS, FILE_FIELDS, write_csv
@@ -34,11 +35,22 @@ def read_jsonl(path, skip_blank=False):
 
 
 @contextmanager
-def directory_lock(directory, filename):
+def directory_lock(directory, filename, timeout=None):
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=True)
     with (directory / filename).open("a") as handle:
-        fcntl.flock(handle, fcntl.LOCK_EX)
+        if timeout is None:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+        else:
+            deadline = time.monotonic() + timeout
+            while True:
+                try:
+                    fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError("다른 문서 준비 작업이 사용 중입니다. 잠시 후 기존 작업 상태를 확인하세요.") from None
+                    time.sleep(0.1)
         try:
             yield directory
         finally:

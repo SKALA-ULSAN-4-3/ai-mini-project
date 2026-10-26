@@ -166,7 +166,7 @@ class CorpusIntegrationTests(unittest.TestCase):
 
 
 class RenderVerificationTests(unittest.TestCase):
-    def run_verification(self, *, credentials=True, cors=True, profile=True, offline=False):
+    def run_verification(self, *, credentials=True, cors=True, profile=True, offline=False, deadline_start=None):
         import contextlib
         import os
         from argparse import Namespace
@@ -195,7 +195,10 @@ class RenderVerificationTests(unittest.TestCase):
             if path == '/api/profile':
                 return httpx.Response(200, json={'industry': 'software'} if profile else {})
             if path == '/search-bids':
-                return httpx.Response(200, json={'search_id': 'search-example', 'items': [{'bid_no': 'sample'}]})
+                data = {'search_id': 'search-example', 'items': [{'bid_no': 'sample'}]}
+                if deadline_start:
+                    data.update(deadline_from=deadline_start, deadline_to='2026-11-30')
+                return httpx.Response(200, json=data)
             if path == '/bids':
                 return httpx.Response(200, json={'bids': [{'bid_no': 'sample'}], 'excluded': [], 'candidate_count': 1})
             raise AssertionError(f'Unexpected path: {path}')
@@ -235,6 +238,15 @@ class RenderVerificationTests(unittest.TestCase):
         self.assertTrue(result)
         self.assertFalse(report['passed'])
         self.assertTrue(report['data_pipeline_passed'])
+
+    def test_server_deadline_range_is_used_instead_of_publication_start(self):
+        result, _, requests = self.run_verification(deadline_start='2026-10-26')
+        self.assertFalse(result)
+        search = next(r for r in requests if r.url.path == '/search-bids' and 'authorization' in r.headers)
+        self.assertEqual(json.loads(search.content)['from'], '2026-10-01')
+        bids = next(r for r in requests if r.url.path == '/bids' and 'authorization' in r.headers)
+        self.assertEqual(bids.url.params['from'], '2026-10-26')
+        self.assertEqual(bids.url.params['to'], '2026-11-30')
 
     def test_missing_credentials_or_profile_never_passes(self):
         for options in ({'credentials': False}, {'profile': False}):

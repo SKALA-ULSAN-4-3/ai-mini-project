@@ -8,9 +8,11 @@ import os
 import re
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+from zipfile import ZipFile, is_zipfile
 from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 
@@ -38,6 +40,17 @@ def find_soffice(explicit=None):
     raise RuntimeError("LibreOffice가 없습니다. --soffice로 실행파일 경로를 지정하세요.")
 
 
+ACTIVE_PROCESS = None
+
+
+def cancel_active_conversion():
+    if ACTIVE_PROCESS is not None:
+        try:
+            os.killpg(ACTIVE_PROCESS.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
 def execute(args, timeout=45):
     args = list(args)
     java_home = os.environ.get("JAVA_HOME")
@@ -47,11 +60,23 @@ def execute(args, timeout=45):
             java_home = detected.stdout.strip()
     if java_home:
         args.insert(1, "-env:UNO_JAVA_JFW_JREHOME=" + Path(java_home).resolve().as_uri())
-    result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
-    if result.returncode:
-        detail = (result.stderr or result.stdout).strip()[-1500:]
-        raise RuntimeError(f"변환 도구 실행 실패 (종료 코드 {result.returncode}): {detail}")
-    return result.stdout
+    global ACTIVE_PROCESS
+    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, start_new_session=True)
+    ACTIVE_PROCESS = process
+    try:
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            cancel_active_conversion()
+            process.communicate()
+            raise RuntimeError(f"변환 도구가 {timeout}초 내에 응답하지 않아 자식 프로세스까지 종료했습니다.") from None
+        if process.returncode:
+            detail = (stderr or stdout).strip()[-1500:]
+            raise RuntimeError(f"변환 도구 실행 실패 (종료 코드 {process.returncode}): {detail}")
+        return stdout
+    finally:
+        ACTIVE_PROCESS = None
 
 
 def _install_macos_extension(soffice, extension):
@@ -178,10 +203,29 @@ def setup(soffice):
     return config
 
 
-def convert_one(source, target, soffice, profile=PROFILE):
+def convert_one(source, target, soffice, profile=PROFILE, _archive_depth=0):
     """격리된 임시 출력에서 완성된 PDF만 목적 경로에 반영한다."""
     from pypdf import PdfReader
     target.parent.mkdir(parents=True, exist_ok=True)
+    # 일부 공고는 파일명이 .hwp지만 실제 내용은 한글 원문 여러 개를 담은 ZIP이다.
+    # 정상 HWPX ZIP과 구분하고, 이름이 일치하는 원문 하나만 임시 경로에서 변환한다.
+    if is_zipfile(source):
+        with ZipFile(source) as archive:
+            names = archive.namelist()
+            if "Contents/section0.xml" not in names:
+                matches = [entry for entry in archive.infolist()
+                           if not entry.is_dir() and source.name.endswith(Path(entry.filename).name)
+                           and Path(entry.filename).suffix.lower() in (".hwp", ".hwpx")]
+                if _archive_depth or len(matches) != 1:
+                    raise RuntimeError("첨부는 ZIP 형식이며 내부에서 이름이 일치하는 한글 원문 하나를 확인하지 못했습니다. 원본 첨부를 확인하세요.")
+                entry = matches[0]
+                if entry.file_size > 50 * 1024 * 1024 or entry.flag_bits & 1:
+                    raise RuntimeError("ZIP 내부 한글 원문이 크기 제한을 넘거나 암호화되어 있습니다.")
+                with tempfile.TemporaryDirectory(prefix="hwp-source-", dir=target.parent) as temp:
+                    # archive.extract를 쓰지 않아 경로 이동·링크를 통한 파일 쓰기를 막는다.
+                    extracted = Path(temp) / Path(entry.filename).name
+                    extracted.write_bytes(archive.read(entry))
+                    return convert_one(extracted, target, soffice, profile, _archive_depth + 1)
     with tempfile.TemporaryDirectory(prefix="hwp-", dir=target.parent) as temp:
         execute([soffice, "-env:UserInstallation=" + Path(profile).resolve().as_uri(),
                  "--headless", "--infilter=Hwp2002_File", "--convert-to", "pdf:writer_pdf_Export",
@@ -252,9 +296,21 @@ def convert_run(run_dir, config=None, converter=convert_one):
                     and target.is_file() and cached.get("pdf_sha256") == sha256(target)):
                 record.update(pdf_path=str(target), pdf_sha256=cached["pdf_sha256"], status="existing")
             else:
-                print(f"PDF 변환: {path.name}", flush=True)
-                converter(path, target, config["soffice"])
-                record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted")
+                # 서로 다른 첨부 URL이 같은 원문을 제공해도 변환은 한 번만 수행한다.
+                equivalent = next((r for r in [*old.values(), *records[:-1]]
+                                   if r.get("original_sha256") == digest
+                                   and r.get("status") in ("converted", "existing")
+                                   and all(r.get(k) == config.get(k) for k in config)
+                                   and r.get("pdf_path") and Path(r["pdf_path"]).is_file()
+                                   and r.get("pdf_sha256") == sha256(Path(r["pdf_path"]))), None)
+                if equivalent:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(equivalent["pdf_path"], target)
+                    record.update(pdf_path=str(target), pdf_sha256=equivalent["pdf_sha256"], status="existing")
+                else:
+                    print(f"PDF 변환: {path.name}", flush=True)
+                    converter(path, target, config["soffice"])
+                    record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted")
         except Exception as exc:
             record.update(status="failed", error=(str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__))
         # 중간에 멈춰도 완료된 파일은 다음 실행에서 재사용한다.

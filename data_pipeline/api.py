@@ -24,8 +24,8 @@ router = APIRouter()
 
 
 class SearchBidsRequest(BaseModel):
-    start: date = Field(alias="from")
-    end: date = Field(alias="to")
+    start: date = Field(alias="from", description="공고 게시 조회 시작일. 오늘까지 게시된 공고를 조회합니다.")
+    end: date = Field(alias="to", description="입찰 마감 종료일. 오늘부터 이 날짜까지 마감하는 공고만 선택합니다.")
     queries: list[str] = Field(min_length=1)
     limit: int = Field(default=100, ge=1, le=100)
 

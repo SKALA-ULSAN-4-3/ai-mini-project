@@ -16,6 +16,8 @@ const checked = ref(flow.selected.map(keyOf))
 const jobId = ref('')
 const opened = reactive({}) // 펼친 카드만 원문 PDF 목록을 불러옵니다.
 const docsJob = ref(null)
+const starting = ref(false)
+const startMessage = ref('')
 const saveNotice = ref('') // 요약을 내 계정(DB)에 저장한 결과 안내
 const changedRevisions = ref([]) // 정정공고로 차수가 바뀐 공고번호
 
@@ -74,24 +76,26 @@ function onDocsDone(job) {
 }
 
 // ⑤ 선택한 공고의 제안요청서 준비
-const preparing = ref(false) // 요청을 보내는 동안 true: 연타해도 같은 요청이 한 번만 가게 막음
 async function prepare() {
-  if (preparing.value) return
-  preparing.value = true // await 앞에서 가장 먼저 잠급니다.
+  if (starting.value) return
+  starting.value = true // await 앞에서 가장 먼저 잠급니다. (연타 방지)
+  startMessage.value = '선택한 공고를 확인하는 중…'
   error.value = ''; docsJob.value = null
   const picked = flow.summaries.filter((r) => checked.value.includes(keyOf(r)))
-  if (!picked.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; preparing.value = false; return }
+  if (!picked.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; starting.value = false; startMessage.value = ''; return }
   try {
     flow.selected = picked.map((r) => ({
       bid_no: r.bid_no, revision: r.revision, title: meta(r).title || r.summary?.title?.value || r.bid_no,
     }))
     flow.approved = []
     await saveSelections(picked) // 내 계정(DB)에 선택 저장 (공고별 1건씩)
+    startMessage.value = '제안요청서 준비 작업을 요청하는 중…'
     jobId.value = await fetchDocuments(flow.searchId, picked)
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
-    preparing.value = false
+    starting.value = false
+    startMessage.value = ''
   }
 }
 </script>
@@ -157,8 +161,8 @@ async function prepare() {
 
     <div v-if="flow.summaries.length" class="action-bar">
       <span><strong>{{ checked.length }}건</strong> 선택됨<span class="meta"> · 선택한 공고만 채점표를 만들어요</span></span>
-      <button class="primary" type="button" :disabled="preparing || (!!jobId && !docsJob)" @click="prepare">
-        {{ preparing ? '요청 중…' : `선택한 ${checked.length}건 제안요청서 준비` }}
+      <button class="primary" type="button" :disabled="starting || (!!jobId && !docsJob)" @click="prepare">
+        {{ starting ? startMessage : `선택한 ${checked.length}건 제안요청서 준비` }}
       </button>
     </div>
     <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="제안요청서를 받는 중" @done="onDocsDone" />

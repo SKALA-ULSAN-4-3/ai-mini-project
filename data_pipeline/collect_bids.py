@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 from project_env import load_env
 
 API_URL = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch"
+MAX_DISCOVERY_REQUESTS = 100
 KST = ZoneInfo("Asia/Seoul")
 MAX_FILE_BYTES = 50 * 1024 * 1024
 BID_FIELDS = ["bid_no", "bid_order", "title", "agency", "published_at", "deadline",
@@ -62,11 +63,13 @@ def parse_response(raw):
     return items, int(body.get("totalCount") or 0)
 
 
-def fetch_page(key, start, end, keyword, page):
+def fetch_page(key, start, end, keyword, page, *, exclude_closed=False):
     params = {"serviceKey": unquote(key), "type": "json", "inqryDiv": "1",
               "inqryBgnDt": start.strftime("%Y%m%d") + "0000",
               "inqryEndDt": end.strftime("%Y%m%d") + "2359",
               "bidNtceNm": keyword, "pageNo": page, "numOfRows": 100}
+    if exclude_closed:
+        params["bidClseExcpYn"] = "Y"
     req = Request(API_URL + "?" + urlencode(params), headers={"User-Agent": "BidCollector/1.0"})
     try:
         with build_opener().open(req, timeout=30) as response:
@@ -79,7 +82,10 @@ def fetch_page(key, start, end, keyword, page):
 
 def attachments(item):
     seen = set()
-    for i in range(1, 11):
+    # 고정 10개로 자르지 않는다. API가 추가 순번을 반환하면 변환본도 함께 읽는다.
+    indices = sorted({int(match.group(1)) for field in item
+                      if (match := re.fullmatch(r"ntceSpecDocUrl(\d+)", field))})
+    for i in indices:
         url = str(item.get(f"ntceSpecDocUrl{i}") or "").strip()
         if url and url not in seen:
             seen.add(url)
@@ -88,7 +94,7 @@ def attachments(item):
     url = str(item.get("stdNtceDocUrl") or "").strip()
     if url and url not in seen:
         seen.add(url)
-        yield "standard_notice", url
+        yield str(item.get("stdNtceFileNm") or "standard_notice"), url
     # 제안요청정보(e발주)는 일반 파일첨부의 ntceSpecDocUrl1~10과 별도 제공된다.
     for attachment in item.get("eorder_attachments", []):
         if (attachment.get("bid_no"), attachment.get("bid_order")) != (
@@ -98,6 +104,28 @@ def attachments(item):
         if url and url not in seen:
             seen.add(url)
             yield attachment["file_name"], url
+
+
+def resolve_standard_notice(item):
+    """별도 표준공고서의 실제 이름을 확인해 PDF 우선 선택에 사용한다.
+
+    같은 URL의 원본 HWP를 PDF로 추정하지 않는다. 헤더 조회 실패 시 기존 목록을 유지한다.
+    """
+    result = dict(item)
+    url = str(item.get("stdNtceDocUrl") or "").strip()
+    if not url or item.get("stdNtceFileNm"):
+        return result
+    try:
+        name = attachment_header_name(url)
+    except CollectionError:
+        return result
+    result["stdNtceFileNm"] = name
+    # 일반 첨부에도 같은 URL이 있되 이름이 비었으면 확인된 이름으로 보완한다.
+    for field, value in item.items():
+        match = re.fullmatch(r"ntceSpecDocUrl(\d+)", field)
+        if match and str(value or "").strip() == url:
+            result[f"ntceSpecFileNm{match.group(1)}"] = name
+    return result
 
 
 def lookup_eorder_attachments(key, bid_no, bid_order):
@@ -222,9 +250,8 @@ def write_csv(path, fields, rows):
         writer.writerows(rows)
 
 
-def deadline_in_period(item, start, end):
-    """API 입찰마감일의 서울 날짜를 비교한다. 미확인 날짜는 게시일로 대체하지 않는다."""
-    raw = str(item.get("bidClseDt") or "").strip()
+def _date_in_period(value, start, end):
+    raw = str(value or "").strip()
     try:
         deadline = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         if deadline.tzinfo is not None:
@@ -232,6 +259,57 @@ def deadline_in_period(item, start, end):
         return start <= deadline.date() <= end
     except ValueError:
         return False
+
+
+def deadline_in_period(item, start, end):
+    """API 입찰마감일의 서울 날짜를 비교한다. 미확인 날짜는 게시일로 대체하지 않는다."""
+    return _date_in_period(item.get("bidClseDt"), start, end)
+
+
+def search_deadline_candidates(key, start_publication, end_publication, deadline_start, deadline_end, queries, limit,
+                               *, candidate_transform=None):
+    """마감일 후보를 최근 게시 이력부터 탐색한다. 조회 한도와 실제 탐색 범위를 함께 반환한다."""
+    found, seen = {}, set()
+    requests = 0
+    end = end_publication
+    coverage = {"publication_from": None, "publication_to": str(end_publication),
+                "requested_publication_from": str(start_publication), "requests": 0,
+                "complete": False, "stop_reason": None}
+
+    def finish(reason, truncated=False):
+        coverage.update(requests=requests, stop_reason=reason, complete=reason == "window_exhausted")
+        return list(found.values()), truncated, coverage
+
+    while end >= start_publication:
+        # 월을 넘어가도 API의 1개월 이내 조회 조건을 지키도록 28일씩 나눈다.
+        start = max(start_publication, end - timedelta(days=27))
+        for query in queries:
+            for page in range(1, 21):
+                if requests >= MAX_DISCOVERY_REQUESTS:
+                    return finish("request_limit", True)
+                if requests:
+                    clock.sleep(0.15)
+                items, total = fetch_page(key, start, end, query, page, exclude_closed=True)
+                requests += 1
+                coverage["publication_from"] = str(start)
+                for raw in items:
+                    if not _date_in_period(raw.get("bidNtceDt"), start_publication, end_publication):
+                        continue
+                    identity = (str(raw.get("bidNtceNo") or ""), str(raw.get("bidNtceOrd") or "000"))
+                    if not identity[0] or identity in seen:
+                        continue
+                    seen.add(identity)
+                    item = candidate_transform(raw) if candidate_transform else raw
+                    if item is not None and deadline_in_period(item, deadline_start, deadline_end):
+                        found[identity] = item
+                        if len(found) >= limit:
+                            return finish("candidate_limit")
+                if not items or page * 100 >= total:
+                    break
+            else:
+                return finish("page_limit", True)
+        end = start - timedelta(days=1)
+    return finish("window_exhausted")
 
 
 def search_candidates(key, start_date, end_date, queries, limit, *, deadline_period=None, candidate_transform=None):

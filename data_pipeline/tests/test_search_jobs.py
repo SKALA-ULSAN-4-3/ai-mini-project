@@ -127,6 +127,91 @@ class DocumentReadinessTests(unittest.TestCase):
         self.assertFalse(result['rfp_ready'])
         self.assertEqual(result['status'], 'partial_failed')
 
+    def test_mislabeled_hwp_archive_converts_only_matching_original(self):
+        from zipfile import ZipFile
+        from data_pipeline import convert_documents as conversion
+        source = self.root / '03_과업지시서.hwp'
+        target = self.root / 'verified.pdf'
+        with ZipFile(source, 'w') as archive:
+            archive.writestr('../과업지시서.hwp', b'expected-original')
+            archive.writestr('긴급발주사유서.hwp', b'not-selected')
+        original = source.read_bytes()
+        def execute(args):
+            selected = Path(args[-1])
+            self.assertEqual(selected.name, '과업지시서.hwp')
+            self.assertEqual(selected.read_bytes(), b'expected-original')
+            output = Path(args[args.index('--outdir') + 1]) / (selected.stem + '.pdf')
+            output.write_bytes(self.pdf)
+            return ''
+        with patch.object(conversion, 'execute', side_effect=execute):
+            conversion.convert_one(source, target, 'mock-soffice')
+        self.assertEqual(source.read_bytes(), original)
+        self.assertTrue(target.is_file())
+        self.assertFalse((self.root / '과업지시서.hwp').exists())
+
+    def test_hwp_archive_does_not_choose_unrelated_member(self):
+        from zipfile import ZipFile
+        from data_pipeline import convert_documents as conversion
+        source = self.root / '과업지시서.hwp'
+        with ZipFile(source, 'w') as archive:
+            archive.writestr('다른서류.hwp', b'not-selected')
+        with patch.object(conversion, 'execute') as execute:
+            with self.assertRaisesRegex(RuntimeError, '이름이 일치'):
+                conversion.convert_one(source, self.root / 'bad.pdf', 'mock-soffice')
+            execute.assert_not_called()
+
+    def test_identical_attachments_reuse_converted_pdf(self):
+        from data_pipeline import convert_documents as conversion
+        from data_pipeline.common import write_csv
+        for name in ('one.hwp', 'two.hwp'):
+            (self.root / name).write_bytes(b'identical-original')
+        rows = [{'bid_no': 'B1', 'bid_order': '000', 'selected': True,
+                 'status': 'downloaded', 'local_path': str(self.root / name)}
+                for name in ('one.hwp', 'two.hwp')]
+        write_csv(self.root / 'attachments.csv', list(rows[0]), rows)
+        def convert(source, target, soffice):
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(self.pdf)
+        with patch.object(conversion, 'convert_one', side_effect=convert) as tool:
+            records = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=tool)
+        self.assertEqual(tool.call_count, 1)
+        self.assertEqual([r['status'] for r in records], ['converted', 'existing'])
+        self.assertEqual(records[0]['pdf_sha256'], records[1]['pdf_sha256'])
+        self.assertTrue(all(Path(r['pdf_path']).is_file() for r in records))
+
+    def test_soffice_timeout_kills_descendants_before_waiting_for_pipes(self):
+        import subprocess
+        from data_pipeline import convert_documents as conversion
+        with patch.object(conversion.subprocess, 'Popen') as popen, \
+                patch.object(conversion.os, 'killpg') as kill, \
+                patch.dict(os.environ, {'JAVA_HOME': '/tmp/test-java'}):
+            process = popen.return_value
+            process.pid = 54321
+            process.poll.return_value = None
+            process.communicate.side_effect = [subprocess.TimeoutExpired('soffice', 1), ('', '')]
+            with self.assertRaisesRegex(RuntimeError, '자식 프로세스'):
+                conversion.execute(['mock-soffice'], timeout=1)
+            kill.assert_called_once_with(54321, conversion.signal.SIGKILL)
+            self.assertIsNone(conversion.ACTIVE_PROCESS)
+
+    def test_document_worker_timeout_kills_process_group(self):
+        import subprocess
+        with patch.object(search_jobs.subprocess, 'Popen') as popen, patch.object(search_jobs.os, 'killpg') as kill:
+            process = popen.return_value
+            process.pid = 12345
+            process.communicate.side_effect = [subprocess.TimeoutExpired('worker', 1), ('', '')]
+            with self.assertRaisesRegex(RuntimeError, '1초'):
+                search_jobs._prepare_with_timeout(self.root, True, timeout=1)
+            kill.assert_called_once_with(12345, search_jobs.signal.SIGTERM)
+            self.assertTrue(popen.call_args.kwargs['start_new_session'])
+
+    def test_document_lock_wait_is_bounded(self):
+        from data_pipeline.common import directory_lock
+        with patch('data_pipeline.common.fcntl.flock', side_effect=BlockingIOError):
+            with self.assertRaisesRegex(RuntimeError, '다른 문서 준비 작업'):
+                with directory_lock(self.root, '.test.lock', timeout=0):
+                    self.fail('잠긴 작업을 실행하면 안 됩니다.')
+
     def test_eorder_hwpx_uses_conversion_before_becoming_ready(self):
         import hashlib
         from data_pipeline.common import write_jsonl
@@ -134,7 +219,8 @@ class DocumentReadinessTests(unittest.TestCase):
         self.item['eorder_attachments'] = [
             {'bid_no': 'B1', 'bid_order': '000', 'file_name': '제안요청서.hwpx',
              'url': 'https://www.g2b.go.kr/rfp', 'document_type': '제안요청서'}]
-        def convert(folder):
+        def convert(folder, convert_hwp):
+            self.assertTrue(convert_hwp)
             rows = read_csv(folder / 'attachments.csv')
             rfp = next(r for r in rows if r['file_name'] == '제안요청서.hwpx')
             self.assertEqual(rfp['selected'], 'True')
@@ -147,7 +233,9 @@ class DocumentReadinessTests(unittest.TestCase):
                 'original_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
                 'pdf_path': str(target), 'pdf_sha256': hashlib.sha256(self.pdf).hexdigest(),
                 'status': 'converted'}])
-        with patch.object(search_jobs.converter, 'convert_run', side_effect=convert) as tool:
+            from data_pipeline.prepare_documents import prepare
+            prepare(folder)
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=convert) as tool:
             result = self.process()
         tool.assert_called_once()
         self.assertTrue(result['rfp_ready'])
@@ -160,6 +248,40 @@ class DocumentReadinessTests(unittest.TestCase):
         self.assertTrue(result['download_complete'])
         self.assertFalse(result['rfp_ready'])
         self.assertEqual(result['rfp_status'], 'not_requested')
+
+    def test_notice_uses_standard_pdf_instead_of_converting_hwp(self):
+        self.item['ntceSpecFileNm1'] = '★입찰공고(최종).hwp'
+        self.item['ntceSpecFileNm2'] = '붙임 3-2. 제안요청서_상용SW_26년도_29년도_1001.hwp'
+        self.item['stdNtceDocUrl'] = 'https://www.g2b.go.kr/converted-notice'
+        with patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
+                patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as converter:
+            result = self.process(full=False)
+        self.assertFalse(converter.call_args.args[1])
+        self.assertEqual(result['status'], 'completed')
+        self.assertGreater(result['indexed_chunks'], 0)
+        self.assertEqual(result['rfp_status'], 'not_requested')
+        rfp = result['rfp_files'][0]
+        self.assertIn('제안요청서_상용SW', rfp['file_name'])
+        self.assertEqual(rfp['status'], 'deferred')
+        _, records, _ = self.store.load()
+        self.assertTrue(all(r['source_url'] == self.item['stdNtceDocUrl'] for r in records))
+
+    def test_notice_job_refreshes_same_revision_before_selecting_pdf(self):
+        search_id = 'b' * 32
+        folder = self.root / search_id
+        folder.mkdir()
+        write_json(folder / 'search.json', {'items': [self.item]})
+        current = {**self.item, 'stdNtceDocUrl': 'https://www.g2b.go.kr/converted-notice'}
+        job = search_jobs.create_job(search_id, [{'bid_no': 'B1', 'bid_order': '000'}], 'notices')
+        with patch.object(collector, 'lookup_notice', return_value=current) as lookup, \
+                patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
+                patch.object(collector, 'download_file', side_effect=self.download), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
+            search_jobs.run_job(job['job_id'], 'test-key')
+        lookup.assert_called_once_with('test-key', 'B1')
+        bid = search_jobs.get_job(job['job_id'])['bids'][0]
+        self.assertEqual(bid['status'], 'completed')
+        self.assertFalse(bid['revision_changed'])
 
     def test_downloaded_but_unreadable_rfp_is_not_ready(self):
         def download(url, target):
@@ -188,7 +310,7 @@ class DocumentReadinessTests(unittest.TestCase):
 
     def test_conversion_failure_still_reports_download_complete(self):
         self.item['ntceSpecFileNm2'] = '제안요청서.hwpx'
-        with patch.object(search_jobs.converter, 'convert_run', side_effect=RuntimeError('변환 실패')):
+        with patch.object(search_jobs, '_prepare_with_timeout', side_effect=RuntimeError('변환 실패')):
             result = self.process()
         self.assertTrue(result['download_complete'])
         self.assertFalse(result['rfp_ready'])
@@ -241,19 +363,20 @@ class DeadlineSearchTests(unittest.TestCase):
                                                    deadline_period=(date(2026, 11, 1), date(2026, 11, 30)))
         self.assertEqual([i['bidNtceNo'] for i in found], ['MATCH'])
 
-    def test_live_search_finds_earlier_publication_and_does_not_query_future_postings(self):
-        item = {'bidNtceNo': 'EARLIER', 'bidNtceOrd': '000', 'bidNtceDt': '2026-10-15 09:00',
+    def test_live_search_uses_deadline_period_and_does_not_query_future_postings(self):
+        item = {'bidNtceNo': 'EARLIER', 'bidNtceOrd': '000', 'bidNtceDt': '2026-10-20 09:00',
                 'bidClseDt': '2026-11-15 18:00', 'bidNtceNm': '웹 개발',
                 'ntceSpecDocUrl1': 'https://www.g2b.go.kr/notice', 'ntceSpecFileNm1': '공고문.pdf'}
         windows = []
-        def fetch(key, start, end, query, page):
+        def fetch(key, start, end, query, page, **kwargs):
             windows.append((start, end))
-            rows = [item] if start <= date(2026, 10, 15) <= end else []
+            self.assertTrue(kwargs['exclude_closed'])
+            rows = [item] if start <= date(2026, 10, 20) <= end else []
             return rows, len(rows)
         with tempfile.TemporaryDirectory() as tmp, \
                 patch.object(search_jobs, 'root_dir', return_value=Path(tmp)), \
                 patch.object(search_jobs, 'datetime') as clock, \
-                patch.dict(os.environ, {'BID_SEARCH_LOOKBACK_DAYS': '14'}), \
+                patch.dict(os.environ, {'BID_SEARCH_LOOKBACK_DAYS': 'unused-value'}), \
                 patch.object(collector, 'fetch_page', side_effect=fetch), \
                 patch.object(search_jobs.bid_progress, 'lookup_progress', return_value={
                     'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
@@ -265,16 +388,113 @@ class DeadlineSearchTests(unittest.TestCase):
                     'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = datetime(2026, 10, 26, 10)
-            result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
+            result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertEqual([r['bid_no'] for r in result['items']], ['EARLIER'])
             self.assertEqual(result['date_basis'], 'deadline')
             self.assertTrue(result['items'][0]['notice_only'])
             self.assertTrue(all(end <= date(2026, 10, 26) for start, end in windows))
-            self.assertEqual(min(start for start, end in windows), date(2026, 10, 12))
+            self.assertEqual(windows, [(date(2026, 10, 20), date(2026, 10, 26))])
+            self.assertEqual(result['deadline_from'], '2026-10-26')
+            self.assertEqual(result['deadline_to'], '2026-11-30')
+            self.assertEqual(result['search_coverage']['stop_reason'], 'candidate_limit')
             # 같은 조건은 새 마감일 기준 스냅샷만 캐시로 재사용한다.
-            cached = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
+            cached = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertTrue(cached['cached'])
             self.assertEqual(cached['search_id'], result['search_id'])
+
+    def test_publication_window_and_deadline_period_have_independent_inclusive_bounds(self):
+        def item(no, publication, deadline):
+            return {'bidNtceNo': no, 'bidNtceOrd': '000', 'bidNtceDt': publication, 'bidClseDt': deadline}
+        items = [item('FIRST', '2026-10-17 00:00', '2026-11-01 00:00'),
+                 item('LAST', '2026-10-26 23:59:59', '2026-11-30 23:59:59'),
+                 item('OLD_PUBLICATION', '2026-10-16 23:59:59', '2026-11-15 18:00'),
+                 item('FUTURE_PUBLICATION', '2026-10-27 00:00', '2026-11-15 18:00'),
+                 item('EARLY_DEADLINE', '2026-10-20 09:00', '2026-10-31 23:59:59'),
+                 item('LATE_DEADLINE', '2026-10-20 09:00', '2026-12-01 00:00'),
+                 item('UNKNOWN_DEADLINE', '2026-10-20 09:00', '')]
+        with patch.object(collector, 'fetch_page', return_value=(items, len(items))) as fetch:
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 10, 17), date(2026, 10, 26), date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20)
+        self.assertEqual([r['bidNtceNo'] for r in rows], ['FIRST', 'LAST'])
+        self.assertFalse(partial)
+        self.assertTrue(coverage['complete'])
+        self.assertEqual(fetch.call_count, 1)
+
+    def test_publication_start_is_direct_and_deadline_start_is_today(self):
+        windows = []
+        def fetch(key, start, end, query, page, **kwargs):
+            windows.append((start, end))
+            return [], 0
+        with tempfile.TemporaryDirectory() as temp, \
+                patch.object(search_jobs, 'root_dir', return_value=Path(temp)), \
+                patch.object(search_jobs, 'datetime') as clock, \
+                patch.object(collector, 'fetch_page', side_effect=fetch), \
+                patch.object(collector.clock, 'sleep'):
+            clock.now.return_value = datetime(2026, 10, 26, 10)
+            result = search_jobs.search_bids(date(2026, 10, 1), date(2026, 11, 30), ['웹'], 20, 'test')
+        self.assertEqual(min(start for start, end in windows), date(2026, 10, 1))
+        self.assertEqual(max(end for start, end in windows), date(2026, 10, 26))
+        self.assertEqual(len(windows), 1)
+        self.assertTrue(result['search_coverage']['complete'])
+        self.assertEqual(result['publication_from'], '2026-10-01')
+        self.assertEqual(result['deadline_from'], '2026-10-26')
+
+    def test_invalid_ui_dates_are_rejected_before_any_api_request(self):
+        with patch.object(search_jobs, 'datetime') as clock, patch.object(collector, 'fetch_page') as fetch:
+            clock.now.return_value = datetime(2026, 10, 26, 10)
+            for start, end in ((date(2026, 10, 27), date(2026, 11, 30)),
+                               (date(2026, 10, 1), date(2026, 10, 25))):
+                with self.subTest(start=start, end=end), self.assertRaises(ValueError):
+                    search_jobs.search_bids(start, end, ['웹'], 20, 'test')
+        fetch.assert_not_called()
+
+    def test_request_limit_reports_only_actually_queried_coverage(self):
+        with patch.object(collector, 'fetch_page', return_value=([], 0)) as fetch, \
+                patch.object(collector, 'MAX_DISCOVERY_REQUESTS', 2), patch.object(collector.clock, 'sleep'):
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 1, 1), date(2026, 10, 26), date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20)
+        self.assertFalse(rows)
+        self.assertTrue(partial)
+        self.assertEqual(coverage['stop_reason'], 'request_limit')
+        self.assertEqual(coverage['requests'], 2)
+        self.assertEqual(coverage['publication_from'], str(fetch.call_args.args[1]))
+
+    def test_window_exhaustion_is_distinct_from_partial_search(self):
+        with patch.object(collector, 'fetch_page', return_value=([], 0)):
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 10, 17), date(2026, 10, 26), date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20)
+        self.assertFalse(rows)
+        self.assertFalse(partial)
+        self.assertTrue(coverage['complete'])
+        self.assertEqual(coverage['stop_reason'], 'window_exhausted')
+        self.assertEqual(coverage['requests'], 1)
+
+    def test_future_publication_window_never_queries_or_expands_into_earlier_dates(self):
+        with patch.object(collector, 'fetch_page') as fetch:
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 11, 16), date(2026, 10, 26), date(2026, 12, 1), date(2026, 12, 31), ['웹'], 20)
+        fetch.assert_not_called()
+        self.assertFalse(rows)
+        self.assertFalse(partial)
+        self.assertTrue(coverage['complete'])
+        self.assertEqual(coverage['requests'], 0)
+
+    def test_api_receives_publication_dates_and_expired_notice_exclusion(self):
+        import io
+        from types import SimpleNamespace
+        from urllib.parse import parse_qs, urlparse
+        requests = []
+        def opened(request, timeout):
+            requests.append(request)
+            return io.BytesIO(json.dumps({'response': {'header': {'resultCode': '00'},
+                'body': {'items': [], 'totalCount': 0}}}).encode())
+        with patch.object(collector, 'build_opener', return_value=SimpleNamespace(open=opened)):
+            collector.fetch_page('test-key', date(2026, 3, 1), date(2026, 3, 28), '웹', 1, exclude_closed=True)
+        query = parse_qs(urlparse(requests[0].full_url).query)
+        self.assertEqual(query['inqryDiv'], ['1'])
+        self.assertEqual(query['inqryBgnDt'], ['202603010000'])
+        self.assertEqual(query['inqryEndDt'], ['202603282359'])
+        self.assertEqual(query['bidClseExcpYn'], ['Y'])
 
     def test_offline_cli_retains_publication_search_behavior(self):
         items = [{'bidNtceNo': 'A', 'bidClseDt': ''}]
@@ -380,14 +600,13 @@ class BidProgressTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         with patch.object(search_jobs, 'root_dir', return_value=Path(temp.name)), \
                 patch.object(search_jobs, 'datetime') as clock, \
-                patch.dict(os.environ, {'DATA_GO_KR_SCSBID_SERVICE_KEY': 'separate-result-key',
-                                        'BID_SEARCH_LOOKBACK_DAYS': '7'}), \
+                patch.dict(os.environ, {'DATA_GO_KR_SCSBID_SERVICE_KEY': 'separate-result-key'}), \
                 patch.object(collector, 'fetch_page', return_value=(rows, len(rows))), \
                 patch.object(bid_progress, 'lookup_progress', side_effect=lookup) as progress_lookup, \
                 patch.object(search_jobs, '_enrich_candidate', side_effect=lambda item, key: item), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = self.now
-            result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 1, 'notice-key')
+            result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'notice-key')
             return result, progress_lookup.call_args_list
 
     def test_search_checks_progress_before_limit_and_admits_rebid_outside_original_deadline(self):
@@ -411,6 +630,29 @@ class BidProgressTests(unittest.TestCase):
         self.assertFalse(result['items'])
         self.assertEqual(result['progress_excluded'][0]['status'], 'unavailable')
 
+    def test_rate_limit_stops_search_without_saving_empty_result(self):
+        def limited(*args):
+            raise bid_progress.ProgressRateLimitError('개찰·재입찰 API 요청 한도 초과 (HTTP 429)')
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(search_jobs, 'root_dir', return_value=Path(tmp)), \
+                patch.object(collector, 'fetch_page', return_value=([self.item()], 1)), \
+                patch.object(bid_progress, 'lookup_progress', side_effect=limited) as lookup, \
+                patch.object(collector.clock, 'sleep'):
+            with self.assertRaisesRegex(collector.CollectionError, '429'):
+                search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 20, 'key')
+            self.assertEqual(lookup.call_count, 1)
+            self.assertEqual(list(Path(tmp).glob('**/search.json')), [])
+            self.assertEqual(list(Path(tmp).glob('cache-*.json')), [])
+
+    def test_http_429_reports_quota_instead_of_service_approval(self):
+        from urllib.error import HTTPError
+        with patch.object(collector, 'build_opener') as opener:
+            opener.return_value.open.side_effect = HTTPError('https://example.test', 429, 'Too Many Requests', {}, None)
+            with self.assertRaisesRegex(bid_progress.ProgressRateLimitError, '요청 한도') as caught:
+                bid_progress.lookup_rows('secret-key', 'B1', '000', bid_progress.OPERATIONS[0])
+            self.assertNotIn('활용승인', str(caught.exception))
+            self.assertNotIn('secret-key', str(caught.exception))
+
     def test_past_opening_with_missing_deadline_is_recorded_as_closed(self):
         item = self.item(bidClseDt='', opengDt='2026-10-14 15:00')
         result, calls = self.run_search([item], lambda *args: {
@@ -432,6 +674,7 @@ class BidProgressTests(unittest.TestCase):
         active = self.evaluate(bidClseDt='2026-10-12 17:00',
             openings=[self.row(progrsDivCdNm='재입찰')],
             rebids=[self.row('001', bidClseDt='2026-11-05 18:00')])
+        today = self.evaluate(bidNtceNo='TODAY', bidClseDt='2026-10-26 12:00', opengDt='2026-10-26 13:00')
         # 별도 공고로 바꾸며 근거의 공고번호도 함께 대응시킨다.
         closed['bidNtceNo'] = 'CLOSED'
         closed['bid_progress']['opening_results'][0]['bidNtceNo'] = 'CLOSED'
@@ -439,8 +682,9 @@ class BidProgressTests(unittest.TestCase):
             root = Path(temp)
             folder = root / ('a' * 32)
             folder.mkdir()
-            write_json(folder / 'search.json', {'search_id': 'a' * 32, 'items': [closed, active],
-                'request': {'from': '2026-11-01', 'to': '2026-11-30', 'queries': ['웹'], 'date_basis': 'deadline'},
+            write_json(folder / 'search.json', {'search_id': 'a' * 32, 'items': [closed, active, today],
+                'request': {'from': '2026-10-01', 'to': '2026-11-30', 'deadline_from': '2026-10-26',
+                            'queries': ['웹'], 'date_basis': 'deadline'},
                 'collected_at': '2026-10-26', 'page_limit_reached': False})
             app = FastAPI()
             app.include_router(create_bid_router(profile_dependency=lambda: {'region': '서울', 'keywords': ['웹']},
@@ -452,10 +696,17 @@ class BidProgressTests(unittest.TestCase):
             with patch.object(search_jobs, 'root_dir', return_value=root), \
                     patch.object(search_jobs, '_public_search', side_effect=lambda s, c: public(s, c, self.now)):
                 response = TestClient(app).get('/bids', params={
-                    'from': '2026-11-01', 'to': '2026-11-30', 'search_id': 'a' * 32})
+                    'from': '2026-10-26', 'to': '2026-11-30', 'search_id': 'a' * 32})
+                mixed_period = TestClient(app).get('/bids', params={
+                    'from': '2026-10-01', 'to': '2026-11-30', 'search_id': 'a' * 32})
+                recheck = TestClient(app).post('/bids/recheck', json={
+                    'from': '2026-10-26', 'to': '2026-11-30', 'search_id': 'a' * 32,
+                    'bids': [{'bid_no': 'B1', 'revision': '000'}, {'bid_no': 'TODAY', 'revision': '000'}]})
             self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(mixed_period.status_code, 422)
+            self.assertEqual(recheck.status_code, 200, recheck.text)
             bids = response.json()['bids']
-            self.assertEqual([row['bid_no'] for row in bids], ['B1'])
+            self.assertEqual([row['bid_no'] for row in bids], ['B1', 'TODAY'])
             self.assertTrue(bids[0]['deadline'].startswith('2026-11-05'))
 
 

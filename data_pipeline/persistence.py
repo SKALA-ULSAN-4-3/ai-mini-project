@@ -28,6 +28,7 @@ class BackendStore:
         self.configured = bool(self.base and self.key)
         self.documents = None
         self.blocked = False
+        self.auth_failed = False
         self.errors, self.saved, self.reused = [], 0, 0
         self.files = []
         self.client = httpx.Client(timeout=20, follow_redirects=False) if self.configured else None
@@ -42,9 +43,12 @@ class BackendStore:
         if self.client:
             self.client.close()
 
-    def _error(self, step, status=None):
+    def _error(self, step, status=None, *, service_auth=True):
         if status in (401, 403, 500, 502, 503, 504):
             self.blocked = True
+        if status in (401, 403, 503) and service_auth:
+            self.auth_failed = True
+            step = 'DB 인증 실패 — 파이프라인 SERVICE_API_KEY와 Java SERVICE_API_KEY 설정을 확인하세요'
         message = step + (f' (HTTP {status})' if status else '')
         if message not in self.errors:
             self.errors.append(message)
@@ -52,6 +56,7 @@ class BackendStore:
     @property
     def report(self):
         return {'status': 'not_configured' if not self.configured else 'failed' if self.errors else 'saved' if self.saved or self.reused else 'not_needed',
+                'auth_failed': self.auth_failed,
                 'saved': self.saved, 'reused': self.reused, 'errors': list(self.errors), 'files': list(self.files)}
 
     def list(self):
@@ -109,7 +114,7 @@ class BackendStore:
             # 서비스 키는 Java 요청에만 보낸다. Storage 서명 주소에는 전달하지 않는다.
             with self.client.stream('GET', url) as response:
                 if response.status_code != 200:
-                    self._error('DB 파일 복원 실패', response.status_code)
+                    self._error('DB 파일 복원 실패', response.status_code, service_auth=False)
                     return None
                 chunks, total = [], 0
                 for chunk in response.iter_bytes():
@@ -140,7 +145,11 @@ class BackendStore:
         suffix = Path(name).suffix[:10]
         logical_name = Path(name).stem[:250 - len(suffix)] + suffix
         filename = f'dp1_{kind}_{key}_{digest}_{logical_name}'
-        if any(row.get('file_name') == filename for row in self.list()):
+        documents = self.list()
+        # 목록 조회에서 인증 실패가 확인되면 POST로 같은 잘못된 키를 재전송하지 않는다.
+        if self.blocked:
+            return self._failed_file(kind, name)
+        if any(row.get('file_name') == filename for row in documents):
             self.reused += 1
             if kind != 'state': self.files.append({'file_name': name, 'kind': kind, 'status': 'reused'})
             return True

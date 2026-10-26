@@ -267,7 +267,7 @@ def deadline_in_period(item, start, end):
 
 
 def search_deadline_candidates(key, start_publication, end_publication, deadline_start, deadline_end, queries, limit,
-                               *, candidate_transform=None):
+                               *, candidate_transform=None, excluded_callback=None):
     """마감일 후보를 최근 게시 이력부터 탐색한다. 조회 한도와 실제 탐색 범위를 함께 반환한다."""
     found, seen = {}, set()
     requests = 0
@@ -300,7 +300,15 @@ def search_deadline_candidates(key, start_publication, end_publication, deadline
                         continue
                     seen.add(identity)
                     item = candidate_transform(raw) if candidate_transform else raw
-                    if item is not None and deadline_in_period(item, deadline_start, deadline_end):
+                    if item is not None:
+                        if not str(item.get("bidClseDt") or "").strip():
+                            if excluded_callback:
+                                excluded_callback(item, "deadline_unknown")
+                            continue
+                        if not deadline_in_period(item, deadline_start, deadline_end):
+                            if excluded_callback:
+                                excluded_callback(item, "deadline_outside_period")
+                            continue
                         found[identity] = item
                         if len(found) >= limit:
                             return finish("candidate_limit")

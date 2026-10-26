@@ -1,7 +1,4 @@
-// 새 흐름(검색 → 요약 → 채점 → 승인 → 체크리스트)의 API 호출 모음.
-// 실제 서버 코드(2번 RAG · 3번 공고 로직)를 읽고 응답 모양을 맞췄습니다.
-// ★ 1번(/search-bids, /fetch-notices, /fetch-documents, /jobs)과 4번(/me/...)은 아직 서버에 없어서
-//   가이드 문서 기준의 "가정"입니다. 담당자의 실제 응답과 다르면 이 파일만 고치세요.
+// 검색·추천·문서 준비 API 호출과 화면 응답 정규화를 모읍니다.
 import client, { rag, cachedApi, invalidateApiCache } from './client'
 
 export const SUMMARY_LABELS = {
@@ -38,16 +35,15 @@ export function toBid(b) {
   }
 }
 
-// ① 검색 (1번 — 아직 서버에 없음)
+// ① 나라장터 검색. 로그인 토큰으로 회사별 DB 캐시를 조회합니다.
 export async function searchBids({ from, to, queries, limit = 100 }) {
   return cachedApi(`search:${JSON.stringify([from, to, queries, limit])}`, async () =>
     (await rag.post('/search-bids', { from, to, queries, limit })).data, 0)
 }
-// ② 추린 공고 (3번): { bids, excluded, candidate_count, needs_review }
-// search_id 는 3번이 1번의 새 검색 결과를 읽도록 바뀌면 필요해질 값이라 미리 함께 보냅니다. (지금 서버는 무시)
+// ② 추린 공고: 저장된 search_id로 검색 원본·회사별 추천 캐시를 연결합니다.
 export async function fetchCandidates(from, to, searchId) {
   const d = (await rag.get('/bids', { params: { from, to, limit: 20, search_id: searchId } })).data
-  return { bids: (d.bids || []).map(toBid), excluded: d.excluded || [] }
+  return { bids: (d.bids || []).map(toBid), excluded: d.excluded || [], cacheSync: d.cache_sync || null }
 }
 // ③' 공고문 준비가 끝난 뒤 재확인 (3번): 본문까지 보고 부적격인 공고를 표시합니다. (삭제하지 않고 표시만)
 // 응답: { bids:[{...공고, recheck:{status: confirmed|disqualified|unknown|not_evaluated, reasons, unknown}}], disqualified, not_evaluated }
@@ -62,6 +58,9 @@ export async function fetchNotices(searchId, bids) {
 }
 export async function fetchDocuments(searchId, bids) {
   return (await rag.post('/fetch-documents', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
+}
+export async function retryDbSave(searchId, bids) {
+  return (await rag.post('/retry-db-save', { search_id: searchId, bids: pipelineRefs(bids) }, { timeout: 30000 })).data.job_id
 }
 export async function getJob(id) {
   const d = (await rag.get(`/jobs/${id}`, { timeout: 15000 })).data

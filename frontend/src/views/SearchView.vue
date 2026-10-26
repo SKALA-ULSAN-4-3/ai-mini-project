@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, nextTick, onUnmounted } from 'vue'
 import { useFlowStore } from '../stores/flow'
-import { searchBids, fetchCandidates, fetchNotices, recheckBids, isOk } from '../api/flow'
+import { searchBids, fetchCandidates, fetchNotices, recheckBids, retryDbSave, isOk } from '../api/flow'
 import { errorMessage } from '../api/client'
 import { addDays, iso, won, dday, keyOf, ymd, unknownLabel } from '../utils'
 import JobProgress from '../components/JobProgress.vue'
@@ -26,7 +26,8 @@ const formOpen = ref(!flow.candidates.length)
 const resultsTop = ref(null)
 const searchFinished = ref(false)
 const searchCount = ref(0)
-const progressExcluded = ref([])
+const deadlineUnknown = ref([])
+const cancelledWithdrawn = ref([])
 
 // ② 추린 공고 중 공고문을 받을 공고 (최대 20건)
 const checked = ref(flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf))
@@ -90,16 +91,23 @@ async function search() {
   loading.value = true
   startProgress()
   searchFinished.value = false
-  progressExcluded.value = []
+  deadlineUnknown.value = []
+  cancelledWithdrawn.value = []
   jobId.value = ''; noticeJob.value = null
   try {
     // ① 나라장터 검색 (1번 API)
     const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 100 })
     setStage(2)
+    if (d.cache_sync?.status === 'failed') {
+      searchNotice.value = d.cache_sync.auth_failed
+        ? '검색 캐시 인증에 실패했습니다. 파이프라인 SERVICE_API_KEY와 Java SERVICE_API_KEY, 로그인 토큰 전달을 확인해 주세요.'
+        : '검색 결과 DB 캐시를 확인하지 못했습니다. 검색은 계속 진행하며, 백엔드 캐시 설정을 확인해 주세요.'
+    }
     searchCount.value = (d.items || []).length
-    progressExcluded.value = d.progress_excluded || []
+    deadlineUnknown.value = d.deadline_unknown || []
+    cancelledWithdrawn.value = d.cancelled_withdrawn || []
     if (d.page_limit_reached) {
-      searchNotice.value = '조회 한도에 도달해 일부 공고가 누락될 수 있습니다. 검색어를 더 구체적으로 입력해 주세요.'
+      searchNotice.value = [searchNotice.value, '조회 한도에 도달해 일부 공고가 누락될 수 있습니다. 검색어를 더 구체적으로 입력해 주세요.'].filter(Boolean).join(' ')
     }
     flow.resetFrom(3)
     flow.searchId = d.search_id
@@ -108,6 +116,12 @@ async function search() {
     // ② 회사 프로필에 맞게 추리기 (3번 API). 여기서 404 는 "저장된 프로필이 없음"입니다.
     try {
       const r = await fetchCandidates(flow.period.deadline_from, flow.period.deadline_to, d.search_id)
+      if (r.cacheSync?.status === 'failed') {
+        const cacheMessage = r.cacheSync.auth_failed
+          ? '검색 캐시 인증이 거부되어 저장하지 못했습니다. 서비스 키와 로그인 토큰 전달을 확인해 주세요.'
+          : '추천 결과 DB 저장에 실패했습니다. 캐시 저장 설정을 확인해 주세요.'
+        searchNotice.value = [searchNotice.value, cacheMessage].filter(Boolean).join(' ')
+      }
       flow.candidates = r.bids
       flow.excluded = r.excluded
       setStage(3)
@@ -177,6 +191,7 @@ async function prepare() {
 }
 const recheckError = ref('')
 async function onDone(job) {
+  if (job.mode === 'db_retry') return
   noticeJob.value = job
   flow.readyKeys = job.bids.filter((b) => isOk(b.status)).map(keyOf)
   flow.resetFrom(4)
@@ -191,6 +206,24 @@ async function onDone(job) {
     flow.candidates = flow.candidates.map((b) => (byKey[keyOf(b)] ? { ...b, recheck: byKey[keyOf(b)] } : b))
   } catch (e) {
     recheckError.value = '재확인에 실패해 ②에서 추린 결과 그대로 표시합니다. (' + errorMessage(e) + ')'
+  }
+}
+const retryingDb = ref(false)
+async function retryDatabaseSave(job) {
+  if (retryingDb.value) return
+  error.value = ''
+  const bids = (job.bids || []).filter((b) => b.preparation_status === 'ready'
+    && ['failed', 'not_configured'].includes(b.db_sync?.status))
+  if (!bids.length) return
+  retryingDb.value = true
+  try {
+    const nextJobId = await retryDbSave(job.search_id, bids)
+    noticeJob.value = null
+    jobId.value = nextJobId
+  } catch (e) {
+    error.value = 'DB 저장만 다시 시도하지 못했습니다. ' + errorMessage(e)
+  } finally {
+    retryingDb.value = false
   }
 }
 </script>
@@ -242,11 +275,15 @@ async function onDone(job) {
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="searchNotice" class="notice">{{ searchNotice }}</p>
     <p v-if="searchFinished && !loading && !flow.candidates.length" class="notice" role="status">
-      {{ searchCount ? `검색된 공고 ${searchCount}건이 회사 조건에 맞지 않아 추천 공고가 없습니다. 아래 제외 사유를 확인해 주세요.` : '선택한 게시기간·마감기간·검색어에 맞는 추천 공고가 없습니다. 아래 진행 상태 확인 결과를 확인하거나 검색 조건을 조정해 주세요.' }}
+      {{ searchCount ? `검색된 공고 ${searchCount}건이 회사 조건에 맞지 않아 추천 공고가 없습니다. 아래 제외 사유를 확인해 주세요.` : '선택한 게시기간·마감기간·검색어에 맞는 공고가 없습니다. 마감일 확인 필요 목록을 보거나 검색 조건을 조정해 주세요.' }}
     </p>
-    <details v-if="!loading && progressExcluded.length" style="margin-top: 14px">
-      <summary>입찰 진행 상태로 제외된 공고 {{ progressExcluded.length }}건</summary>
-      <p v-for="b in progressExcluded" :key="b.bid_no + b.bid_order" class="meta">{{ b.bid_no }}: {{ b.label }} · {{ b.reason }}</p>
+    <details v-if="!loading && deadlineUnknown.length" style="margin-top: 14px">
+      <summary>마감일 확인 필요 {{ deadlineUnknown.length }}건</summary>
+      <p v-for="b in deadlineUnknown" :key="b.bid_no + b.bid_order" class="meta">{{ b.bid_no }}: {{ b.title }} · {{ b.reason }}</p>
+    </details>
+    <details v-if="!loading && cancelledWithdrawn.length" style="margin-top: 14px">
+      <summary>취소·철회로 제외 {{ cancelledWithdrawn.length }}건</summary>
+      <p v-for="b in cancelledWithdrawn" :key="b.bid_no + b.bid_order" class="meta">{{ b.bid_no }}: {{ b.reason }}</p>
     </details>
     <details v-if="searchFinished && !loading && flow.excluded.length" style="margin-top: 14px">
       <summary>회사 조건에 맞지 않아 제외된 공고 {{ flow.excluded.length }}건</summary>
@@ -315,7 +352,7 @@ async function onDone(job) {
           {{ preparing ? '요청 중…' : `선택한 ${checked.length}건 공고문 준비` }}
         </button>
         <div v-if="jobId || noticeJob" class="action-status">
-          <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="공고문을 받는 중" @done="onDone" />
+          <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" :label="retryingDb ? 'DB 저장만 다시 시도하는 중' : '공고문을 받는 중'" @done="onDone" @retry-db="retryDatabaseSave" />
           <div v-if="noticeJob">
             <p v-if="flow.readyKeys.length" class="ok">공고문 {{ flow.readyKeys.length }}건 준비 완료.</p>
             <p v-if="recheckError" class="notice">{{ recheckError }}</p>

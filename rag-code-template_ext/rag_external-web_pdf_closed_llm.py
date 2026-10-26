@@ -131,6 +131,95 @@ async def keep_stores_current(request, call_next):
     refresh_stores()
     return await call_next(request)
 
+
+@app.middleware("http")
+async def use_bid_search_cache(request, call_next):
+    """추천 응답 캐시를 재사용하고, 새 추천 결과는 DB에 저장한다."""
+    from data_pipeline import cache_api, search_jobs
+    from starlette.concurrency import run_in_threadpool
+
+    authorization = request.headers.get("authorization")
+    if request.url.path == "/bids" and request.method == "GET":
+        search_id = request.query_params.get("search_id", "")
+        try:
+            snapshot = search_jobs._snapshot(search_id)
+        except search_jobs.SearchNotFound:
+            snapshot = None
+        cached = snapshot.get("cached_recommendation") if snapshot else None
+        if isinstance(cached, dict):
+            params = snapshot.get("request", {})
+            try:
+                profile = await run_in_threadpool(get_authenticated_profile, authorization)
+                profile_key = hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest()
+                matches = (request.query_params.get("from") == params.get("deadline_from", params.get("from"))
+                           and request.query_params.get("to") == params.get("to")
+                           and cached.get("_cache_profile") == profile_key
+                           and int(request.query_params.get("limit", "20")) == int(cached.get("_cache_limit", 20)))
+            except HTTPException as exc:
+                return JSONResponse({"detail": exc.detail}, status_code=exc.status_code,
+                                    headers=exc.headers)
+            except (TypeError, ValueError):
+                matches = False
+            if matches:
+                try:
+                    # 회사 프로필/JWT를 확인한 추천 결과만 재사용한다.
+                    result = {k: v for k, v in cached.items() if not k.startswith("_")}
+                    result["search_id"] = search_id
+                    if snapshot.get("cache_saved"):
+                        result["cache_sync"] = {"status": "reused"}
+                    elif snapshot.get("cache_auth_failed"):
+                        result["cache_sync"] = {"status": "failed", "auth_failed": True,
+                                                "error": "검색 캐시 인증 실패가 확인되어 저장 요청을 생략했습니다."}
+                    else:
+                        search_request = snapshot["request"]
+                        sync = await run_in_threadpool(cache_api.save_search,
+                            search_request["from"], search_request["to"], search_request["queries"],
+                            search_request["limit"],
+                            {"snapshot": snapshot, "recommendation": cached}, authorization)
+                        snapshot["cache_saved"] = sync.get("status") == "saved"
+                        snapshot["cache_auth_failed"] = bool(sync.get("auth_failed"))
+                        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+                        result["cache_sync"] = sync
+                    return JSONResponse(result)
+                except HTTPException as exc:
+                    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code,
+                                        headers=exc.headers)
+
+    response = await call_next(request)
+    if request.url.path != "/bids" or request.method != "GET" or response.status_code != 200:
+        return response
+    search_id = request.query_params.get("search_id", "")
+    try:
+        snapshot = search_jobs._snapshot(search_id)
+        chunks = [chunk async for chunk in response.body_iterator]
+        body = b"".join(chunks)
+        recommendation = json.loads(body)
+        search_request = snapshot["request"]
+        profile = await run_in_threadpool(get_authenticated_profile, authorization)
+        recommendation_to_cache = {**recommendation,
+                                   "_cache_profile": hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest(),
+                                   "_cache_limit": int(request.query_params.get("limit", "20"))}
+        snapshot["cached_recommendation"] = recommendation_to_cache
+        snapshot["cache_saved"] = False
+        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+        result = {"snapshot": snapshot, "recommendation": recommendation_to_cache}
+        if snapshot.get("cache_auth_failed"):
+            sync = {"status": "failed", "auth_failed": True,
+                    "error": "검색 캐시 인증 실패가 확인되어 저장 요청을 생략했습니다."}
+        else:
+            sync = await run_in_threadpool(cache_api.save_search,
+                search_request["from"], search_request["to"], search_request["queries"],
+                search_request["limit"], result, authorization)
+        snapshot["cache_saved"] = sync.get("status") == "saved"
+        snapshot["cache_auth_failed"] = bool(snapshot.get("cache_auth_failed") or sync.get("auth_failed"))
+        search_jobs.write_json(search_jobs.root_dir() / search_id / "search.json", snapshot)
+        recommendation["cache_sync"] = sync
+        return JSONResponse(recommendation, status_code=response.status_code,
+                            headers={k: v for k, v in response.headers.items()
+                                     if k.lower() not in {"content-length", "content-type"}})
+    except (search_jobs.SearchNotFound, KeyError, TypeError, ValueError):
+        return response
+
 # ✅ 로그인 확인: BACKEND_URL(4번)이 있으면 /health 외 모든 API에 Bearer 토큰 필요 (기획서 03). 없으면 로컬 개발용으로 열어 둠
 from fastapi import Depends
 from backend_auth import require_login

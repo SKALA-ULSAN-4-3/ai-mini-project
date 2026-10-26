@@ -5,7 +5,7 @@ import { errorMessage } from '../api/client'
 
 // 직전 조회가 끝난 뒤 다음 조회를 예약해 느린 서버에 요청이 겹치지 않게 한다.
 const props = defineProps({ jobId: String, label: { type: String, default: '준비 중' } })
-const emit = defineEmits(['done'])
+const emit = defineEmits(['done', 'retry-db'])
 const job = ref({ status: 'running', done: 0, total: 0, bids: [] })
 const error = ref('')
 const checking = ref(false)
@@ -16,7 +16,8 @@ async function download(file) {
   try { await downloadJobFile(props.jobId, file) }
   catch (e) { fileError.value = errorMessage(e) }
 }
-const stages = { restoring_database: 'DB 저장 자료 확인·복원', saving_database: 'DB 파일 저장', waiting_document: '같은 공고의 문서 준비 완료 대기', queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
+const displayLabel = computed(() => job.value.mode === 'db_retry' ? 'DB 저장만 다시 시도하는 중' : props.label)
+const stages = { restoring_database: 'DB 저장 자료 확인·복원', saving_database: 'DB 파일 저장', checking_bid_progress: '선택 공고의 개찰·재입찰 상태 확인', waiting_document: '같은 공고의 문서 준비 완료 대기', queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
   downloading: '첨부파일 다운로드', converting: '문서 변환·텍스트 추출', indexing: '검색 인덱스 적재',
   completed: '완료', partial_failed: '일부 실패', failed: '실패' }
 // 진행 중에는 "지금 처리 중인 공고 1건"만 보여 줍니다. (20건이어도 화면을 덮지 않게)
@@ -24,6 +25,10 @@ const running = computed(() => !isFinished(job.value.status))
 const current = computed(() => (job.value.bids || []).find((b) => !isFinished(b.status)))
 const failedBids = computed(() => (job.value.bids || []).filter((b) => ['failed', 'partial_failed'].includes(b.status)))
 const pct = computed(() => Math.round(((job.value.done || 0) / (job.value.total || 1)) * 100))
+const preparedCount = computed(() => (job.value.bids || []).filter((b) => b.preparation_status === 'ready').length)
+const dbSavedCount = computed(() => (job.value.bids || []).filter((b) => ['saved', 'reused'].includes(b.db_sync?.status)).length)
+const dbFailedBids = computed(() => (job.value.bids || []).filter((b) => b.preparation_status === 'ready'
+  && ['failed', 'not_configured'].includes(b.db_sync?.status)))
 let timer = null
 let stopped = false
 let lastState = ''
@@ -62,7 +67,7 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
 <template>
   <div class="job-progress">
     <div class="jp-head">
-      <strong>{{ label }}</strong>
+      <strong>{{ displayLabel }}</strong>
       <span class="jp-count">{{ job.done }} / {{ job.total }}건 · {{ running ? pct + '%' : '끝' }}</span>
     </div>
     <progress :value="job.done" :max="job.total || 1"></progress>
@@ -79,6 +84,10 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
           <a v-if="b.rfp_ready !== true && b.detail_url" :href="b.detail_url" target="_blank" rel="noopener noreferrer">공고 상세에서 첨부 확인</a>
         </p>
       </template>
+      <p v-for="b in job.bids.filter((row) => row.progress_check)" :key="'progress-' + b.bid_no" class="meta">
+        {{ b.bid_no }} 진행 상태: {{ b.progress_check.label }}<span v-if="b.progress_check.reason"> · {{ b.progress_check.reason }}</span>
+        <span v-if="b.progress_check.deadline"> · 확인된 마감 {{ b.progress_check.deadline }}</span>
+      </p>
       <p v-for="b in failedBids" :key="'f' + b.bid_no" class="error">{{ b.bid_no }}: {{ b.error || '실패했습니다.' }}</p>
       <template v-for="bid in job.bids" :key="'conversion-' + bid.bid_no">
         <p v-for="file in bid.conversion_progress || []" :key="file.file_name" class="meta">
@@ -88,11 +97,25 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
       </template>
       <p v-for="bid in job.bids" :key="'db-' + bid.bid_no" :class="['failed', 'not_configured'].includes(bid.db_sync?.status) ? 'error' : 'meta'">
         {{ bid.bid_no }} DB 저장: {{ bid.db_sync?.status === 'not_configured' ? '설정 없음 — 로컬 저장만 완료' : bid.db_sync?.status === 'failed' ? '일부 미완료 — 파일별 오류 확인 필요' : bid.db_sync?.status === 'saved' ? '저장·재사용 완료' : '저장 상태 미확인' }}
+        <span v-if="bid.db_sync?.auth_failed"> · 파이프라인 SERVICE_API_KEY와 Java SERVICE_API_KEY 설정을 확인하세요.</span>
+      </p>
+      <p v-for="bid in job.bids.filter((row) => row.rfp_cache?.status && !['not_requested', 'reused', 'saved', 'miss', 'not_configured'].includes(row.rfp_cache.status))" :key="'rfp-cache-' + bid.bid_no" class="error">
+        {{ bid.bid_no }} 제안요청서 캐시: {{ bid.rfp_cache.error || bid.rfp_cache.reason || '저장·조회 실패' }}
+      </p>
+      <p v-for="bid in job.bids.filter((row) => ['reused', 'saved'].includes(row.rfp_cache?.status))" :key="'rfp-cache-ok-' + bid.bid_no" class="meta">
+        {{ bid.bid_no }} 제안요청서 처리 결과 DB {{ bid.rfp_cache.status === 'reused' ? '캐시 재사용' : '저장 완료' }}
       </p>
       <template v-for="bid in job.bids" :key="'db-files-' + bid.bid_no">
         <p v-for="file in (bid.db_sync?.files || []).filter((row) => row.status === 'failed')" :key="file.kind + file.file_name" class="error">DB 미저장: {{ file.file_name }} ({{ file.kind === 'converted' ? '변환본' : '원본' }})</p>
       </template>
+      <template v-for="bid in job.bids" :key="'db-errors-' + bid.bid_no">
+        <p v-for="(message, index) in bid.db_sync?.errors || []" :key="index" class="error">{{ bid.bid_no }} DB 오류: {{ message }}</p>
+      </template>
     </details>
+    <div v-if="!running && ['notices', 'documents', 'db_retry'].includes(job.mode)" class="jp-detail">
+      <p>공고문 준비 완료 {{ preparedCount }}건 · DB 저장 성공 {{ dbSavedCount }}건 · DB 저장 실패 {{ dbFailedBids.length }}건</p>
+      <button v-if="dbFailedBids.length" type="button" class="small" @click="emit('retry-db', job)">DB 저장만 다시 시도</button>
+    </div>
     <p v-if="slow && running" class="notice">같은 단계에서 2분 이상 처리 중입니다. 서버가 느리거나 멈췄을 수 있습니다. 아직 실패로 확정된 것은 아닙니다.</p>
     <p v-if="job.error" class="error">{{ job.error }}</p>
     <p v-if="error" class="error">진행 상태를 확인하지 못했습니다. {{ error }} 서버 작업이 취소된 것은 아닙니다.</p>

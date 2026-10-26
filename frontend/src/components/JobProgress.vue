@@ -16,7 +16,7 @@ async function download(file) {
   try { await downloadJobFile(props.jobId, file) }
   catch (e) { fileError.value = errorMessage(e) }
 }
-const stages = { waiting_document: '같은 공고의 문서 준비 완료 대기', queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
+const stages = { restoring_database: 'DB 저장 자료 확인·복원', saving_database: 'DB 파일 저장', waiting_document: '같은 공고의 문서 준비 완료 대기', queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
   downloading: '첨부파일 다운로드', converting: '문서 변환·텍스트 추출', indexing: '검색 인덱스 적재',
   completed: '완료', partial_failed: '일부 실패', failed: '실패' }
 // 진행 중에는 "지금 처리 중인 공고 1건"만 보여 줍니다. (20건이어도 화면을 덮지 않게)
@@ -80,6 +80,18 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
         </p>
       </template>
       <p v-for="b in failedBids" :key="'f' + b.bid_no" class="error">{{ b.bid_no }}: {{ b.error || '실패했습니다.' }}</p>
+      <template v-for="bid in job.bids" :key="'conversion-' + bid.bid_no">
+        <p v-for="file in bid.conversion_progress || []" :key="file.file_name" class="meta">
+          {{ file.file_name }} · {{ file.status === 'retrying' ? '시간 초과 후 재시도' : file.status === 'converted' || file.status === 'existing' ? '변환 완료' : file.status === 'converting' ? '변환 중' : '확인 필요' }}
+          <span v-if="file.attempt">({{ file.attempt }}/{{ file.max_attempts }}회 · 시도당 {{ file.timeout_seconds }}초)</span>
+        </p>
+      </template>
+      <p v-for="bid in job.bids" :key="'db-' + bid.bid_no" :class="['failed', 'not_configured'].includes(bid.db_sync?.status) ? 'error' : 'meta'">
+        {{ bid.bid_no }} DB 저장: {{ bid.db_sync?.status === 'not_configured' ? '설정 없음 — 로컬 저장만 완료' : bid.db_sync?.status === 'failed' ? '일부 미완료 — 파일별 오류 확인 필요' : bid.db_sync?.status === 'saved' ? '저장·재사용 완료' : '저장 상태 미확인' }}
+      </p>
+      <template v-for="bid in job.bids" :key="'db-files-' + bid.bid_no">
+        <p v-for="file in (bid.db_sync?.files || []).filter((row) => row.status === 'failed')" :key="file.kind + file.file_name" class="error">DB 미저장: {{ file.file_name }} ({{ file.kind === 'converted' ? '변환본' : '원본' }})</p>
+      </template>
     </details>
     <p v-if="slow && running" class="notice">같은 단계에서 2분 이상 처리 중입니다. 서버가 느리거나 멈췄을 수 있습니다. 아직 실패로 확정된 것은 아닙니다.</p>
     <p v-if="job.error" class="error">{{ job.error }}</p>

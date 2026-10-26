@@ -96,10 +96,20 @@ export async function saveSummary(r) {
   return (await client.put(`/bids/${encodeURIComponent(r.bid_no)}/summary`, body)).data
 }
 // 성공한 요약만 저장하고, 실패한 건수를 돌려줍니다. (저장 실패가 화면 흐름을 막지 않도록 예외는 던지지 않습니다)
-export async function saveSummaries(results) {
+export async function saveSummaries(results, { retry = false } = {}) {
   const targets = results.filter((r) => r.status === 'ok' && r.summary && typeof r.summary === 'object')
-  const settled = await Promise.allSettled(targets.map(saveSummary))
-  return { total: targets.length, failed: settled.filter((x) => x.status === 'rejected').length }
+  const pending = targets.filter((r) => !['saved', 'reused'].includes(r.db_persistence?.status)
+    && (retry || r.db_persistence?.status !== 'failed'))
+  await Promise.allSettled(pending.map(async (row) => {
+    try {
+      await saveSummary(row)
+      row.db_persistence = { status: 'saved' }
+    } catch (e) {
+      row.db_persistence = { status: 'failed' }
+      throw e
+    }
+  }))
+  return { total: targets.length, failed: targets.filter((r) => r.db_persistence?.status === 'failed').length }
 }
 // ⑦ 채점표(2번) · 예상 점수(3번) / ⑨ 체크리스트(3번). 3번 경로는 revision 이 필수입니다.
 export async function fetchScoringTable(b) {

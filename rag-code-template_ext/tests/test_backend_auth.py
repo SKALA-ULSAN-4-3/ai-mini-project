@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 try:
     from fastapi import HTTPException
-    from backend_auth import get_authenticated_profile
+    from backend_auth import get_authenticated_profile, require_login
 except ImportError:  # FastAPI가 없는 환경
     get_authenticated_profile = None
 
@@ -25,7 +25,12 @@ class FakeBackend(BaseHTTPRequestHandler):
     # 백엔드(4번)의 실제 응답 형식: 오류는 {"code", "message", "request_id"}
     def do_GET(self):
         token = self.headers.get("Authorization", "")
-        if token == "Bearer good":
+        if self.path == "/api/auth/check":
+            # 토큰만 확인하는 API: 프로필이 없어도 로그인은 유효
+            ok = token in ("Bearer good", "Bearer no-profile")
+            status, body = (200, {"ok": True, "business_registration_number": "1234567890", "corporate_name": "테스트"}) if ok \
+                else (401, {"code": "UNAUTHORIZED", "message": "유효하지 않거나 만료된 인증 토큰입니다.", "request_id": "x"})
+        elif token == "Bearer good":
             status, body = 200, PROFILE
         elif token == "Bearer no-profile":
             status, body = 404, {"code": "RESOURCE_NOT_FOUND", "message": "등록된 회사 프로필이 없습니다.", "request_id": "x"}
@@ -44,8 +49,8 @@ class FakeBackend(BaseHTTPRequestHandler):
         pass
 
 
-@unittest.skipIf(get_authenticated_profile is None, "FastAPI 미설치")
-class BackendAuthTest(unittest.TestCase):
+class FakeBackendCase(unittest.TestCase):
+    """가짜 백엔드를 띄우고 BACKEND_URL을 그쪽으로 돌린다 (각 테스트 끝에 원래 값 복원)."""
     @classmethod
     def setUpClass(cls):
         cls.server = HTTPServer(("127.0.0.1", 0), FakeBackend)
@@ -66,6 +71,9 @@ class BackendAuthTest(unittest.TestCase):
         else:
             os.environ["BACKEND_URL"] = self.saved
 
+
+@unittest.skipIf(get_authenticated_profile is None, "FastAPI 미설치")
+class BackendAuthTest(FakeBackendCase):
     def status_of(self, authorization):
         with self.assertRaises(HTTPException) as caught:
             get_authenticated_profile(authorization)
@@ -91,6 +99,28 @@ class BackendAuthTest(unittest.TestCase):
         os.environ["BACKEND_URL"] = "http://127.0.0.1:9"   # 닫힌 포트
         self.assertEqual(self.status_of("Bearer good"), 503)
         os.environ["BACKEND_URL"] = ""
+        self.assertEqual(self.status_of("Bearer good"), 503)
+
+
+@unittest.skipIf(get_authenticated_profile is None, "FastAPI 미설치")
+class RequireLoginTest(FakeBackendCase):
+    """질의 · 요약 · 검색 · 음성 API용 로그인 확인 (프로필 없이 토큰만)."""
+
+    def status_of(self, authorization):
+        with self.assertRaises(HTTPException) as caught:
+            require_login(authorization)
+        return caught.exception.status_code
+
+    def test_token_only_check(self):
+        self.assertEqual(require_login("Bearer good")["business_registration_number"], "1234567890")
+        self.assertTrue(require_login("Bearer no-profile")["ok"])     # 프로필이 없어도 질문은 가능
+        self.assertEqual(self.status_of(None), 401)
+        self.assertEqual(self.status_of("Bearer forged"), 401)
+
+    def test_open_without_backend_and_503_when_down(self):
+        os.environ["BACKEND_URL"] = ""
+        self.assertIsNone(require_login(None))                     # 로컬 개발 · 평가는 그대로
+        os.environ["BACKEND_URL"] = "http://127.0.0.1:9"
         self.assertEqual(self.status_of("Bearer good"), 503)
 
 

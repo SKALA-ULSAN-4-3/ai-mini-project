@@ -45,19 +45,36 @@ python -m unittest discover -s tests -p "test_*.py"   # 2번 연결 + 3번 로�
 cd .. && python -m unittest discover -s data_pipeline/tests    # 1번 테스트
 ```
 
-## 5. 4번 로그인 연결 (공고 추천 · 점수 · 체크리스트)
+## 5. 4번 로그인 연결
 
-`GET /bids`, `/bids/{bid_no}/score`, `/bids/{bid_no}/checklist`는 로그인한 회사의 프로필이 필요합니다.
-루트 `.env`에 4번 Java 백엔드 주소를 넣고 서버를 다시 켜면 자동으로 등록됩니다.
+루트 `.env`에 4번 Java 백엔드 주소를 넣고 서버를 다시 켭니다 (4번 `workplace/.env`의 `SERVER_PORT`와 같은 포트).
 
 ```
-BACKEND_URL=http://localhost:8080
+BACKEND_URL=http://localhost:18080
 ```
 
-- 시작 로그에 `[공고 API 연결] ... ← 프로필: http://localhost:8080/api/profile`이 보이면 연결된 것입니다.
-- 요청에는 4번 `/api/login`에서 받은 토큰을 `Authorization: Bearer <토큰>`으로 붙입니다.
-- Python 서버는 JWT 비밀키를 갖지 않습니다. 토큰을 4번 `/api/profile`에 그대로 전달하고, 검증과 프로필 조회는 4번이 합니다
-  (토큰 없음 · 위조 · 만료 401, 프로필 없음 404, 백엔드 꺼짐 503).
-- 실시간 흐름: `POST /search-bids`가 돌려준 `search_id`를 `GET /bids?from=…&to=…&limit=20&search_id=…`에 넘기면
-  그 검색 결과에서 20건을 추립니다. 공고문을 받기 전이라 공고명과 회사 키워드의 유사도로 정렬하고, 지역 · 업종 등 제한은 '미확인'으로 둡니다.
-- `search_id` 없이 부르면 예전처럼 1번 `data/corpus/bids.csv`를 씁니다 (없으면 503).
+- 시작 로그에 `[공고 API 연결] ... ← 프로필: http://localhost:18080/api/profile`이 보이면 연결된 것입니다.
+- **`/health`를 뺀 모든 API에 로그인 토큰이 필요합니다** (질의 · 요약 · 추출 · 검색 · 적재 · 음성 · 추천 · 점수 · 체크리스트).
+  4번 `/api/login`에서 받은 토큰을 `Authorization: Bearer <토큰>`으로 붙입니다. 토큰 없음 · 위조 · 만료는 401, 백엔드가 꺼져 있으면 503.
+- Python 서버는 JWT 비밀키를 갖지 않습니다. 토큰을 4번에 넘겨 확인합니다
+  (질의 · 요약 · 음성 등은 `/api/auth/check`로 토큰만, 추천 · 점수 · 체크리스트는 `/api/profile`로 회사 프로필까지).
+- `BACKEND_URL`이 없으면 로그인 확인 없이 열립니다 (로컬 개발 · 평가용). 평가 스크립트에 토큰이 필요하면 `--token "$TOKEN"`.
+- 흐름 ③: `POST /search-bids`가 돌려준 `search_id`를 `GET /bids?from=…&to=…&limit=20&search_id=…`에 넘기면
+  그 검색 결과에서 3번 로직이 20건을 추립니다. 로그인 연결 상태에서는 `search_id`가 필수입니다.
+
+## 6. 음성 질의 (X3)
+
+화면(공고 Q&A)의 마이크 버튼이 `POST /stt` → `POST /rag-query` → `POST /tts` 순서로 부릅니다.
+
+| API | 요청 | 응답 |
+|---|---|---|
+| `POST /stt` | multipart, 필드 `audio` (webm · mp3 · wav 등, 10MB 이하) | `{"text": "인식된 질문"}` |
+| `POST /tts` | `{"text": "읽을 답변"}` (1,500자 넘으면 잘라 읽음) | `audio/mpeg` (mp3) |
+
+- OpenAI `whisper-1`(받아쓰기) · `tts-1`(읽기, 목소리 `nova`)을 씁니다. 바꾸려면 `.env`에 `STT_MODEL`, `TTS_MODEL`, `TTS_VOICE`.
+- 올린 음성은 파일로 저장하지 않고 메모리에서만 처리합니다.
+
+## 주의: OpenAI 키가 두 군데 있으면
+
+이미 셸에 설정된 환경변수가 `.env`보다 우선합니다. `~/.zshrc` 등에 예전 `OPENAI_API_KEY`가 남아 있으면
+`.env`의 키 대신 그 키를 써서 질의 · 요약 · 음성이 모두 401(키 오류)로 실패합니다. 셸의 줄을 지우거나 새 키로 바꾸세요.

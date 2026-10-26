@@ -1,7 +1,7 @@
 """X3 음성 질의: 음성 → 텍스트(STT) → 기존 /rag-query → 텍스트 → 음성(TTS).
 
 교재 voice-ai_code 예제와 같은 흐름이지만, 질의는 우리 RAG(/rag-query)가 맡고 여기서는 변환만 한다.
-- STT: OpenAI whisper-1 (예제의 로컬 faster-whisper 대신 API를 써 서버에 모델을 받지 않음)
+- STT: OpenAI gpt-4o-mini-transcribe (예제의 로컬 faster-whisper 대신 API. whisper-1보다 입찰 용어를 덜 틀림)
 - TTS: OpenAI tts-1 (예제와 같은 모델)
 - 올린 음성은 디스크에 저장하지 않고 메모리에서만 처리한다 (예제는 uploads/에 저장)
 화면(5번 QaView): POST /stt (multipart 필드 audio) → {text}, POST /tts {text} → 오디오(mp3).
@@ -19,7 +19,7 @@ router = APIRouter(tags=["음성 질의 (X3)"])
 
 MAX_AUDIO_BYTES = 10 * 1024 * 1024     # 질문 한 마디면 충분. 큰 파일로 비용이 새는 것을 막는다
 MAX_TTS_CHARS = 1500                   # 답변 읽기용. OpenAI 한도(4096자)보다 짧게 잘라 응답 시간을 줄인다
-STT_MODEL = os.getenv("STT_MODEL", "whisper-1")
+STT_MODEL = os.getenv("STT_MODEL", "gpt-4o-mini-transcribe")  # whisper-1보다 정확 · 빠름 (eval/MODEL_COMPARISON.md)
 TTS_MODEL = os.getenv("TTS_MODEL", "tts-1")
 TTS_VOICE = os.getenv("TTS_VOICE", "nova")
 AUDIO_TYPES = {"audio/webm", "audio/ogg", "audio/mpeg", "audio/mp3", "audio/mp4", "audio/m4a", "audio/x-m4a",

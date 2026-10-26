@@ -123,6 +123,9 @@ def main():
             "correct": correct, "grounded": grounded, "hallucination": hallucination,
             "handoff": res.get("handoff"), "needs_review": res.get("needs_review"), "review_flag_ok": review_ok,
             "baseline_correct": base_ok, "latency_ms": res.get("latency_ms", 0), "exception": exception,
+            "model": (res.get("usage") or {}).get("model", ""),
+            "input_tokens": (res.get("usage") or {}).get("input_tokens", 0),
+            "output_tokens": (res.get("usage") or {}).get("output_tokens", 0),
             "human_judgement": "",  # 사람이 최종 확인: O / X / 부분
         })
         if not args.baseline_only:
@@ -153,6 +156,9 @@ def main():
         print(f"needs_review 표시:      {sum(r['review_flag_ok'] for r in checked)}/{len(checked)}")
         if lat:
             print(f"응답 시간: 평균 {sum(lat) / len(lat):.0f}ms, 최대 {max(lat)}ms")
+        tin, tout = sum(r["input_tokens"] for r in rows), sum(r["output_tokens"] for r in rows)
+        if tin:
+            print(f"토큰({rows[0]['model']}): 입력 {tin:,} · 출력 {tout:,} (문항당 평균 {tin // len(rows):,} · {tout // len(rows):,})")
         wrong = [r["id"] for r in rows if not r["correct"]]
         if wrong:
             print(f"틀린 문항: {', '.join(wrong)} → CSV의 answer 열과 원문을 대조하세요")

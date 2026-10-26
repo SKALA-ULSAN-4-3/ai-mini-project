@@ -14,6 +14,7 @@ const error = ref('')
 const loading = ref(false)
 
 async function onSubmit() {
+  if (loading.value) return
   error.value = ''
   // 숫자가 아닌 글자(하이픈, 공백)를 모두 제거
   const number = businessNumber.value.replace(/\D/g, '')

@@ -11,8 +11,9 @@ import RecheckBadge from '../components/RecheckBadge.vue'
 const flow = useFlowStore()
 
 // ① 검색 조건
-const to = ref(flow.period?.to || iso(addDays(new Date(), 30)))
-const from = ref(flow.period?.from || iso(new Date()))
+const today = iso(new Date())
+const to = ref(flow.period?.to >= today ? flow.period.to : iso(addDays(new Date(), 30)))
+const from = ref(flow.period?.from <= today ? flow.period.from : today)
 const queries = ref(flow.period?.queries || '')
 const queryList = computed(() => queries.value.split(',').map((s) => s.trim()).filter(Boolean))
 const loading = ref(false)
@@ -41,6 +42,8 @@ async function search() {
   const list = queries.value.split(',').map((s) => s.trim()).filter(Boolean)
   if (!list.length) { error.value = '검색어를 한 개 이상 입력해 주세요.'; return }
   if (from.value > to.value) { error.value = '시작일이 종료일보다 늦을 수 없습니다.'; return }
+  if (from.value > today) { error.value = '게시 시작일은 오늘 이전 또는 오늘이어야 합니다.'; return }
+  if (to.value < today) { error.value = '마감 종료일은 오늘 이후 또는 오늘이어야 합니다.'; return }
   loading.value = true
   jobId.value = ''; noticeJob.value = null
   try {
@@ -51,10 +54,11 @@ async function search() {
     }
     flow.resetFrom(3)
     flow.searchId = d.search_id
-    flow.period = { from: from.value, to: to.value, queries: queries.value }
+    flow.period = { from: from.value, to: to.value, queries: queries.value,
+      deadline_from: d.deadline_from || from.value, deadline_to: d.deadline_to || to.value }
     // ② 회사 프로필에 맞게 추리기 (3번 API). 여기서 404 는 "저장된 프로필이 없음"입니다.
     try {
-      const r = await fetchCandidates(from.value, to.value, d.search_id)
+      const r = await fetchCandidates(flow.period.deadline_from, flow.period.deadline_to, d.search_id)
       flow.candidates = r.bids
       flow.excluded = r.excluded
       checked.value = flow.candidates.filter((b) => !b.notice_only).slice(0, 20).map(keyOf)
@@ -90,7 +94,8 @@ async function onDone(job) {
   const done = flow.candidates.filter((b) => flow.readyKeys.includes(keyOf(b)))
   if (!done.length) return
   try {
-    const rows = await recheckBids(flow.period.from, flow.period.to, flow.searchId, done)
+    const rows = await recheckBids(flow.period.deadline_from || flow.period.from,
+      flow.period.deadline_to || flow.period.to, flow.searchId, done)
     const byKey = Object.fromEntries(rows.map((r) => [keyOf(r), r.recheck]))
     flow.candidates = flow.candidates.map((b) => (byKey[keyOf(b)] ? { ...b, recheck: byKey[keyOf(b)] } : b))
   } catch (e) {
@@ -103,12 +108,12 @@ async function onDone(job) {
   <div class="layout">
   <div class="card">
     <h1>공고 검색</h1>
-    <p class="sub">시작일 15일 전부터 오늘까지 게시된 공고 중, 입찰 마감일이 시작일~종료일에 포함되는 공고를 검색합니다. 공고문만 있는 공고는 추천 순위를 낮추고 기본 선택에서 제외합니다.</p>
+    <p class="sub">게시 시작일부터 오늘까지 게시된 공고 중, 마감일이 오늘~마감 종료일에 포함되는 공고를 검색합니다. 공고문만 있는 공고는 추천 순위를 낮추고 기본 선택에서 제외합니다.</p>
 
     <form @submit.prevent="search">
       <div class="row">
-        <div><label for="from">시작일</label><input id="from" v-model="from" type="date" /></div>
-        <div><label for="to">종료일</label><input id="to" v-model="to" type="date" /></div>
+        <div><label for="from">게시 시작일</label><input id="from" v-model="from" type="date" :max="today" /></div>
+        <div><label for="to">마감 종료일</label><input id="to" v-model="to" type="date" :min="today" /></div>
       </div>
       <label for="q">검색어 <span class="hint">쉼표로 구분 · 예: 챗봇, 모바일 앱</span></label>
       <input id="q" v-model="queries" />

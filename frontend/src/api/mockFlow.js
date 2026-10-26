@@ -24,7 +24,11 @@ function startJob(kind, bids) {
 // ---- 1번 · 4번 (서버에 아직 없는 API) ----
 export function handlePipeline({ config, url, method, body, ok, fail }) {
   // 실제 1번 API 는 32자리 16진수 search_id 를 돌려줍니다.
-  if (url === '/search-bids' && method === 'post') return ok(config, { search_id: 'a1b2c3d4'.repeat(4), items: [], cached: false })
+  if (url === '/search-bids' && method === 'post') return ok(config, {
+    search_id: 'a1b2c3d4'.repeat(4), items: [], cached: false,
+    publication_from: body.from, publication_to: iso(new Date()),
+    deadline_from: iso(new Date()), deadline_to: body.to,
+  })
 
   if (['/fetch-notices', '/fetch-documents'].includes(url) && method === 'post') {
     const kind = url === '/fetch-notices' ? 'notices' : 'documents'

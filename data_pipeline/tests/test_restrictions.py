@@ -100,8 +100,8 @@ class RestrictionDetailsTests(unittest.TestCase):
                 patch.object(search_jobs.collector, 'lookup_eorder_attachments', return_value=[]), \
                 patch.object(search_jobs.collector, 'search_deadline_candidates',
                              return_value=([item], False, {'complete': True, 'requests': 1})):
-            first = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
-            second = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
+            first = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 20, 'test')
+            second = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 20, 'test')
             self.assertNotEqual(first['search_id'], second['search_id'])
             self.assertFalse(second['cached'])
             self.assertEqual(lookup.call_count, 2)

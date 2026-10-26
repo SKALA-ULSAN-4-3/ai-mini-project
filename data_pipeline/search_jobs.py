@@ -1,7 +1,7 @@
 """확정 흐름의 검색 스냅샷 → 공고문 준비 → 선택 첨부 준비와 진행률."""
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 import importlib
 import json
 import os
@@ -156,7 +156,8 @@ def _public_search(saved, cached, now=None):
         if not item["bid_progress"]["recommendable"]:
             continue
         if saved["request"].get("date_basis") == "deadline" and not collector.deadline_in_period(
-                item, date.fromisoformat(saved["request"]["from"]), date.fromisoformat(saved["request"]["to"])):
+                item, date.fromisoformat(saved["request"].get("deadline_from", saved["request"]["from"])),
+                date.fromisoformat(saved["request"]["to"])):
             continue
         row = collector.notice_row(item, saved["request"]["queries"], saved["collected_at"])
         # 허용 목록으로만 응답한다. API 담당자 성명·연락처를 그대로 반환하지 않는다.
@@ -180,6 +181,10 @@ def _public_search(saved, cached, now=None):
     return {"search_id": saved["search_id"], "items": items, "cached": cached,
             "progress_excluded": saved.get("progress_excluded", []),
             "search_coverage": saved.get("search_coverage"),
+            "publication_from": saved["request"].get("publication_from"),
+            "publication_to": saved["request"].get("publication_to"),
+            "deadline_from": saved["request"].get("deadline_from", saved["request"].get("from")),
+            "deadline_to": saved["request"].get("to"),
             "date_basis": saved["request"].get("date_basis", "published_at"),
             "collected_at": saved["collected_at"], "cache_seconds": CACHE_SECONDS,
             "page_limit_reached": saved["page_limit_reached"]}
@@ -190,15 +195,21 @@ def search_bids(start, end, queries, limit, key):
     if start > end or not queries or not all(queries):
         raise ValueError("검색 기간과 검색어를 확인하세요.")
     current_time = datetime.now(collector.KST)
-    discovery_start = start - timedelta(days=15)
+    discovery_start = start
     discovery_end = current_time.date()
+    deadline_start = current_time.date()
+    if start > discovery_end:
+        raise ValueError("게시 시작일은 오늘 이전 또는 오늘이어야 합니다.")
+    if end < deadline_start:
+        raise ValueError("마감 종료일은 오늘 이후 또는 오늘이어야 합니다.")
     request = {"from": str(start), "to": str(end), "queries": queries, "limit": limit,
-               "date_basis": "deadline", "discovery_strategy": "start-minus-15-to-today-v1",
+               "date_basis": "deadline", "discovery_strategy": "publication-start-deadline-end-v1",
+               "deadline_from": str(deadline_start),
                "publication_from": str(discovery_start), "publication_to": str(discovery_end),
                "restriction_sources": "region-license-v2",
                "progress_source": "scsbid-v1",
                "progress_key_configured": bool(os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()),
-               "attachment_sources": "notice+eorder-v1"}
+               "attachment_sources": "notice+eorder-standard-name-v2"}
     digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
     with directory_lock(root_dir(), ".search.lock") as root:
         cache = root / f"cache-{digest}.json"
@@ -216,7 +227,7 @@ def search_bids(start, end, queries, limit, key):
             opening = bid_progress.parse_time(item.get("opengDt"))
             elapsed_unknown = not item.get("bidClseDt") and opening is not None and opening <= (
                 current_time if current_time.tzinfo else current_time.replace(tzinfo=collector.KST))
-            if (not collector.deadline_in_period(item, start, end)
+            if (not collector.deadline_in_period(item, deadline_start, end)
                     and str(item.get("rbidPermsnYn") or "").upper() != "Y" and not elapsed_unknown):
                 return None
             identity = (str(item.get("bidNtceNo") or ""), str(item.get("bidNtceOrd") or "000"))
@@ -237,7 +248,7 @@ def search_bids(start, end, queries, limit, key):
             return current
 
         items, truncated, coverage = collector.search_deadline_candidates(
-            key, discovery_start, discovery_end, start, end, queries, limit,
+            key, discovery_start, discovery_end, deadline_start, end, queries, limit,
             candidate_transform=current_candidate)
         latest = latest_notices(items)
         # 상세 제한을 조회하고, 일반 첨부에 RFP가 없으면 e발주 목록도 보완한다.
@@ -304,7 +315,7 @@ def get_job(job_id):
 def _notice_url(item):
     options = []
     for position, (name, url) in enumerate(collector.attachments(item)):
-        standard = name == "standard_notice"
+        standard = url == str(item.get("stdNtceDocUrl") or "").strip()
         kinds = {"notice"} if standard else classify_attachment(name)
         suffix = Path(name).suffix.lower()
         if "notice" in kinds and "cancel" not in kinds and (standard or suffix in {".pdf", ".hwp", ".hwpx"}):
@@ -338,7 +349,7 @@ def _prepare_selected(folder, rows):
             and Path(row["local_path"]).suffix.lower() == ".pdf"}
     scoped = []
     for row in rows:
-        kinds = {"notice"} if row["file_name"] == "standard_notice" else classify_attachment(row["file_name"])
+        kinds = {"notice"} if row.get("role") == "notice" else classify_attachment(row["file_name"])
         selected = row["selected"] and bool(kinds & {"notice", "rfp", "agreement"}) and "cancel" not in kinds
         if Path(row["file_name"]).suffix.lower() in HWP_SUFFIXES and stem(row) in pdfs:
             selected = False  # 원본은 보존하고 같은 이름의 PDF만 내부 적재에 쓴다.
@@ -366,7 +377,7 @@ def _document_readiness(item, rows, indexed_records, documents=()):
     """다운로드와 실제 RFP 청크 적재를 구분한다. 파일명·URL만으로 준비 완료를 추정하지 않는다."""
     files = []
     for row in rows:
-        kinds = ({"notice"} if row["file_name"] == "standard_notice"
+        kinds = ({"notice"} if row.get("role") == "notice"
                  else classify_attachment(row["file_name"]))
         records = [r for r in indexed_records if r["source_url"] == row["url"]]
         document = next((d for d in documents if d["source_url"] == row["url"]), {})
@@ -399,6 +410,7 @@ def _document_readiness(item, rows, indexed_records, documents=()):
 
 
 def _process_bid(item, full, store, progress):
+    item = collector.resolve_standard_notice(item)
     bid_no = str(item["bidNtceNo"])
     order = str(item.get("bidNtceOrd") or "000")
     folder = root_dir() / "documents" / collector.safe_name(f"{bid_no}_{order}")
@@ -440,7 +452,9 @@ def _process_bid(item, full, store, progress):
             progress("indexing")
             store.upsert(records)  # 실시간 경로는 누적 적재만 허용한다.
         failures = [r["file_name"] for r in rows if r["selected"] and r["status"] == "failed"]
-        failures += [d["original_file_name"] for d in documents if d["status"] not in TEXT_READY]
+        failures += [f"{d['original_file_name']} ({d['status']}"
+                     + (f": {d['error']}" if d.get("error") else "") + ")"
+                     for d in documents if d["status"] not in TEXT_READY]
         if not records:
             failures.append("적재 가능한 공고문/제안요청서 텍스트가 없습니다.")
         readiness = _document_readiness(item, rows, records, documents)
@@ -473,7 +487,7 @@ def run_job(job_id, key=None):
                 write_json(path, job)
 
             try:
-                if job["mode"] == "documents":
+                if job["mode"] == "documents" or (job["mode"] == "notices" and key):
                     # 전체 검색을 재실행하지 않고 선택된 공고번호만 조회한다.
                     current = collector.lookup_notice(key, bid["bid_no"])
                     latest_order = str(current.get("bidNtceOrd") or "000")
@@ -484,7 +498,14 @@ def run_job(job_id, key=None):
                     bid["bid_order"] = latest_order
                     # 같은 차수도 첨부 링크가 보완될 수 있으므로 재조회한 목록을 사용한다.
                     progress("checking_attachments")
-                    item = _enrich_eorder(current, key)
+                    if job["mode"] == "documents":
+                        item = _enrich_eorder(current, key)
+                    else:
+                        # 같은 차수의 e발주 조회 결과는 유지하되 일반 첨부는 최신 응답을 쓴다.
+                        extra = {field: item[field] for field in (
+                            "eorder_attachments", "eorder_lookup_status", "eorder_lookup_error")
+                            if field in item} if not bid["revision_changed"] else {}
+                        item = {**current, **extra}
                     folder = root_dir() / job["search_id"]
                     write_json(folder / f"revision-{collector.safe_name(bid['bid_no'])}-{latest_order}.json", item)
                 bid.update(_process_bid(item, job["mode"] == "documents", store, progress))

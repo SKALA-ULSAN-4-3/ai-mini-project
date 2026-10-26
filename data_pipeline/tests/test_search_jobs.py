@@ -161,6 +161,40 @@ class DocumentReadinessTests(unittest.TestCase):
         self.assertFalse(result['rfp_ready'])
         self.assertEqual(result['rfp_status'], 'not_requested')
 
+    def test_notice_uses_standard_pdf_instead_of_converting_hwp(self):
+        self.item['ntceSpecFileNm1'] = '★입찰공고(최종).hwp'
+        self.item['ntceSpecFileNm2'] = '붙임 3-2. 제안요청서_상용SW_26년도_29년도_1001.hwp'
+        self.item['stdNtceDocUrl'] = 'https://www.g2b.go.kr/converted-notice'
+        with patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
+                patch.object(search_jobs.converter, 'convert_run') as converter:
+            result = self.process(full=False)
+        converter.assert_not_called()
+        self.assertEqual(result['status'], 'completed')
+        self.assertGreater(result['indexed_chunks'], 0)
+        self.assertEqual(result['rfp_status'], 'not_requested')
+        rfp = result['rfp_files'][0]
+        self.assertIn('제안요청서_상용SW', rfp['file_name'])
+        self.assertEqual(rfp['status'], 'deferred')
+        _, records, _ = self.store.load()
+        self.assertTrue(all(r['source_url'] == self.item['stdNtceDocUrl'] for r in records))
+
+    def test_notice_job_refreshes_same_revision_before_selecting_pdf(self):
+        search_id = 'b' * 32
+        folder = self.root / search_id
+        folder.mkdir()
+        write_json(folder / 'search.json', {'items': [self.item]})
+        current = {**self.item, 'stdNtceDocUrl': 'https://www.g2b.go.kr/converted-notice'}
+        job = search_jobs.create_job(search_id, [{'bid_no': 'B1', 'bid_order': '000'}], 'notices')
+        with patch.object(collector, 'lookup_notice', return_value=current) as lookup, \
+                patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'), \
+                patch.object(collector, 'download_file', side_effect=self.download), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
+            search_jobs.run_job(job['job_id'], 'test-key')
+        lookup.assert_called_once_with('test-key', 'B1')
+        bid = search_jobs.get_job(job['job_id'])['bids'][0]
+        self.assertEqual(bid['status'], 'completed')
+        self.assertFalse(bid['revision_changed'])
+
     def test_downloaded_but_unreadable_rfp_is_not_ready(self):
         def download(url, target):
             self.download(url, target)
@@ -266,15 +300,17 @@ class DeadlineSearchTests(unittest.TestCase):
                     'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = datetime(2026, 10, 26, 10)
-            result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 1, 'test')
+            result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertEqual([r['bid_no'] for r in result['items']], ['EARLIER'])
             self.assertEqual(result['date_basis'], 'deadline')
             self.assertTrue(result['items'][0]['notice_only'])
             self.assertTrue(all(end <= date(2026, 10, 26) for start, end in windows))
-            self.assertEqual(windows, [(date(2026, 10, 17), date(2026, 10, 26))])
+            self.assertEqual(windows, [(date(2026, 10, 20), date(2026, 10, 26))])
+            self.assertEqual(result['deadline_from'], '2026-10-26')
+            self.assertEqual(result['deadline_to'], '2026-11-30')
             self.assertEqual(result['search_coverage']['stop_reason'], 'candidate_limit')
             # 같은 조건은 새 마감일 기준 스냅샷만 캐시로 재사용한다.
-            cached = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 1, 'test')
+            cached = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertTrue(cached['cached'])
             self.assertEqual(cached['search_id'], result['search_id'])
 
@@ -296,7 +332,7 @@ class DeadlineSearchTests(unittest.TestCase):
         self.assertTrue(coverage['complete'])
         self.assertEqual(fetch.call_count, 1)
 
-    def test_october_first_deadline_start_searches_publications_from_september_sixteenth(self):
+    def test_publication_start_is_direct_and_deadline_start_is_today(self):
         windows = []
         def fetch(key, start, end, query, page, **kwargs):
             windows.append((start, end))
@@ -308,10 +344,21 @@ class DeadlineSearchTests(unittest.TestCase):
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = datetime(2026, 10, 26, 10)
             result = search_jobs.search_bids(date(2026, 10, 1), date(2026, 11, 30), ['웹'], 20, 'test')
-        self.assertEqual(min(start for start, end in windows), date(2026, 9, 16))
+        self.assertEqual(min(start for start, end in windows), date(2026, 10, 1))
         self.assertEqual(max(end for start, end in windows), date(2026, 10, 26))
-        self.assertEqual(len(windows), 2)
+        self.assertEqual(len(windows), 1)
         self.assertTrue(result['search_coverage']['complete'])
+        self.assertEqual(result['publication_from'], '2026-10-01')
+        self.assertEqual(result['deadline_from'], '2026-10-26')
+
+    def test_invalid_ui_dates_are_rejected_before_any_api_request(self):
+        with patch.object(search_jobs, 'datetime') as clock, patch.object(collector, 'fetch_page') as fetch:
+            clock.now.return_value = datetime(2026, 10, 26, 10)
+            for start, end in ((date(2026, 10, 27), date(2026, 11, 30)),
+                               (date(2026, 10, 1), date(2026, 10, 25))):
+                with self.subTest(start=start, end=end), self.assertRaises(ValueError):
+                    search_jobs.search_bids(start, end, ['웹'], 20, 'test')
+        fetch.assert_not_called()
 
     def test_request_limit_reports_only_actually_queried_coverage(self):
         with patch.object(collector, 'fetch_page', return_value=([], 0)) as fetch, \
@@ -471,7 +518,7 @@ class BidProgressTests(unittest.TestCase):
                 patch.object(search_jobs, '_enrich_candidate', side_effect=lambda item, key: item), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = self.now
-            result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 1, 'notice-key')
+            result = search_jobs.search_bids(date(2026, 10, 20), date(2026, 11, 30), ['웹'], 1, 'notice-key')
             return result, progress_lookup.call_args_list
 
     def test_search_checks_progress_before_limit_and_admits_rebid_outside_original_deadline(self):
@@ -516,6 +563,7 @@ class BidProgressTests(unittest.TestCase):
         active = self.evaluate(bidClseDt='2026-10-12 17:00',
             openings=[self.row(progrsDivCdNm='재입찰')],
             rebids=[self.row('001', bidClseDt='2026-11-05 18:00')])
+        today = self.evaluate(bidNtceNo='TODAY', bidClseDt='2026-10-26 12:00', opengDt='2026-10-26 13:00')
         # 별도 공고로 바꾸며 근거의 공고번호도 함께 대응시킨다.
         closed['bidNtceNo'] = 'CLOSED'
         closed['bid_progress']['opening_results'][0]['bidNtceNo'] = 'CLOSED'
@@ -523,8 +571,9 @@ class BidProgressTests(unittest.TestCase):
             root = Path(temp)
             folder = root / ('a' * 32)
             folder.mkdir()
-            write_json(folder / 'search.json', {'search_id': 'a' * 32, 'items': [closed, active],
-                'request': {'from': '2026-11-01', 'to': '2026-11-30', 'queries': ['웹'], 'date_basis': 'deadline'},
+            write_json(folder / 'search.json', {'search_id': 'a' * 32, 'items': [closed, active, today],
+                'request': {'from': '2026-10-01', 'to': '2026-11-30', 'deadline_from': '2026-10-26',
+                            'queries': ['웹'], 'date_basis': 'deadline'},
                 'collected_at': '2026-10-26', 'page_limit_reached': False})
             app = FastAPI()
             app.include_router(create_bid_router(profile_dependency=lambda: {'region': '서울', 'keywords': ['웹']},
@@ -536,10 +585,17 @@ class BidProgressTests(unittest.TestCase):
             with patch.object(search_jobs, 'root_dir', return_value=root), \
                     patch.object(search_jobs, '_public_search', side_effect=lambda s, c: public(s, c, self.now)):
                 response = TestClient(app).get('/bids', params={
-                    'from': '2026-11-01', 'to': '2026-11-30', 'search_id': 'a' * 32})
+                    'from': '2026-10-26', 'to': '2026-11-30', 'search_id': 'a' * 32})
+                mixed_period = TestClient(app).get('/bids', params={
+                    'from': '2026-10-01', 'to': '2026-11-30', 'search_id': 'a' * 32})
+                recheck = TestClient(app).post('/bids/recheck', json={
+                    'from': '2026-10-26', 'to': '2026-11-30', 'search_id': 'a' * 32,
+                    'bids': [{'bid_no': 'B1', 'revision': '000'}, {'bid_no': 'TODAY', 'revision': '000'}]})
             self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(mixed_period.status_code, 422)
+            self.assertEqual(recheck.status_code, 200, recheck.text)
             bids = response.json()['bids']
-            self.assertEqual([row['bid_no'] for row in bids], ['B1'])
+            self.assertEqual([row['bid_no'] for row in bids], ['B1', 'TODAY'])
             self.assertTrue(bids[0]['deadline'].startswith('2026-11-05'))
 
 

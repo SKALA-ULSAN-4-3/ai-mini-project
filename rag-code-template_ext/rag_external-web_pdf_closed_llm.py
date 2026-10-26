@@ -691,7 +691,10 @@ def run_extraction(schema, instruction: str, context: str):
 
 def cached(bid_no: str, revision: str, kind: str, refresh: bool, build) -> dict:
     key = (bid_no, revision, kind)
-    return EXTRACTIONS.get(key, BID_FINGERPRINTS.get((bid_no, revision)), build, refresh=refresh)
+    fingerprint = BID_FINGERPRINTS.get((bid_no, revision))
+    if kind == "scoring" and fingerprint is not None:
+        fingerprint += ":separate-rule-context-percent-v2"
+    return EXTRACTIONS.get(key, fingerprint, build, refresh=refresh)
 
 
 def bid_documents(bid_no: str, revision: str) -> dict:
@@ -754,9 +757,10 @@ class Band(BaseModel):
 
 class CategoryScore(BaseModel):
     value: str = Field(description="등급 표기 원문 그대로 (예: AAA, A+)")
-    score: float
+    score: float = Field(description="원문의 점수 또는 배점 대비 백분율 숫자. 배점의 95%이면 95, 직접 점수를 계산하지 않음")
 
 class QuantRule(BaseModel):
+    doc_no: Optional[int] = Field(default=None, description="산정표가 적힌 [문서 n] 번호. 확인할 수 없으면 null")
     explicit: bool = Field(description="이 항목의 점수 산정표(구간표 또는 등급표)가 숫자로 원문에 명시되어 있으면 true, 아니면 false")
     metric_field: Literal["credit_rating", "track_records", "none"] = Field(
         description="신용등급 등급표면 credit_rating, 수행 실적 건수 · 금액 구간표면 track_records, 그 외 none")
@@ -765,6 +769,8 @@ class QuantRule(BaseModel):
     period_from: str = Field(description="실적 인정 시작일 YYYY-MM-DD. 원문에 절대 날짜로 적혀 있을 때만, 아니면 빈 문자열")
     period_to: str = Field(description="실적 인정 종료일 YYYY-MM-DD. 원문에 절대 날짜로 적혀 있을 때만, 아니면 빈 문자열")
     rule_type: Literal["bands", "category", "none"]
+    category_score_unit: Literal["points", "percent"] = Field(default="points",
+        description="등급표가 고정 점수이면 points, 배점의 100%·95%처럼 비율이면 percent")
     bands: List[Band] = Field(default_factory=list)
     categories: List[CategoryScore] = Field(default_factory=list)
 
@@ -774,7 +780,18 @@ def build_rule(q: QuantRule, maximum: float) -> tuple[dict | None, str]:
         return None, "원문에 계산 가능한 산정표가 명시되지 않음"
     try:
         if q.metric_field == "credit_rating" and q.rule_type == "category" and q.categories:
-            values = {c.value: c.score for c in q.categories}
+            # 원문의 '배점의 95%'를 LLM이 계산하지 않도록 비율→점수 변환은 코드가 맡는다.
+            from decimal import Decimal
+            values = {}
+            for category in q.categories:
+                score = category.score
+                if q.category_score_unit == "percent":
+                    if not 0 <= score <= 100:
+                        return None, "등급표 비율이 0~100% 범위를 벗어남"
+                    score = float(Decimal(str(maximum)) * Decimal(str(score)) / Decimal(100))
+                if category.value in values and values[category.value] != score:
+                    return None, "같은 신용등급의 점수가 중복되어 원문 확인 필요"
+                values[category.value] = score
             if any(not 0 <= v <= maximum for v in values.values()):
                 return None, "등급표 점수가 배점 범위를 벗어남"
             return {"metric": {"field": "credit_rating"}, "rule": {"type": "category", "values": values}}, ""
@@ -797,6 +814,17 @@ def build_rule(q: QuantRule, maximum: float) -> tuple[dict | None, str]:
 
 SCORING_KEYWORDS = ("배점", "평가항목", "평가 항목", "기술능력평가", "입찰가격평가", "합 계", "합계")
 
+def scoring_rule_context(bid_no: str, revision: str, item: str):
+    # 항목 목록과 상세 산정표는 서로 다른 쪽에 있을 수 있다. 같은 공고·차수 안에서
+    # 항목별로 다시 고르고, 별도 문맥의 문서 번호와 출처를 함께 유지한다.
+    if any(word in _squash(item) for word in ("경영상태", "신용", "재무")):
+        keywords = ("신용평가등급", "신용평가 등급", "신용 평가 등급", "기업신용", "기업 신용", "회사채", "기업어음", "신용등급")
+    elif "실적" in item:
+        keywords = (item, "수행실적", "수행 실적", "실적평가", "실적 평가", "인정기간", "인정 기간")
+    else:
+        keywords = (item,)
+    return numbered_context(bid_chunks(bid_no, revision, keywords))
+
 def build_scoring(bid_no: str, revision: str) -> dict:
     t0 = time.perf_counter()
     docs = bid_chunks(bid_no, revision, SCORING_KEYWORDS)
@@ -814,12 +842,27 @@ def build_scoring(bid_no: str, revision: str) -> dict:
         n, ok = verified_source(it.item, it.doc_no, texts)
         row = {**it.model_dump(exclude={"doc_no"}), "source": labels.get(n or 0, "unknown"),
                "source_refs": [refs[n]] if ok and n in refs else [], "source_verified": ok,
-               "rule": None, "rule_note": ""}
+               "rule": None, "rule_note": "", "rule_sources": []}
         if it.eval_type == "정량":
-            q = run_extraction(QuantRule,
-                f"아래 문서에서 평가 항목 '{it.item}'(배점 {it.max_score})의 점수 산정표를 찾아 옮기세요. "
-                "원문에 숫자로 된 구간표나 등급표가 없으면 explicit을 false로 하고, 추정하거나 계산하지 마세요.", context)
-            row["rule"], row["rule_note"] = build_rule(q, it.max_score)
+            rule_context, _, _, rule_refs = scoring_rule_context(bid_no, revision, it.item)
+            if not rule_context:
+                row["rule_note"] = "해당 항목의 상세 산정표를 문서에서 찾지 못했습니다. 원문을 확인해 주세요."
+            else:
+                q = run_extraction(QuantRule,
+                    f"아래 문서에서 평가 항목 '{it.item}'(배점 {it.max_score})의 점수 산정표를 찾아 옮기세요. "
+                    "경영상태가 신용평가등급표를 참조하면 기업신용평가등급 열을 사용하세요. "
+                    "회사채·기업어음 등 다른 등급 체계의 열을 섞지 마세요. "
+                    "배점의 95% 같은 비율표는 category_score_unit=percent, score=95로 그대로 옮기세요. "
+                    "다른 항목의 표나 배점 합계를 이 항목의 산정표로 사용하지 마세요. "
+                    "원문에 숫자로 된 구간표나 등급표가 없으면 explicit을 false로 하고, 추정하거나 계산하지 마세요. "
+                    "산정표가 있는 [문서 n] 번호를 doc_no로 넣으세요.", rule_context)
+                row["rule"], row["rule_note"] = build_rule(q, it.max_score)
+                if row["rule"]:
+                    if q.doc_no in rule_refs:
+                        row["rule_sources"] = [rule_refs[q.doc_no]]
+                    else:
+                        row["rule"] = None
+                        row["rule_note"] = "산정표의 원문 출처를 확인하지 못했습니다. 원문을 확인해 주세요."
         items.append(row)
     total = round(sum(it["max_score"] for it in items), 2)
     # 옮겨 적은 배점의 합이 문서의 합계와 다르면 누락 · 중복이 있다는 뜻이므로 표시

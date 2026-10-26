@@ -274,9 +274,11 @@ def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
             "bid_no": bid_no, "revision": revision, "id": f"item{i:02d}", "item": it["item"],
             "section": it.get("section", ""), "kind": kind, "max": it["max_score"],
             "basis": it.get("criteria") or f"{it.get('section', '')} · {it['item']}",
-            "sources": it.get("source_refs", []),
+            "sources": it.get("source_refs", []) + [ref for ref in it.get("rule_sources", [])
+                                                       if ref not in it.get("source_refs", [])],
             # 원문에 계산 규칙이 명시된 정량 항목만 metric · rule을 채운다. 없으면 3번이 '담당자 판단'으로 처리
             "metric": rule["metric"] if rule else None, "rule": rule["rule"] if rule else None,
+            "rule_note": it.get("rule_note", ""),
         })
     return {"bid_no": bid_no, "revision": revision, "items": items}
 

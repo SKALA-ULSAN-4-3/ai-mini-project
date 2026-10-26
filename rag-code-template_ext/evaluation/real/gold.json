@@ -17,7 +17,15 @@
         "status": "pending",
         "reviewer": null,
         "reviewed_at": null,
-        "author": "AI source-reading draft"
+        "author": "AI source-reading draft",
+        "human_scope": {
+          "reviewer": "정하윤",
+          "reviewed_at": "2026-10-26",
+          "checked": 5,
+          "held": 1,
+          "unchecked": 14,
+          "note": "재생 시각 기준 마감 전 공고 6건만 확인. 마감 제외 14건은 미확인이라 status는 pending 유지. 판정 변경 없음."
+        }
       },
       "ai_review": {
         "status": "rubric_applied",
@@ -57,7 +65,15 @@
         "status": "pending",
         "reviewer": null,
         "reviewed_at": null,
-        "author": "AI source-reading draft"
+        "author": "AI source-reading draft",
+        "human_scope": {
+          "reviewer": "정하윤",
+          "reviewed_at": "2026-10-26",
+          "checked": 6,
+          "held": 0,
+          "unchecked": 14,
+          "note": "재생 시각 기준 마감 전 공고 6건만 확인. 마감 제외 14건은 미확인이라 status는 pending 유지. 판정 변경 없음."
+        }
       },
       "ai_review": {
         "status": "rubric_applied",
@@ -89,7 +105,15 @@
         "status": "pending",
         "reviewer": null,
         "reviewed_at": null,
-        "author": "AI source-reading draft"
+        "author": "AI source-reading draft",
+        "human_scope": {
+          "reviewer": "정하윤",
+          "reviewed_at": "2026-10-26",
+          "checked": 6,
+          "held": 0,
+          "unchecked": 14,
+          "note": "재생 시각 기준 마감 전 공고 6건만 확인. 마감 제외 14건은 미확인이라 status는 pending 유지. 판정 변경 없음."
+        }
       },
       "ai_review": {
         "status": "rubric_applied",

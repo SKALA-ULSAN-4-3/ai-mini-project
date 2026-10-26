@@ -30,6 +30,7 @@ const form = reactive({
 const none = reactive({ licenses: false, certs: false, owned_docs: false, keywords: false, track_records: false })
 const trackRecords = ref([]) // 수행 실적: 줄 단위로 추가/삭제
 const regionNotice = ref('')
+const prefillNotice = ref('')
 
 const error = ref('')
 const saved = ref(false)
@@ -76,9 +77,33 @@ onMounted(async () => {
   } catch (e) {
     // 404(프로필 없음)이거나 조회 API가 아직 없으면 그냥 빈 폼으로 둡니다.
   }
+  await prefillFromSignup()
 })
 
+// 회원가입 때 입력한 업종·본점 소재지로 아직 비어 있는 칸을 미리 채웁니다. (확인 후 저장해야 반영됨)
+// 1순위: 서버가 /auth/check 로 돌려주는 값(서버가 지원하면), 2순위: 가입할 때 이 브라우저에 보관해 둔 값
+async function prefillFromSignup() {
+  if (form.industry && form.region) return
+  let info = null
+  try {
+    const { data } = await client.get('/auth/check')
+    if (data && (data.head_office_address || data.business_item || data.business_type)) info = data
+  } catch (e) { /* 서버가 아직 지원하지 않으면 다음 방법으로 */ }
+  if (!info) {
+    try { info = JSON.parse(localStorage.getItem('signup_info_' + (sessionStorage.getItem('bn') || '')) || 'null') } catch (e) { info = null }
+  }
+  if (!info) return
+  const filled = []
+  if (!form.industry && (info.business_item || info.business_type)) { form.industry = info.business_item || info.business_type; filled.push('업종') }
+  if (!form.region && info.head_office_address) {
+    const r = matchRegion(info.head_office_address)
+    if (r) { form.region = r; filled.push('소재지') }
+  }
+  if (filled.length) prefillNotice.value = `가입할 때 입력한 정보로 ${filled.join('·')}를 채웠어요. 확인하고 저장해 주세요.`
+}
+
 async function onSubmit() {
+  if (loading.value) return
   error.value = ''
   saved.value = false
 
@@ -165,6 +190,7 @@ async function onSubmit() {
         </div>
       </div>
       <p v-if="regionNotice" class="notice">{{ regionNotice }}</p>
+      <p v-if="prefillNotice" class="notice">{{ prefillNotice }}</p>
 
       <template v-for="f in LIST_FIELDS" :key="f.key">
         <label :for="'f-' + f.key">{{ f.label }} <span class="hint">{{ f.hint }}</span></label>

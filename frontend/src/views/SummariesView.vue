@@ -1,9 +1,9 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useFlowStore } from '../stores/flow'
 import { fetchSummaries, saveSummaries, fetchDocuments, saveSelections, SUMMARY_LABELS, isFailed, isOk } from '../api/flow'
 import { errorMessage } from '../api/client'
-import { keyOf } from '../utils'
+import { keyOf, dday } from '../utils'
 import RecheckBadge from '../components/RecheckBadge.vue'
 import SourceList from '../components/SourceList.vue'
 import JobProgress from '../components/JobProgress.vue'
@@ -23,6 +23,24 @@ const changedRevisions = ref([]) // 정정공고로 차수가 바뀐 공고번�
 
 const meta = (r) => flow.candidates.find((b) => keyOf(b) === keyOf(r)) || {}
 const failed = (r) => !!r.status && isFailed(r.status)
+
+// 마감일 색: 3일 이내 빨강, 7일 이내 주황, 그 외 초록, 마감·미확인은 회색
+const ddayTone = (deadline) => {
+  const t = dday(deadline)
+  if (t === '미확인') return 'na'
+  if (t === '마감') return 'over'
+  const n = t === 'D-day' ? 0 : Number(/^D-(\d+)$/.exec(t)?.[1])
+  return n <= 3 ? 'hot' : n <= 7 ? 'warn' : 'ok'
+}
+// 위쪽 요약 숫자
+const kpi = computed(() => ({
+  done: flow.summaries.filter((r) => !failed(r)).length,
+  soon: flow.summaries.filter((r) => ['hot', 'warn'].includes(ddayTone(meta(r).deadline))).length,
+  review: flow.summaries.filter((r) => r.needs_review || r.handoff).length,
+}))
+// 전체 선택·해제 (요약에 실패한 공고는 제외)
+const selectAll = () => { checked.value = flow.summaries.filter((r) => !failed(r)).map(keyOf) }
+const clearAll = () => { checked.value = [] }
 
 // ④ 화면이 열리면 공고문이 준비된 공고를 한 번에 요약 (동시 처리라 수십 초 걸릴 수 있음)
 onMounted(async () => {
@@ -60,11 +78,11 @@ function onDocsDone(job) {
 // ⑤ 선택한 공고의 제안요청서 준비
 async function prepare() {
   if (starting.value) return
+  starting.value = true // await 앞에서 가장 먼저 잠급니다. (연타 방지)
+  startMessage.value = '선택한 공고를 확인하는 중…'
   error.value = ''; docsJob.value = null
   const picked = flow.summaries.filter((r) => checked.value.includes(keyOf(r)))
-  if (!picked.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; return }
-  starting.value = true
-  startMessage.value = '선택한 공고를 확인하는 중…'
+  if (!picked.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; starting.value = false; startMessage.value = ''; return }
   try {
     flow.selected = picked.map((r) => ({
       bid_no: r.bid_no, revision: r.revision, title: meta(r).title || r.summary?.title?.value || r.bid_no,
@@ -95,11 +113,28 @@ async function prepare() {
     <p v-if="saveNotice" :class="saveNotice.includes('못했') ? 'notice' : 'ok'">{{ saveNotice }}</p>
     <p v-if="error" class="error">{{ error }}</p>
 
+    <template v-if="flow.summaries.length">
+      <div class="kpis">
+        <div class="kpi"><span class="kpi-label">요약 완료</span><b class="kpi-num">{{ kpi.done }}<small>건</small></b></div>
+        <div class="kpi hot"><span class="kpi-label">마감 임박 (7일 이내)</span><b class="kpi-num">{{ kpi.soon }}<small>건</small></b></div>
+        <div class="kpi warn"><span class="kpi-label">담당자 확인 필요</span><b class="kpi-num">{{ kpi.review }}<small>건</small></b></div>
+        <div class="kpi accent"><span class="kpi-label">내가 선택</span><b class="kpi-num">{{ checked.length }}<small>건</small></b></div>
+      </div>
+      <div class="pick-bar">
+        <span class="pick-count">준비할 공고를 고르세요</span>
+        <span class="pick-actions">
+          <button type="button" class="small" @click="selectAll">전체 선택</button>
+          <button type="button" class="small" :disabled="!checked.length" @click="clearAll">전체 해제</button>
+        </span>
+      </div>
+    </template>
+
     <div v-for="r in flow.summaries" :key="keyOf(r)" class="item">
       <label style="display: flex; gap: 8px; align-items: flex-start; margin: 0; cursor: pointer">
         <input v-model="checked" type="checkbox" :value="keyOf(r)" :disabled="failed(r)" style="width: auto; margin-top: 6px" />
         <span>
           <strong>{{ meta(r).title || r.summary?.title?.value || r.bid_no }}</strong>
+          <span v-if="meta(r).deadline" class="dday" :class="ddayTone(meta(r).deadline)">{{ dday(meta(r).deadline) }}</span>
           <RecheckBadge :recheck="meta(r).recheck" />
           <span class="meta" style="display: block; font-weight: 400">{{ r.bid_no }}-{{ r.revision }} · {{ meta(r).agency }}</span>
         </span>
@@ -125,9 +160,12 @@ async function prepare() {
       </details>
     </div>
 
-    <button v-if="flow.summaries.length" class="primary" type="button" :disabled="starting || (!!jobId && !docsJob)" @click="prepare">
-      {{ starting ? startMessage : `선택한 ${checked.length}건 제안요청서 준비` }}
-    </button>
+    <div v-if="flow.summaries.length" class="action-bar">
+      <span><strong>{{ checked.length }}건</strong> 선택됨<span class="meta"> · 선택한 공고만 채점표를 만들어요</span></span>
+      <button class="primary" type="button" :disabled="starting || (!!jobId && !docsJob)" @click="prepare">
+        {{ starting ? startMessage : `선택한 ${checked.length}건 제안요청서 준비` }}
+      </button>
+    </div>
     <JobProgress v-if="jobId" :key="jobId" :job-id="jobId" label="제안요청서를 받는 중" @done="onDocsDone" />
     <p v-if="changedRevisions.length" class="notice">정정공고로 차수가 바뀐 공고가 있어 최신 차수로 바꿨습니다: {{ changedRevisions.join(', ') }}</p>
     <router-link v-if="docsJob && flow.selected.length" to="/review" class="back">채점표 보러 가기 →</router-link>

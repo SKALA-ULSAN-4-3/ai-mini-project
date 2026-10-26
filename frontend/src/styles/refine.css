@@ -1,0 +1,33 @@
+/* 글자 크기 대비 + 카드 단조로움 줄이기. 롤백: main.js 에서 './styles/refine.css' 한 줄 삭제 */
+
+/* 3) 글자 크기 대비: 제목은 크고 굵게, 보조 글은 작고 옅게 */
+.head h2 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.04em; }
+.head-desc { font-size: 0.88rem; color: #9a9aa6; }
+.head .eyebrow { font-size: 0.72rem; letter-spacing: 0.08em; }
+.item h3, .item > strong { font-size: 1.12rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.4; }
+.item > strong { display: inline; }
+.item .meta { font-size: 0.84rem; color: #8d8d99; margin-top: 6px; }
+.item .meta .amt { color: var(--ink); font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; }
+.kpi-label { font-size: 0.78rem; font-weight: 500; color: #9a9aa6; }
+.kpi-num { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.05em; }
+.kpi-num small { font-size: 0.85rem; font-weight: 500; }
+.pick-bar { font-size: 0.9rem; color: #8d8d99; }
+.pick-bar strong { color: var(--ink); font-size: 1.05rem; }
+.side-panel .status h3, .side-panel .help h3 { font-size: 0.78rem; font-weight: 600; color: #9a9aa6; letter-spacing: 0.04em; }
+
+/* 2) 카드 균일함 줄이기: 테두리·박스를 걷고 구분선과 여백으로 나눔 */
+.kpis { gap: 0; border: 1px solid var(--line); border-radius: 16px; background: #fff; overflow: hidden; }
+.kpi { border: 0; border-radius: 0; background: transparent; padding: 20px 26px; }
+.kpi + .kpi { border-left: 1px solid var(--line); }
+.kpi.accent { background: #faf9ff; border-color: var(--line); }
+.item { margin-top: 0; padding: 20px 8px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; transition: background .15s, padding .15s; }
+.item:hover { background: #fff; border-color: var(--line); padding-left: 16px; }
+label.item:has(input:checked) { background: #faf9ff; box-shadow: inset 3px 0 0 var(--accent); padding-left: 16px; }
+.item:last-of-type { border-bottom: 0; }
+
+html[data-theme="dark"] .kpis { background: #17171f; border-color: var(--line); }
+html[data-theme="dark"] .kpi.accent { background: #1b1830; }
+html[data-theme="dark"] .item:hover { background: #1b1b24; }
+html[data-theme="dark"] label.item:has(input:checked) { background: #1b1830; }
+html[data-theme="dark"] .item .meta .amt { color: #f2f2f7; }
+html[data-theme="dark"] .head-desc, html[data-theme="dark"] .item .meta, html[data-theme="dark"] .kpi-label { color: #9c9cae; }

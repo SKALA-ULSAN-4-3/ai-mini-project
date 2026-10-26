@@ -92,7 +92,8 @@ async function search() {
     // 입력한 게시기간은 보존하고, 후속 요청에는 서버가 확정한 마감기간을 사용한다.
     const deadlineFrom = d.deadline_from || requestedPeriod.from
     const deadlineTo = d.deadline_to || requestedPeriod.to
-    flow.period = { ...requestedPeriod, deadline_from: deadlineFrom, deadline_to: deadlineTo }
+    flow.period = { ...requestedPeriod, search_queries: list, limit: 20,
+      deadline_from: deadlineFrom, deadline_to: deadlineTo }
     // ② 회사 프로필에 맞게 추리기 (3번 API). 여기서 404 는 "저장된 프로필이 없음"입니다.
     try {
       const r = await fetchCandidates(deadlineFrom, deadlineTo, d.search_id)
@@ -155,9 +156,9 @@ async function prepare() {
   const bids = flow.candidates.filter((b) => checked.value.includes(keyOf(b))).slice(0, 20)
   if (!bids.length) { error.value = '공고를 한 건 이상 선택해 주세요.'; preparing.value = false; return }
   try {
-    jobId.value = await fetchNotices(flow.searchId, bids)
+    jobId.value = await flow.prepareWithSearchRecovery(fetchNotices, bids)
   } catch (e) {
-    error.value = errorMessage(e)
+    error.value = e.recoveryMessage || errorMessage(e)
   } finally {
     preparing.value = false
   }

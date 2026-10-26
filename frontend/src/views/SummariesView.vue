@@ -92,9 +92,9 @@ async function prepare() {
     flow.approved = []
     await saveSelections(picked) // 내 계정(DB)에 선택 저장 (공고별 1건씩)
     startMessage.value = '제안요청서 준비 작업을 요청하는 중…'
-    jobId.value = await fetchDocuments(flow.searchId, picked)
+    jobId.value = await flow.prepareWithSearchRecovery(fetchDocuments, picked)
   } catch (e) {
-    error.value = errorMessage(e)
+    error.value = e.recoveryMessage || errorMessage(e)
   } finally {
     starting.value = false
     startMessage.value = ''

@@ -55,7 +55,7 @@ PDF 청킹, FAISS 검색, 프롬프트와 LLM 호출은 RAG 담당 영역이므�
 |---|---|---|---|
 | POST | `/api/signup` | 사업자 회원가입 | 불필요 |
 | POST | `/api/login` | 로그인 및 JWT 발급 | 불필요 |
-| GET | `/api/auth/check` | 현재 JWT 확인 | Bearer JWT |
+| GET | `/api/auth/check` | 현재 JWT 확인·가입 기본정보 조회 | Bearer JWT |
 | GET | `/api/profile` | 회사 프로필 조회 | Bearer JWT |
 | PUT | `/api/profile` | 회사 프로필 생성·수정 | Bearer JWT |
 | POST | `/api/me/selections` | 공고 선택 상태 저장 | Bearer JWT |
@@ -122,6 +122,32 @@ Content-Type: application/json
 Authorization: Bearer eyJ...
 ```
 
+### JWT 및 가입 기본정보 확인
+
+프론트엔드는 로그인 상태를 복원할 때 아래 API로 JWT를 검증하고, 회원가입 때
+저장한 본점 소재지·업태·업종을 함께 조회할 수 있습니다.
+
+```http
+GET /api/auth/check
+Authorization: Bearer eyJ...
+```
+
+```json
+{
+  "ok": true,
+  "business_registration_number": "1234567890",
+  "corporate_name": "예시 주식회사",
+  "head_office_address": "울산광역시 남구",
+  "business_type": "정보통신업",
+  "business_item": "소프트웨어 개발 및 공급업"
+}
+```
+
+JWT에서 사용자 식별값을 검증한 뒤 `users` 테이블에서 최신 가입 정보를 조회합니다.
+따라서 기존에 발급한 토큰도 다시 로그인하지 않고 사용할 수 있으며,
+`company_profiles`가 아직 생성되지 않은 사용자도 위 세 가지 기본정보를 받을 수
+있습니다.
+
 로그아웃 API는 별도로 두지 않습니다. 클라이언트가 보관한 Access Token을
 삭제하면 로그아웃됩니다. 운영 환경의 브라우저 토큰 보관 방식은 프론트엔드와
 보안 정책을 함께 정해야 하며, 예제 로그인 화면은 개발 확인용으로
@@ -186,9 +212,10 @@ docker compose up -d --build
 통합 테스트는 회원가입, 로그인, JWT 검증, 회사 프로필 저장·조회를 확인하고
 자신이 만든 테스트 데이터만 종료 시 삭제합니다.
 
-현재 Java 테스트 소스는 JWT, 인증 서비스, 회사 프로필 서비스와 공고 API를
-검증합니다. `scripts/local-smoke-test.sh`는 실제 HTTP 서버와 PostgreSQL을 연결해
-회원가입, 중복 가입, 로그인, JWT 확인과 프로필 저장·조회를 점검합니다.
+현재 Java 테스트 소스는 JWT, 인증 서비스, 인증 확인 응답의 가입 기본정보,
+회사 프로필 서비스와 공고 API를 검증합니다. `scripts/local-smoke-test.sh`는 실제
+HTTP 서버와 PostgreSQL을 연결해 회원가입, 중복 가입, 로그인, JWT 확인과 프로필
+저장·조회를 점검합니다.
 
 `CREATE TABLE IF NOT EXISTS`는 기존 테이블 구조를 변경하지 않습니다. 예전
 `id/username` 구조의 테이블을 이미 생성했다면 데이터를 백업한 뒤 별도의

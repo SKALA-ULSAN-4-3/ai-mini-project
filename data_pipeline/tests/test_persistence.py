@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -11,6 +12,32 @@ from data_pipeline import persistence
 
 
 class PersistenceTests(unittest.TestCase):
+    def test_bulk_download_urls_and_file_reuse_do_not_repeat_java_requests(self):
+        contents = {'a': b'first', 'b': b'second'}
+        names = {key: f'dp1_original_{key}_{hashlib.sha256(data).hexdigest()}_{key}.pdf'
+                 for key, data in contents.items()}
+        java_requests = []
+        def handler(request):
+            if request.url.host == 'storage.test':
+                return httpx.Response(200, content=contents[request.url.path.strip('/')])
+            self.assertEqual(request.method, 'GET')
+            java_requests.append(dict(request.url.params))
+            signed = request.url.params.get('download_urls') == 'true'
+            return httpx.Response(200, json=[{'file_name': names[key],
+                **({'download_url': 'https://storage.test/' + key} if signed else {})} for key in names])
+        real_client = httpx.Client
+        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,
+                {'BACKEND_URL': 'https://java.test', 'SERVICE_API_KEY': 'test'}), patch.object(
+                persistence.httpx, 'Client', side_effect=lambda **kw: real_client(transport=httpx.MockTransport(handler))):
+            with persistence.BackendStore('B1', '000') as store:
+                for key, data in contents.items():
+                    target = Path(temp) / (key + '.pdf')
+                    self.assertTrue(store.restore('original', key, target))
+                    with patch.object(Path, 'read_bytes', side_effect=AssertionError('duplicate body read')):
+                        self.assertTrue(store.put_file('original', key, target.name, target))
+                self.assertEqual(len(java_requests), 2)
+                self.assertEqual([q['download_urls'] for q in java_requests], ['false', 'true'])
+
     def test_original_round_trip_checks_content_hash_and_reuses_existing(self):
         stored = {}
         content = b"original PDF bytes"

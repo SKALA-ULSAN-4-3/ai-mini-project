@@ -29,6 +29,11 @@ def read_csv(path):
         return list(csv.DictReader(stream))
 
 
+def read_jsonl(path):
+    with Path(path).open(encoding='utf-8') as stream:
+        return [json.loads(line) for line in stream if line.strip()]
+
+
 def split_text(text, size=1000, overlap=200):
     """페이지 경계를 넘지 않는 문자 단위 청킹. 원문 공백/연락처 유지."""
     if size <= 0 or not 0 <= overlap < size:
@@ -135,16 +140,21 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
             continue
         doc["source_sha256"] = digest
         doc["preparation_version"] = PREPARATION_VERSION
+        context = hashlib.sha256(json.dumps([chunk_size, overlap, official_names(api_item)],
+                                            sort_keys=True).encode()).hexdigest()
+        doc['preparation_context'] = context
         old = previous.get(row.get("url"))
         if old:
             old_doc, saved_pages, saved_chunks = old
             if (old_doc.get("source_sha256") == digest
                     and old_doc.get("document_id") == document_id
                     and old_doc.get("preparation_version") == PREPARATION_VERSION
+                    and old_doc.get('preparation_context') == context
                     and old_doc.get("status") in ("extracted", "review_empty_pages")):
                 # 같은 해시·전처리 버전은 페이지 파싱·개인정보 마스킹·청킹을 다시 하지 않는다.
                 doc.update({**old_doc, **base, "document_id": document_id, "sha256": digest,
                             "source_sha256": digest, "preparation_version": PREPARATION_VERSION,
+                            "preparation_context": context,
                             "extraction_seconds": 0.0})
                 documents[-1] = doc
                 pages.extend({**record, **base, "document_id": document_id, "sha256": digest,

@@ -4,6 +4,8 @@ from datetime import date, datetime
 import os
 from pathlib import Path
 import tempfile
+import shutil
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -33,6 +35,143 @@ def text_pdf():
 
 
 class DocumentReadinessTests(unittest.TestCase):
+    def test_only_timed_out_conversion_is_retried_and_successes_are_reused(self):
+        from data_pipeline import convert_documents as conversion
+        rows = []
+        for name in ('retry.hwp', 'success.hwp'):
+            path = self.root / name
+            path.write_bytes(name.encode())
+            rows.append({'bid_no': 'B1', 'bid_order': '000', 'selected': True,
+                         'status': 'downloaded', 'local_path': str(path)})
+        search_jobs.write_csv(self.root / 'attachments.csv', list(rows[0]), rows)
+        calls = []
+        def convert(source, target, soffice):
+            calls.append(source.name)
+            if source.name == 'retry.hwp' and calls.count(source.name) == 1:
+                raise conversion.ConversionTimeout('mock timeout')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(self.pdf)
+        first = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=convert)
+        self.assertEqual(calls, ['retry.hwp', 'retry.hwp', 'success.hwp'])
+        self.assertEqual(len(first[0]['attempt_history']), 2)
+        self.assertAlmostEqual(first[0]['elapsed_seconds'],
+                               sum(entry['elapsed_seconds'] for entry in first[0]['attempt_history']))
+        with patch.object(conversion, 'convert_one', side_effect=AssertionError('repeat successful conversion')) as tool:
+            reused = conversion.convert_run(self.root, config={'soffice': 'mock'}, converter=tool)
+        self.assertTrue(all(row['status'] == 'existing' for row in reused))
+        tool.assert_not_called()
+
+    def test_downloads_overlap_but_are_bounded_and_forms_are_not_converted(self):
+        self.item.update(ntceSpecFileNm3='신청서.hwp', ntceSpecDocUrl3='https://www.g2b.go.kr/form')
+        barrier = threading.Barrier(3)
+        lock = threading.Lock()
+        active, peak = 0, 0
+        def download(url, target):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            try:
+                barrier.wait(timeout=5)
+                self.download(url, target)
+            finally:
+                with lock: active -= 1
+        with patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as prepare:
+            result = self.process(downloader=download)
+        self.assertEqual(peak, 3)
+        self.assertTrue(result['download_complete'])
+        self.assertTrue(result['rfp_ready'])
+        self.assertTrue(all(call.args[1] is False for call in prepare.call_args_list))
+
+    def test_cold_document_folder_restores_complete_db_cache_without_download_or_prepare(self):
+        import httpx
+        from data_pipeline import persistence, cache_api
+        self.item.update(ntceSpecFileNm3='신청서.hwp', ntceSpecDocUrl3='https://www.g2b.go.kr/form')
+        self.item['stdNtceDocUrl'] = 'https://www.g2b.go.kr/standard'
+        blobs, cache = {}, {}
+        java_calls = []
+        def handler(request):
+            if request.url.host == 'storage.test':
+                return httpx.Response(200, content=blobs[request.url.path.strip('/')])
+            java_calls.append(request.method)
+            if request.method == 'GET':
+                signed = request.url.params.get('download_urls') == 'true'
+                return httpx.Response(200, json=[{'file_name': name,
+                    **({'download_url': 'https://storage.test/' + name} if signed else {})} for name in blobs])
+            name = request.url.params['file_name']
+            blobs[name] = request.content
+            return httpx.Response(201, json={'file_name': name})
+        def save(no, revision, state):
+            cache.update(state)
+            return {'status': 'saved'}
+        real_client = httpx.Client
+        with patch.dict(os.environ, {'BACKEND_URL': 'https://java.test', 'SERVICE_API_KEY': 'test'}), \
+                patch.object(search_jobs.collector, 'resolve_standard_notice', side_effect=lambda item: item), \
+                patch.object(persistence.httpx, 'Client', side_effect=lambda **kw: real_client(transport=httpx.MockTransport(handler))), \
+                patch.object(cache_api, 'save_rfp', side_effect=save), \
+                patch.object(cache_api, 'lookup_rfp', side_effect=lambda *args: {'cached': bool(cache), 'result': cache, 'status': 'hit' if cache else 'miss'}):
+            first = self.process()
+            self.assertTrue(first['rfp_ready'])
+            self.assertEqual(cache['schema'], 2)
+            shutil.rmtree(self.root / 'documents')
+            java_calls.clear()
+            with patch.object(search_jobs.collector, 'download_file', side_effect=AssertionError('external download')), \
+                    patch.object(search_jobs, '_prepare_with_timeout', side_effect=AssertionError('duplicate prepare')):
+                second = search_jobs._process_bid(self.item, True, self.store, lambda _: None)
+            self.assertTrue(second['rfp_ready'])
+            self.assertTrue(second['download_complete'])
+            self.assertEqual(second['rfp_cache']['status'], 'reused')
+            self.assertEqual(java_calls, ['GET', 'GET'])
+            self.item['ntceInsttOfclNm'] = '담당자변경'
+            with patch.object(search_jobs, '_prepare_with_timeout', wraps=search_jobs._prepare_with_timeout) as worker:
+                changed = self.process()
+            self.assertTrue(changed['rfp_ready'])
+            worker.assert_called_once()
+
+    def test_job_batches_indexing_and_never_reports_ready_before_commit(self):
+        sid = 'a' * 32
+        folder = self.root / sid
+        folder.mkdir()
+        other = {**self.item, 'bidNtceNo': 'B2'}
+        write_json(folder / 'search.json', {'items': [self.item, other]})
+        refs = [{'bid_no': no, 'bid_order': '000'} for no in ['B1', 'B2']]
+        job = search_jobs.create_job(sid, refs, 'notices')
+        upsert = self.store.upsert
+        def commit(records):
+            snapshot = search_jobs.get_job(job['job_id'])
+            self.assertEqual(snapshot['done'], 0)
+            self.assertTrue(all(b['status'] == 'indexing' and b['preparation_status'] == 'pending_index' for b in snapshot['bids']))
+            return upsert(records)
+        with patch.object(search_jobs.collector, 'download_file', side_effect=self.download), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store), \
+                patch.object(self.store, 'upsert', side_effect=commit) as index:
+            search_jobs.run_job(job['job_id'])
+        index.assert_called_once()
+        final = search_jobs.get_job(job['job_id'])
+        self.assertEqual(final['done'], 2)
+        self.assertEqual(final['status'], 'completed')
+        self.assertTrue(all(b['preparation_status'] == 'ready' for b in final['bids']))
+
+    def test_failed_index_is_not_ready_and_retry_reuses_document_work(self):
+        sid = 'f' * 32
+        (self.root / sid).mkdir()
+        write_json(self.root / sid / 'search.json', {'items': [self.item]})
+        refs = [{'bid_no': 'B1', 'bid_order': '000'}]
+        first = search_jobs.create_job(sid, refs, 'notices')
+        with patch.object(search_jobs.collector, 'download_file', side_effect=self.download), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store), \
+                patch.object(self.store, 'upsert', side_effect=RuntimeError('index failure')):
+            search_jobs.run_job(first['job_id'])
+        failed = search_jobs.get_job(first['job_id'])
+        self.assertEqual(failed['status'], 'failed')
+        self.assertEqual(failed['bids'][0]['preparation_status'], 'failed')
+        retry = search_jobs.create_job(sid, refs, 'notices')
+        with patch.object(search_jobs.collector, 'download_file', side_effect=AssertionError('repeat download')), \
+                patch.object(search_jobs, '_prepare_with_timeout', side_effect=AssertionError('repeat prepare')), \
+                patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
+            search_jobs.run_job(retry['job_id'])
+        self.assertEqual(search_jobs.get_job(retry['job_id'])['status'], 'completed')
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -224,7 +363,7 @@ class DocumentReadinessTests(unittest.TestCase):
             archive.writestr('../과업지시서.hwp', b'expected-original')
             archive.writestr('긴급발주사유서.hwp', b'not-selected')
         original = source.read_bytes()
-        def execute(args):
+        def execute(args, timeout=None):
             selected = Path(args[-1])
             self.assertEqual(selected.name, '과업지시서.hwp')
             self.assertEqual(selected.read_bytes(), b'expected-original')
@@ -257,7 +396,7 @@ class DocumentReadinessTests(unittest.TestCase):
                  'status': 'downloaded', 'local_path': str(self.root / name)}
                 for name in ('one.hwp', 'two.hwp')]
         write_csv(self.root / 'attachments.csv', list(rows[0]), rows)
-        def convert(source, target, soffice):
+        def convert(source, target, soffice, **kwargs):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(self.pdf)
         with patch.object(conversion, 'convert_one', side_effect=convert) as tool:
@@ -359,7 +498,7 @@ class DocumentReadinessTests(unittest.TestCase):
         _, records, _ = self.store.load()
         self.assertTrue(all(r['source_url'] == self.item['stdNtceDocUrl'] for r in records))
 
-    def test_notice_job_refreshes_same_revision_before_selecting_pdf(self):
+    def test_notice_job_uses_search_snapshot_without_additional_api_lookup(self):
         search_id = 'b' * 32
         folder = self.root / search_id
         folder.mkdir()
@@ -373,10 +512,10 @@ class DocumentReadinessTests(unittest.TestCase):
                 patch.object(collector, 'download_file', side_effect=self.download), \
                 patch.object(search_jobs, 'KnowledgeStore', return_value=self.store):
             search_jobs.run_job(job['job_id'], 'test-key')
-        lookup.assert_called_once_with('test-key', 'B1')
+        lookup.assert_not_called()
         bid = search_jobs.get_job(job['job_id'])['bids'][0]
         self.assertEqual(bid['status'], 'completed')
-        self.assertFalse(bid['revision_changed'])
+        self.assertFalse(bid.get('revision_changed', False))
 
     def test_downloaded_but_unreadable_rfp_is_not_ready(self):
         def download(url, target):

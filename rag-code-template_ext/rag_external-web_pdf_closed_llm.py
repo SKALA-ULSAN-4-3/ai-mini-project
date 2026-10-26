@@ -1,6 +1,6 @@
 #### 다음 실습 코드는 학습 목적으로만 사용 바랍니다. 문의 : audit@korea.ac.kr 임성열 Ph.D.
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
+from fastapi import Header, FastAPI, UploadFile, File, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import create_async_engine
 from fastapi.responses import JSONResponse
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -50,6 +50,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # 프로젝트 루트 .env(1·3번과 공통)를 먼저 읽고, 옮기는 동안만 이 폴더의 .env도 보조로 읽는다 (이미 있는 값은 덮지 않음)
+from data_pipeline.persistence import summary_with_database
 from knowledge_bridge import (ExtractionCache, StoreCache, sync_bids_csv, to_bid_logic_scoring, to_bid_logic_checklist, to_iso_due,
                               classify_attachment, search_results)
 BASE_DIR = Path(__file__).resolve().parent
@@ -111,7 +112,9 @@ def refresh_stores():
             for d in pdf.docstore._dict.values():
                 if d.metadata.get("bid_no"):
                     chunks.setdefault((d.metadata["bid_no"], d.metadata.get("revision", "")), []).append(
-                        json.dumps([d.metadata.get("chunk_id", ""), d.page_content, d.metadata], sort_keys=True, default=str))
+                        json.dumps([d.metadata.get("chunk_id", ""), d.page_content,
+                                    {key: d.metadata.get(key) for key in ("bid_no", "revision", "filename", "page",
+                                     "source_url", "sha256", "privacy_policy")}], sort_keys=True, default=str))
             fingerprints = {k: hashlib.sha256(json.dumps(sorted(v)).encode()).hexdigest() for k, v in chunks.items()}
         BID_FINGERPRINTS = fingerprints
     STORE_STATE.update(pdf_generation=pdf_generation, web_generation=web_generation,
@@ -963,10 +966,20 @@ def build_summary(bid_no: str, revision: str) -> dict:
     return {"bid_no": bid_no, "revision": revision, "summary": fields, "missing": missing,
             "needs_review": False, "handoff": bool(missing), "latency_ms": elapsed_ms(t0)}
 
+def summary_result(bid_no, revision, refresh=False, authorization=None):
+    revision = resolve_revision(bid_no, revision)
+    return summary_with_database(
+        bid_no, revision, authorization, BID_FINGERPRINTS.get((bid_no, revision)),
+        hashlib.sha256(EXTRACTIONS.namespace.encode()).hexdigest(),
+        lambda: cached(bid_no, revision, "summary", refresh, lambda: build_summary(bid_no, revision)),
+        refresh=refresh)
+
+
 @app.get("/bids/{bid_no}/summary", dependencies=AUTH, summary="공고 요약 (항목별 출처 포함)", tags=["공고 추출"])
 def bid_summary(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
-                      refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
-    return run_endpoint(bid_no, revision, "summary", refresh, build_summary)
+                      refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출"),
+                      authorization: Optional[str] = Header(default=None)):
+    return summary_result(bid_no, revision, refresh, authorization)
 
 # ---- 흐름 ③ · ⑥ 진행 확인: 공고별로 무엇이 적재되었는지 ----
 @app.get("/bids/{bid_no}/documents", dependencies=AUTH, summary="공고별 적재 문서 · 단계 (none / notice_only / full)", tags=["공고 추출"])
@@ -983,7 +996,7 @@ class SummaryBatchRequest(BaseModel):
     refresh: bool = False
 
 @app.post("/bids/summaries", dependencies=AUTH, summary="공고 여러 건 요약 (흐름 ④, 최대 20건 · 동시 5건)", tags=["공고 추출"])
-def bid_summaries(req: SummaryBatchRequest):
+def bid_summaries(req: SummaryBatchRequest, authorization: Optional[str] = Header(default=None)):
     # LLM 호출을 공고마다 순서대로 하면 20건에 1분 이상 걸려 5건씩 동시에 처리한다. 한 건이 실패해도 나머지는 돌려준다
     from concurrent.futures import ThreadPoolExecutor
     t0 = time.perf_counter()
@@ -991,7 +1004,7 @@ def bid_summaries(req: SummaryBatchRequest):
     def one(key: BidKey) -> dict:
         try:
             revision = resolve_revision(key.bid_no, key.revision)
-            data = cached(key.bid_no, revision, "summary", req.refresh, lambda: build_summary(key.bid_no, revision))
+            data = summary_result(key.bid_no, revision, req.refresh, authorization)
             return {"status": "ok", **data, "documents": bid_documents(key.bid_no, revision)["stage"]}
         except HTTPException as e:
             return {"bid_no": key.bid_no, "revision": key.revision, "status": "error", "code": e.status_code, "detail": e.detail}

@@ -19,6 +19,15 @@ const docsJob = ref(null)
 const starting = ref(false)
 const startMessage = ref('')
 const saveNotice = ref('') // 요약을 내 계정(DB)에 저장한 결과 안내
+const savingDb = ref(false)
+const unsaved = computed(() => flow.summaries.some((row) => row.db_persistence?.status === 'failed'))
+async function retryDbSave() {
+  savingDb.value = true
+  try {
+    const result = await saveSummaries(flow.summaries, { retry: true })
+    saveNotice.value = result.failed ? `DB에 저장하지 못한 요약 ${result.failed}건이 남아 있습니다.` : '요약을 DB에 저장했습니다.'
+  } finally { savingDb.value = false }
+}
 const changedRevisions = ref([]) // 정정공고로 차수가 바뀐 공고번호
 
 const meta = (r) => flow.candidates.find((b) => keyOf(b) === keyOf(r)) || {}
@@ -112,6 +121,7 @@ async function prepare() {
     <p v-if="loading" class="sub">요약을 만드는 중… (수십 초 걸릴 수 있어요)</p>
     <p v-if="saveNotice" :class="saveNotice.includes('못했') ? 'notice' : 'ok'">{{ saveNotice }}</p>
     <p v-if="error" class="error">{{ error }}</p>
+    <button v-if="unsaved" type="button" :disabled="savingDb" @click="retryDbSave">{{ savingDb ? 'DB 저장 중…' : '요약 DB 저장 다시 시도' }}</button>
 
     <template v-if="flow.summaries.length">
       <div class="kpis">

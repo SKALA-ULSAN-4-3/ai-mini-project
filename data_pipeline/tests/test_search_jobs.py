@@ -97,6 +97,7 @@ class DocumentReadinessTests(unittest.TestCase):
         search_jobs.ACTIVE_JOBS.discard(third['job_id'])
 
     def test_conversion_profiles_are_isolated_without_global_lock(self):
+        search_jobs.write_csv(self.root / 'attachments.csv', search_jobs.ATTACHMENT_FIELDS, [])
         profile = self.root / 'base-profile'
         profile.mkdir()
         (profile / '.lock').write_text('base profile in use')

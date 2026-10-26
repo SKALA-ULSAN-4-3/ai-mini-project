@@ -25,6 +25,7 @@ from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY
                      read_jsonl, write_jsonl, read_csv, write_csv, stamp)
 from .knowledge import KnowledgeStore
 from .privacy import official_names
+from .persistence import BackendStore, identity
 
 CACHE_SECONDS = 300
 ACTIVE_JOBS = set()
@@ -125,6 +126,10 @@ def _download_record(run_dir, row, old):
         row.update(status="downloaded", local_path=str(target), error="")
     except collector.CollectionError as exc:
         row.update(status="failed", local_path="", error=str(exc))
+
+
+class PrepareTimeout(RuntimeError):
+    pass
 
 
 class SearchNotFound(ValueError):
@@ -345,7 +350,18 @@ def get_job(job_id):
     path = root_dir() / "jobs" / f"{job_id}.json"
     if not path.is_file():
         raise SearchNotFound("작업이 없습니다.")
-    return read_json(path)
+    job = read_json(path)
+    for bid in job.get("bids", []):
+        if bid.get("status") != "converting":
+            continue
+        manifest = root_dir() / "documents" / collector.safe_name(
+            f"{bid['bid_no']}_{bid['bid_order']}") / "conversions.jsonl"
+        if manifest.is_file():
+            bid["conversion_progress"] = [{"file_name": Path(row["original_path"]).name,
+                "status": row.get("status"), "attempt": row.get("attempt"),
+                "max_attempts": row.get("max_attempts"), "timeout_seconds": row.get("timeout_seconds")}
+                for row in read_jsonl(manifest)]
+    return job
 
 
 def _notice_url(item):
@@ -399,14 +415,21 @@ def _run_prepare_worker(folder, convert_hwp, timeout, env):
             except ProcessLookupError:
                 pass
             process.communicate()
-        raise RuntimeError(f"문서 변환·텍스트 추출이 {timeout}초를 초과해 중단했습니다. 원본은 보존되며 재시도 시 성공 파일을 재사용합니다.") from None
+        raise PrepareTimeout(f"문서 변환·텍스트 추출이 {timeout}초를 초과해 중단했습니다. 원본은 보존되며 재시도 시 성공 파일을 재사용합니다.") from None
     if process.returncode not in (0, 2):
         raise RuntimeError("문서 변환·텍스트 추출 프로세스가 실패했습니다. 변환 도구 설정과 문서 형식을 확인하세요.")
 
 
-def _prepare_with_timeout(folder, convert_hwp, timeout=120):
+def _prepare_with_timeout(folder, convert_hwp, timeout=None):
     if not convert_hwp:
-        return _run_prepare_worker(folder, False, timeout, None)
+        return _run_prepare_worker(folder, False, timeout or 120, None)
+    if timeout is None:
+        per_file, attempts, overall_limit = converter.conversion_policy()
+        originals = {converter.sha256(Path(row["local_path"])) for row in read_csv(folder / "attachments.csv")
+                     if str(row.get("selected")).lower() == "true" and row.get("local_path")
+                     and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES
+                     and Path(row["local_path"]).is_file()}
+        timeout = min(overall_limit, max(120, len(originals) * per_file * attempts + 120))
     # 변환 프로필만 격리한다. 확장 파일은 재설치·재다운로드하지 않는다.
     with tempfile.TemporaryDirectory(prefix="bid-office-") as temp:
         profile = Path(temp) / "profile"
@@ -416,10 +439,15 @@ def _prepare_with_timeout(folder, convert_hwp, timeout=120):
         else:
             raise RuntimeError("한글 변환 프로필이 없습니다. 변환 도구 설정을 확인하세요.")
         env = {**os.environ, "BID_CONVERTER_PROFILE": str(profile)}
-        return _run_prepare_worker(folder, True, timeout, env)
+        try:
+            return _run_prepare_worker(folder, True, timeout, env)
+        except PrepareTimeout:
+            # 성공한 변환 기록과 원본은 남겨 PDF 텍스트 추출만 이어간다.
+            # 실패·미변환 파일은 documents.jsonl에 남아 부분 실패로 안내된다.
+            return _run_prepare_worker(folder, False, 120, None)
 
 
-def _prepare_selected(folder, rows, full=False):
+def _prepare_selected(folder, rows, full=False, backend=None):
     """공고문·제안요청서·협약문서를 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
     def stem(row):
         return unicodedata.normalize("NFC", Path(row["file_name"]).stem).casefold()
@@ -443,7 +471,8 @@ def _prepare_selected(folder, rows, full=False):
     config = converter.TOOLS / "converter.json"
     inputs = {"version": PREPARE_VERSION,
               "files": [(row["url"], row["file_name"], converter.sha256(Path(row["local_path"]))) for row in selected],
-              "bids": read_csv(folder / "bids.csv"),
+              "bids": [{k: v for k, v in bid.items() if k not in (
+                  "collected_at", "downloaded_files", "failed_files")} for bid in read_csv(folder / "bids.csv")],
               "names": [official_names(item) for item in read_json(folder / "candidates.json").get("items", [])],
               "converter": converter.sha256(config) if config.is_file() else None}
     fingerprint = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
@@ -456,6 +485,9 @@ def _prepare_selected(folder, rows, full=False):
             return
     except (OSError, ValueError, KeyError, TypeError):
         pass
+    cache_file.unlink(missing_ok=True)
+    if backend and backend.configured and backend.restore_prepared(folder, fingerprint, selected):
+        return
     write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, scoped)
     try:
         if any(row["selected"] and row["status"] in DOWNLOAD_SUCCESS
@@ -520,7 +552,57 @@ def _document_readiness(item, rows, indexed_records, documents=()):
             "detail_url": item.get("bidNtceDtlUrl") or item.get("bidNtceUrl", "")}
 
 
+def _source_identity(item, row):
+    return identity(row["bid_no"], row["bid_order"], row["url"], row["file_name"],
+                    item.get("chgDt") or item.get("bidNtceDt") or "")
+
+
+def _converted_files(backend, folder, rows, item, restore=False):
+    config_path = converter.TOOLS / "converter.json"
+    if not backend.configured or not config_path.is_file():
+        return
+    config = read_json(config_path)
+    path = folder / "conversions.jsonl"
+    records = {r["original_path"]: r for r in read_jsonl(path)} if path.is_file() else {}
+    for row in rows:
+        if not row["selected"] or row["status"] not in DOWNLOAD_SUCCESS:
+            continue
+        original = Path(row["local_path"]).resolve()
+        if original.suffix.lower() not in HWP_SUFFIXES:
+            continue
+        digest = converter.sha256(original)
+        key = identity(_source_identity(item, row), digest, PREPARE_VERSION, config)
+        record = records.get(str(original), {})
+        pdf = Path(record.get("pdf_path") or "__missing__")
+        valid = (record.get("original_sha256") == digest and pdf.is_file()
+                 and record.get("status") in ("converted", "existing")
+                 and all(record.get(k) == config.get(k) for k in config)
+                 and record.get("pdf_sha256") == converter.sha256(pdf))
+        if restore and not valid:
+            source_id = hashlib.sha256((str(original) + digest).encode()).hexdigest()[:16]
+            pdf = folder / "converted" / source_id / (original.stem + ".pdf")
+            if backend.restore('converted', key, pdf):
+                records[str(original)] = {"bid_no": row["bid_no"], "bid_order": row["bid_order"],
+                    "original_path": str(original), "original_sha256": digest,
+                    "pdf_path": str(pdf), "pdf_sha256": converter.sha256(pdf), "status": "existing",
+                    "requires_layout_review": True, **config}
+        elif not restore and valid:
+            backend.put('converted', key, Path(row["file_name"]).stem + '.pdf', pdf.read_bytes(), row["url"])
+    if restore and records:
+        write_jsonl(path, records.values())
+
+
 def _process_bid(item, full, store, progress):
+    with BackendStore(item["bidNtceNo"], item.get("bidNtceOrd") or "000") as backend:
+        result = _process_bid_local(item, full, store, progress, backend)
+        result["db_sync"] = backend.report
+        if backend.errors:
+            result["status"] = "partial_failed" if result.get("indexed_chunks") else "failed"
+            result["error"] = (result.get("error") + "; " if result.get("error") else "") + "DB 저장·복원 확인 필요: " + ", ".join(backend.errors)
+        return result
+
+
+def _process_bid_local(item, full, store, progress, backend):
     item = collector.resolve_standard_notice(item)
     bid_no = str(item["bidNtceNo"])
     order = str(item.get("bidNtceOrd") or "000")
@@ -538,20 +620,37 @@ def _process_bid(item, full, store, progress):
             raise ValueError("API가 제공한 첨부가 없습니다.")
         for row in rows:
             if row["selected"]:
-                _download_record(folder, row, previous.get(row["url"], {}))
+                old = previous.get(row["url"], {})
+                target = folder / "raw" / collector.safe_name(f"{bid_no}_{order}") / row["storage_name"]
+                if not (old.get("status") in DOWNLOAD_SUCCESS and Path(old.get("local_path") or "__missing__").is_file()):
+                    progress("restoring_database")
+                    if backend.restore('original', _source_identity(item, row), target,
+                                       legacy_name=row["file_name"], source_url=row["url"]):
+                        old = {**row, "status": "existing", "local_path": str(target)}
+                progress("downloading")
+                _download_record(folder, row, old)
                 write_csv(manifest, ATTACHMENT_FIELDS, rows)
+                if row["status"] in DOWNLOAD_SUCCESS:
+                    progress("saving_database")
+                    backend.put('original', _source_identity(item, row), row["file_name"],
+                                Path(row["local_path"]).read_bytes(), row["url"])
         write_json(folder / "candidates.json", {"items": [item]})
         published = previous and (folder / "bids.csv").exists()
         collected_at = read_csv(folder / "bids.csv")[0]["collected_at"] if published else stamp()
         write_csv(folder / "bids.csv", BID_FIELDS, [collector.notice_row(item, [], collected_at)])
+        progress("restoring_database")
+        _converted_files(backend, folder, rows, item, restore=True)
         progress("converting")
         try:
-            _prepare_selected(folder, rows, full=full)
+            _prepare_selected(folder, rows, full=full, backend=backend)
         except Exception as exc:
             # 변환 실패여도 이미 끝난 다운로드와 RFP 미적재 사실을 함께 전달한다.
             message = str(exc) if isinstance(exc, (ValueError, RuntimeError)) else type(exc).__name__
             return {"status": "failed", "error": "문서 준비 실패: " + message,
                     "indexed_chunks": 0, **_document_readiness(item, rows, [])}
+        progress("saving_database")
+        _converted_files(backend, folder, rows, item)
+        backend.save_prepared(folder)
         documents = read_jsonl(folder / "processed/documents.jsonl")
         chunks = read_jsonl(folder / "processed/chunks.jsonl")
         ready = {(d["bid_no"], d["bid_order"], d["source_url"])

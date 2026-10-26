@@ -40,6 +40,24 @@ def find_soffice(explicit=None):
     raise RuntimeError("LibreOffice가 없습니다. --soffice로 실행파일 경로를 지정하세요.")
 
 
+class ConversionTimeout(RuntimeError):
+    pass
+
+
+def conversion_policy():
+    def setting(name, default, low, high):
+        try:
+            value = int(os.environ.get(name, default))
+        except ValueError:
+            raise RuntimeError(f"{name}은 정수여야 합니다.") from None
+        if not low <= value <= high:
+            raise RuntimeError(f"{name}은 {low}~{high} 범위여야 합니다.")
+        return value
+    return (setting("BID_CONVERSION_TIMEOUT_SECONDS", 120, 30, 600),
+            setting("BID_CONVERSION_MAX_ATTEMPTS", 2, 1, 3),
+            setting("BID_PREPARE_TIMEOUT_SECONDS", 900, 120, 3600))
+
+
 ACTIVE_PROCESS = None
 
 
@@ -51,7 +69,9 @@ def cancel_active_conversion():
             pass
 
 
-def execute(args, timeout=45):
+def execute(args, timeout=None):
+    if timeout is None:
+        timeout = conversion_policy()[0]
     args = list(args)
     java_home = os.environ.get("JAVA_HOME")
     if not java_home and sys.platform == "darwin":
@@ -70,7 +90,7 @@ def execute(args, timeout=45):
         except subprocess.TimeoutExpired:
             cancel_active_conversion()
             process.communicate()
-            raise RuntimeError(f"변환 도구가 {timeout}초 내에 응답하지 않아 자식 프로세스까지 종료했습니다.") from None
+            raise ConversionTimeout(f"변환 도구가 {timeout}초 내에 응답하지 않아 자식 프로세스까지 종료했습니다.") from None
         if process.returncode:
             detail = (stderr or stdout).strip()[-1500:]
             raise RuntimeError(f"변환 도구 실행 실패 (종료 코드 {process.returncode}): {detail}")
@@ -256,6 +276,12 @@ def validate_text_quality(texts):
             raise RuntimeError("한글이 같은 글자로 반복됩니다. LibreOffice 버전·한국어 글꼴을 확인하세요.")
 
 
+def _save_conversion_records(path, records):
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in records), encoding="utf-8")
+    temporary.replace(path)
+
+
 def convert_run(run_dir, config=None, converter=convert_one):
     run_dir = Path(run_dir).resolve()
     if config is None:
@@ -310,15 +336,36 @@ def convert_run(run_dir, config=None, converter=convert_one):
                     shutil.copyfile(equivalent["pdf_path"], target)
                     record.update(pdf_path=str(target), pdf_sha256=equivalent["pdf_sha256"], status="existing")
                 else:
-                    print(f"PDF 변환: {path.name}", flush=True)
-                    converter(path, target, config["soffice"])
-                    record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted")
+                    timeout_seconds, max_attempts, _ = conversion_policy()
+                    for attempt in range(1, max_attempts + 1):
+                        record.update(status="converting" if attempt == 1 else "retrying",
+                                      attempt=attempt, max_attempts=max_attempts, timeout_seconds=timeout_seconds)
+                        _save_conversion_records(manifest, records)
+                        print(f"PDF 변환: {path.name} ({attempt}/{max_attempts}, {timeout_seconds}초)", flush=True)
+                        try:
+                            if attempt == 1 or converter is not convert_one:
+                                converter(path, target, config["soffice"])
+                            else:
+                                # 시간 초과 후에는 잠금·복구 상태가 남지 않은 별도 프로필로 재시도한다.
+                                with tempfile.TemporaryDirectory(prefix="office-retry-") as temp:
+                                    retry_profile = Path(temp) / "profile"
+                                    shutil.copytree(PROFILE, retry_profile,
+                                                    ignore=shutil.ignore_patterns(".lock", "*.lock", "lock"))
+                                    converter(path, target, config["soffice"], profile=retry_profile)
+                            record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted", error="")
+                            break
+                        except ConversionTimeout as exc:
+                            record.update(status="timeout", error=str(exc))
+                            _save_conversion_records(manifest, records)
+                            if attempt == max_attempts:
+                                raise
+
         except Exception as exc:
             record.update(status="failed", error=(str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__))
         # 중간에 멈춰도 완료된 파일은 다음 실행에서 재사용한다.
-        manifest.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
+        _save_conversion_records(manifest, records)
     if not records:
-        manifest.write_text("", encoding="utf-8")
+        _save_conversion_records(manifest, [])
     return records
 
 

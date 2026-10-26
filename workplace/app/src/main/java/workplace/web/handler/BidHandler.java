@@ -35,7 +35,7 @@ import java.util.Map;
  *   <li>GET  /api/bids/{bid_no}/summary — 내 요약과 PDF 링크, revision 생략 시 최신 차수 (JWT)</li>
  *   <li>PUT  /api/bids/{bid_no}/summary — 내 요약 저장·덮어쓰기 (JWT)</li>
  *   <li>GET  /api/bids/{bid_no}/documents — PDF 목록과 임시 다운로드 주소 (JWT 또는 서비스 키)</li>
- *   <li>POST /api/bids/{bid_no}/documents — PDF 업로드, 본문은 PDF 바이너리 (서비스 키)</li>
+ *   <li>POST /api/bids/{bid_no}/documents — 첨부 업로드, 본문은 원본 바이너리 (서비스 키)</li>
  * </ul>
  */
 public final class BidHandler implements HttpHandler {
@@ -136,7 +136,8 @@ public final class BidHandler implements HttpHandler {
         );
         responses.json(exchange, 200, BidSummaryView.of(
                 summary,
-                documentService.linksOrEmpty(summary.bidNo(), summary.revision())
+                "false".equalsIgnoreCase(query(exchange).get("include_documents"))
+                        ? List.of() : documentService.linksOrEmpty(summary.bidNo(), summary.revision())
         ));
     }
 
@@ -154,8 +155,10 @@ public final class BidHandler implements HttpHandler {
     }
 
     private void listDocuments(HttpExchange exchange, String bidNo) throws IOException {
-        List<BidDocumentView> documents =
-                documentService.list(bidNo, query(exchange).get("revision"));
+        Map<String, String> options = query(exchange);
+        List<BidDocumentView> documents = documentService.list(
+                bidNo, options.get("revision"), serviceKeys.matches(exchange),
+                !"false".equalsIgnoreCase(options.get("download_urls")), options.get("file_name"));
         responses.json(exchange, 200, documents);
     }
 

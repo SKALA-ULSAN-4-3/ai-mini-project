@@ -1,0 +1,31 @@
+# Python 3.10+ / macOS 또는 Linux (fcntl 사용)
+# 전체 환경 설치: bash data_pipeline/setup_environment.sh
+# Python 패키지만 설치: python -m pip install -r data_pipeline/requirements.txt
+#
+# 아래 시스템 도구는 pip 패키지가 아니며 위 Bash 스크립트가 준비한다.
+# 지원: macOS(Homebrew), Ubuntu 24.04(apt). 설치 명령은 일반 사용자로 실행한다.
+# - Java 지원 LibreOffice + soffice/unopkg (프로젝트 검증: 25.8.7.3)
+# - JDK 21 (프로젝트 검증 환경)
+# - H2Orestart 0.8.0 (convert_documents.py --setup으로 설치·SHA-256 검증)
+# macOS: LibreOffice 고정 버전 다운로드·SHA-256 검증, JDK 21은 Homebrew 사용.
+# Ubuntu: 배포판 LibreOffice/Java 지원 패키지, JDK 21, 한글 글꼴을 apt로 설치.
+# 설치 순서·경로·수동 설치: data_pipeline/README.md의 "설정" 참고.
+# 원본 첨부 다운로드·전달만 할 때는 이 변환 도구가 필요하지 않다.
+
+# PDF 텍스트 추출
+pypdf>=6.10,<7
+
+# 벡터 인덱스
+faiss-cpu>=1.7,<2
+numpy>=1.26,<3
+
+# HTTP API·파일 업로드
+fastapi>=0.110,<1
+pydantic>=2.0,<3
+uvicorn>=0.29,<1
+python-multipart>=0.0.9
+
+# 공식 웹 원문·임베딩
+httpx>=0.27,<1
+openai>=1.109,<4
+beautifulsoup4>=4.12,<5

@@ -1,24 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>Sign Up</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>회원가입</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<div class="container">
-    <h1>Sign Up</h1>
-    <form method="POST" action="/api/signup">
-        <label>Username
-            <input type="text" name="username" required>
-        </label>
-        <label>Password
-            <input type="password" name="password" required>
-        </label>
-        <button type="submit">Sign Up</button>
-    </form>
-    <p><a href="/login">Back to Login</a></p>
+<div class="container wide">
+  <h1>회원가입</h1>
+
+  <form id="signupForm">
+    <label>사업자등록번호
+      <input type="text" name="business_registration_number" required inputmode="numeric" placeholder="123-45-67890">
+    </label>
+    <label>비밀번호
+      <input type="password" name="password" required minlength="8" maxlength="100" autocomplete="new-password">
+    </label>
+    <label>법인명
+      <input type="text" name="corporate_name" required maxlength="200">
+    </label>
+    <label>본점 소재지
+      <input type="text" name="head_office_address" required maxlength="500">
+    </label>
+    <label>업태
+      <input type="text" name="business_type" required maxlength="100">
+    </label>
+    <label>업종
+      <input type="text" name="business_item" required maxlength="200">
+    </label>
+    <label>사업자 단위 과세 적용사업자 여부
+      <select name="unit_taxpayer_applicable" required>
+        <option value="">선택해 주세요</option>
+        <option value="여">여</option>
+        <option value="부">부</option>
+      </select>
+    </label>
+    <button type="submit">회원가입</button>
+  </form>
+
+  <p id="msg" class="error-message" aria-live="polite"></p>
+  <p><a href="/login">로그인으로 돌아가기</a></p>
 </div>
-<script src="/static/app.js"></script>
+
+<script>
+  const form = document.getElementById("signupForm");
+  const message = document.getElementById("msg");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    message.textContent = "";
+    const values = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      const response = await fetch("/api/signup", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(values)
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        message.textContent = data.message || "회원가입에 실패했습니다.";
+        return;
+      }
+
+      window.location.href = "/login";
+    } catch (error) {
+      console.error(error);
+      message.textContent = "서버에 연결할 수 없습니다.";
+    }
+  });
+</script>
 </body>
 </html>

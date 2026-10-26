@@ -1,0 +1,2909 @@
+{
+  "dataset_kind": "real",
+  "human_verified": false,
+  "status": "draft_evaluated",
+  "issues": [
+    "추천 정답 사람 검토 필요: seoul_web",
+    "추천 정답 사람 검토 필요: ulsan_data",
+    "추천 정답 사람 검토 필요: jeju_campus",
+    "점수 정답 사람 검토 필요: ('R26BK01667722', '000')/seoul_web",
+    "점수 정답 사람 검토 필요: ('R26BK01667722', '000')/ulsan_data",
+    "점수 정답 사람 검토 필요: ('R26BK01667722', '000')/jeju_campus",
+    "점수 정답 사람 검토 필요: ('R26BK01706837', '001')/seoul_web",
+    "점수 정답 사람 검토 필요: ('R26BK01706837', '001')/ulsan_data",
+    "점수 정답 사람 검토 필요: ('R26BK01706837', '001')/jeju_campus",
+    "점수 정답 사람 검토 필요: ('R26BK01751013', '000')/seoul_web",
+    "점수 정답 사람 검토 필요: ('R26BK01751013', '000')/ulsan_data",
+    "점수 정답 사람 검토 필요: ('R26BK01751013', '000')/jeju_campus",
+    "점수 정답 사람 검토 필요: ('R26BK01706954', '000')/seoul_web",
+    "점수 정답 사람 검토 필요: ('R26BK01706954', '000')/ulsan_data",
+    "점수 정답 사람 검토 필요: ('R26BK01706954', '000')/jeju_campus",
+    "점수 정답 사람 검토 필요: ('R26BK01760198', '000')/seoul_web",
+    "점수 정답 사람 검토 필요: ('R26BK01760198', '000')/ulsan_data",
+    "점수 정답 사람 검토 필요: ('R26BK01760198', '000')/jeju_campus",
+    "서류 정답 사람 검토 필요: ('R26BK01667722', '000')/seoul_web",
+    "서류 정답 사람 검토 필요: ('R26BK01667722', '000')/ulsan_data",
+    "서류 정답 사람 검토 필요: ('R26BK01667722', '000')/jeju_campus",
+    "서류 정답 사람 검토 필요: ('R26BK01706837', '001')/seoul_web",
+    "서류 정답 사람 검토 필요: ('R26BK01706837', '001')/ulsan_data",
+    "서류 정답 사람 검토 필요: ('R26BK01706837', '001')/jeju_campus",
+    "서류 정답 사람 검토 필요: ('R26BK01751013', '000')/seoul_web",
+    "서류 정답 사람 검토 필요: ('R26BK01751013', '000')/ulsan_data",
+    "서류 정답 사람 검토 필요: ('R26BK01751013', '000')/jeju_campus",
+    "서류 정답 사람 검토 필요: ('R26BK01706954', '000')/seoul_web",
+    "서류 정답 사람 검토 필요: ('R26BK01706954', '000')/ulsan_data",
+    "서류 정답 사람 검토 필요: ('R26BK01706954', '000')/jeju_campus",
+    "서류 정답 사람 검토 필요: ('R26BK01760198', '000')/seoul_web",
+    "서류 정답 사람 검토 필요: ('R26BK01760198', '000')/ulsan_data",
+    "서류 정답 사람 검토 필요: ('R26BK01760198', '000')/jeju_campus"
+  ],
+  "metrics": {
+    "recommendations": [
+      {
+        "profile_id": "seoul_web",
+        "returned": 5,
+        "precision_at_5": 0.4,
+        "precision_returned": 0.4,
+        "recall": 1.0
+      },
+      {
+        "profile_id": "ulsan_data",
+        "returned": 5,
+        "precision_at_5": 0.8,
+        "precision_returned": 0.8,
+        "recall": 0.8
+      },
+      {
+        "profile_id": "jeju_campus",
+        "returned": 5,
+        "precision_at_5": 0.6,
+        "precision_returned": 0.6,
+        "recall": 1.0
+      }
+    ],
+    "scores": [
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item01",
+        "expected": 5,
+        "actual": 5.0,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item21",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item22",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item23",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item01",
+        "expected": 4.75,
+        "actual": 4.75,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item21",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item22",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item23",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item01",
+        "expected": 4.5,
+        "actual": 4.5,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item21",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item22",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item23",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item01",
+        "expected": 5,
+        "actual": 5.0,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item01",
+        "expected": 4.5,
+        "actual": 4.5,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item01",
+        "expected": 4,
+        "actual": 4.0,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item01",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item01",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item01",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item01",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item01",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item01",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item02",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item01",
+        "expected": 5,
+        "actual": 5.0,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item02",
+        "expected": 5,
+        "actual": 5.0,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item01",
+        "expected": 4.75,
+        "actual": 4.75,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item02",
+        "expected": 4,
+        "actual": 4.0,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item01",
+        "expected": 4.5,
+        "actual": 4.5,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item02",
+        "expected": 3.5,
+        "actual": 3.5,
+        "kind": "quantitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item03",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item04",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item05",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item06",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item07",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item08",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item09",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item10",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item11",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item12",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item13",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item14",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item15",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item16",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item17",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item18",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item19",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "item20",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "qualitative",
+        "matched": true
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "item_id": "price",
+        "expected": "담당자 판단",
+        "actual": "담당자 판단",
+        "kind": "price",
+        "matched": true
+      }
+    ],
+    "score_item_accuracy": 1.0,
+    "quantitative_item_accuracy": 1.0,
+    "checklists": [
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "seoul_web",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "ulsan_data",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "profile_id": "jeju_campus",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "seoul_web",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "ulsan_data",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "profile_id": "jeju_campus",
+        "documents": {
+          "missing": 0,
+          "extra": 0
+        },
+        "schedule": {
+          "missing": 0,
+          "extra": 0
+        }
+      }
+    ]
+  },
+  "x2_comparison": null,
+  "cost": null,
+  "reference_status": "ai_draft_pending_human_review"
+}

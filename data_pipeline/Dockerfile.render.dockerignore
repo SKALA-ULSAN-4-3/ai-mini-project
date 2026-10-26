@@ -1,0 +1,17 @@
+**
+!project_env.py
+!data_pipeline/
+!data_pipeline/**
+!rag-code-template_ext/
+!rag-code-template_ext/knowledge_bridge.py
+!rag-code-template_ext/rag_external-web_pdf_closed_llm.py
+!rag-code-template_ext/backend_auth.py
+!rag-code-template_ext/requirements-e.txt
+!rag-code-template_ext/bid_logic/
+!rag-code-template_ext/bid_logic/**
+**/.env
+**/.env.*
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc

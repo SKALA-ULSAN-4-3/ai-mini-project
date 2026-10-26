@@ -1,0 +1,106 @@
+[
+  {
+    "id": "seoul_web",
+    "fictional": true,
+    "industry": "SW",
+    "licenses": [
+      "SW"
+    ],
+    "region": "서울",
+    "company_size": "중소기업",
+    "certs": [],
+    "budget_min": 30000000,
+    "budget_max": 500000000,
+    "keywords": [
+      "홈페이지",
+      "웹 서비스",
+      "콘텐츠관리",
+      "포털"
+    ],
+    "credit_rating": "AA0",
+    "credit_rating_issued_at": "2026-07-01",
+    "credit_rating_valid_until": "2027-07-01",
+    "owned_docs": [
+      "사업자등록증 사본",
+      "소프트웨어사업자 신고확인서",
+      "신용평가등급 확인서"
+    ],
+    "track_records": [
+      {
+        "completed_at": "2025-06-01",
+        "category": "Axis 대학 정보화",
+        "summary": "Axis 프레임워크 기반 대학 학사정보시스템 구축",
+        "amount": 100000000,
+        "amount_unit": "KRW"
+      }
+    ]
+  },
+  {
+    "id": "ulsan_data",
+    "fictional": true,
+    "industry": "SW",
+    "licenses": [
+      "SW"
+    ],
+    "region": "울산",
+    "company_size": "중소기업",
+    "certs": [],
+    "budget_min": 30000000,
+    "budget_max": 500000000,
+    "keywords": [
+      "정보시스템",
+      "데이터 연계",
+      "기능 개발",
+      "업무 시스템"
+    ],
+    "credit_rating": "BB0",
+    "credit_rating_issued_at": "2026-07-01",
+    "credit_rating_valid_until": "2027-07-01",
+    "owned_docs": [
+      "사업자등록증 사본",
+      "직접생산확인증명서"
+    ],
+    "track_records": [
+      {
+        "completed_at": "2025-06-01",
+        "category": "Axis 대학 정보화",
+        "summary": "Axis 프레임워크 기반 대학 학사정보시스템 구축",
+        "amount": 40000000,
+        "amount_unit": "KRW"
+      }
+    ]
+  },
+  {
+    "id": "jeju_campus",
+    "fictional": true,
+    "industry": "SW",
+    "licenses": [
+      "SW"
+    ],
+    "region": "제주",
+    "company_size": "중소기업",
+    "certs": [],
+    "budget_min": 30000000,
+    "budget_max": 500000000,
+    "keywords": [
+      "대학",
+      "학사",
+      "학습관리",
+      "학생",
+      "Axis 프레임워크"
+    ],
+    "credit_rating": "B0",
+    "credit_rating_issued_at": "2026-07-01",
+    "credit_rating_valid_until": "2027-07-01",
+    "owned_docs": [],
+    "track_records": [
+      {
+        "completed_at": "2025-06-01",
+        "category": "Axis 대학 정보화",
+        "summary": "Axis 프레임워크 기반 대학 학사정보시스템 구축",
+        "amount": 20000000,
+        "amount_unit": "KRW"
+      }
+    ]
+  }
+]

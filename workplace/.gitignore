@@ -3,3 +3,13 @@
 
 # Ignore Gradle build output directory
 build
+
+# 환경 변수에는 DB 비밀번호와 JWT 비밀키가 포함되므로 커밋하지 않습니다.
+.env
+.env.*
+!.env.example
+
+# 운영체제와 컴파일 과정에서 생성되는 파일
+.DS_Store
+bin
+*.class

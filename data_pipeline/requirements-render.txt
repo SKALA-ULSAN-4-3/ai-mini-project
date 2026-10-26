@@ -1,0 +1,3 @@
+-r requirements.txt
+# 데이터 준비와 RAG 서버가 동일한 환경·임베딩을 사용한다.
+-r ../rag-code-template_ext/requirements-e.txt

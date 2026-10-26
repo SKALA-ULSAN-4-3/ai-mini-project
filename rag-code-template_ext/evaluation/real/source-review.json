@@ -1,0 +1,222 @@
+{
+  "reviewer": "Codex (AI)",
+  "reviewed_at": "2026-10-23T17:42:28.043034+09:00",
+  "human_verified": false,
+  "scope": "평가 정답의 원문 대조. HWPX의 PDF 쪽수 대응 작업은 제외.",
+  "source_files_hash_checked": 74,
+  "score_cases": 15,
+  "quantitative_checks": [
+    {
+      "bid_no": "R26BK01667722",
+      "profile_id": "seoul_web",
+      "item": "경영상태",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "profile_id": "ulsan_data",
+      "item": "경영상태",
+      "expected": 4.75,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "profile_id": "jeju_campus",
+      "item": "경영상태",
+      "expected": 4.5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "profile_id": "seoul_web",
+      "item": "경영상태",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "profile_id": "ulsan_data",
+      "item": "경영상태",
+      "expected": 4.5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "profile_id": "jeju_campus",
+      "item": "경영상태",
+      "expected": 4,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "seoul_web",
+      "item": "경영상태",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "seoul_web",
+      "item": "용역사업 수행실적",
+      "expected": 5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "ulsan_data",
+      "item": "경영상태",
+      "expected": 4.75,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "ulsan_data",
+      "item": "용역사업 수행실적",
+      "expected": 4,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "jeju_campus",
+      "item": "경영상태",
+      "expected": 4.5,
+      "matches_previous": true
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "profile_id": "jeju_campus",
+      "item": "용역사업 수행실적",
+      "expected": 3.5,
+      "matches_previous": true
+    }
+  ],
+  "checklist_cases": 15,
+  "changes": [
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "제안서와 제출서류 일체 원본 출력물"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "제안서 내용이 수록된 CD/USB 또는 인쇄물"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "실적증명원(원본대조필) 사본"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "투입인력 자격증 사본"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "document_added",
+      "doc": "공동수급협정서"
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "change": "document_added",
+      "doc": "경영상태 관련 증빙서류"
+    },
+    {
+      "bid_no": "R26BK01706954",
+      "change": "document_added",
+      "doc": "주요사업실적 관련 증빙서류"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "price_source_corrected"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "price_source_corrected"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "document_added",
+      "doc": "신용평가등급 확인서"
+    },
+    {
+      "bid_no": "R26BK01667722",
+      "change": "schedule_added",
+      "event": "제안발표회"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "document_added",
+      "doc": "신용평가등급 확인서"
+    },
+    {
+      "bid_no": "R26BK01706837",
+      "change": "schedule_added",
+      "event": "입찰참가자격 등록 기한"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "전자입찰서 제출 시작"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "가격입찰서 제출 마감"
+    },
+    {
+      "bid_no": "R26BK01751013",
+      "change": "schedule_added",
+      "event": "제안서 평가"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "제안서 비교평가 조견표"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "납품실적증명원 또는 계약서 사본"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "document_added",
+      "doc": "개인정보 수집 및 활용 동의서"
+    },
+    {
+      "bid_no": "R26BK01760198",
+      "change": "schedule_added",
+      "event": "제안서 평가"
+    }
+  ],
+  "recommendation_cases": 3,
+  "recommendation_review": "rubric_applied",
+  "remaining": [
+    "추천 정답은 명시적 기준에 따른 AI 판정. 사람 승인은 별도",
+    "조건부 서류와 증빙의 실제 해당 여부는 가상 프로필만으로 확정하지 않음"
+  ],
+  "hwpx_page_mapping_changed": false
+}

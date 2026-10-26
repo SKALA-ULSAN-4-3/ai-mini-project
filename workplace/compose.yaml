@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-mini-workplace-backend:local
+    container_name: ai-mini-workplace-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env
+    environment:
+      # 컨테이너 내부의 localhost는 백엔드 자신을 가리키므로 Compose의
+      # PostgreSQL 서비스 이름을 사용합니다.
+      DB_URL: jdbc:postgresql://postgres:5432/workplace_db
+      DB_USER: ${DB_USER:-workplace_app}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-mini-postgres
+    restart: unless-stopped
+
+    # 로컬 개발 DB는 루프백에만 공개합니다. 외부 컴퓨터에서는 이 포트로
+    # 접속할 수 없으며 Java를 호스트에서 실행할 때 localhost:54321을 사용합니다.
+    ports:
+      - "127.0.0.1:54321:5432"
+
+    environment:
+      POSTGRES_DB: workplace_db
+      POSTGRES_USER: ${DB_USER:-workplace_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Seoul
+
+    # schema.sql은 새 데이터 볼륨이 생성되는 최초 기동 시 한 번 적용됩니다.
+    # 기존 볼륨의 스키마 변경은 별도 마이그레이션으로 처리해야 합니다.
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready --username="$${POSTGRES_USER}" --dbname="$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+volumes:
+  postgres-data:
+    name: ai-mini-postgres-data

@@ -1,0 +1,4352 @@
+[
+  {
+    "profile_id": "seoul_web",
+    "hits": [
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7616702777103619
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7523933010283095
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.5972623033771356
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7430393251279597
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8863364019870907
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.797279866407056
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7599667165464972
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7978734357510788
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.691118737240057
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7474777860002817
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6501414732516722
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.4999613715780598
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.5277438852646448
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6954999394917536
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7371257745281135
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.90946407527683
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.9039743127674384
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8337728195635066
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8751986640983311
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7834550275107368
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8191846002476382
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7184443600523984
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8236343511137854
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7850310035495873
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7389154376261189
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6101150459011464
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6603758880222372
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.687872880067772
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7043037040911315
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6309397717081708
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8347025273094424
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7275157303063011
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7496123268261279
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7078965009771423
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6617768948199902
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6132241636397318
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6928672031769594
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.5746126284911242
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6127085473833738
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.4965706531310694
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6080256180241683
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.5455961949541432
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6075664068037483
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6086497099014423
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.842523592245957
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8103541676926298
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.854576899074214
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7824658990364064
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7291641264628197
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6913213080934568
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.526220659585988
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7523561487871469
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7574363471325078
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8348810090460788
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5855397063221268
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6943391136728607
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6816622555603615
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.837698097541118
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.654753874623431
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6498920564943056
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5845542159479997
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.685611694174991
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6456982006972822
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.507847240866763
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5683670066607291
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5070997581086978
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.575934471017458
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6201920458425327
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.713740161698368
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.823161708607799
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.9132733311042003
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8548297049008085
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8234938923604531
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8274140320160086
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8857340420456126
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7521430299146665
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6986310676633565
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7879415475753966
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4023060052200869
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.473374210578843
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7355464633326427
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.84404394001157
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.9236051486110668
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7308086691158486
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.800116997560071
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.9367522422052055
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4603613343738893
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.437743474294141
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4280258311441578
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.473492966055332
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.5333618058346445
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7935355416582937
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.5603486499740917
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.508035992729699
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.7437395251796879
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.5328581128546936
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.7976391399458578
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.5595402971119263
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.4737880551671374
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.5651761126740027
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.6537259702736407
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.5718616881388279
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.7761466977841458
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.5180980124327412
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.5784176563855183
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.7551275011213932
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.7636438756303576
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.731812069987054
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.4902278881160562
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.5268455080565744
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.6477562563253194
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.6668079693940143
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.6233547588450143
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.5861151743174524
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.606130324065223
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.622308578650923
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.7616075381013516
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.892870263158514
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.5139916778239488
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6329761068327642
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6086229818213766
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6915181448686845
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.7914159939635752
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.9555198644820422
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.817779661343728
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.8916600360487656
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.5926551730378655
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.5438059658865093
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6785322357100512
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.4738890461967173
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6405745610912383
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.776529380324277
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.7685439297425773
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.8453819761249015
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6511772571742007
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.7853521711516294
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.705821923601139
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.8027420280302842
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.639457024894753
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6704126976504803
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.3556494356536746
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.47616717162742
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.580279134040751
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.31057235859587
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6117263657363097
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6537941097917326
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.636080041673008
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6394022420015482
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.5595361948654975
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.6648030584332751
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.7186002421961106
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.6197742207925536
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5743505757103655
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.513536375756015
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5932382327692274
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5703133207072106
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.7941602798329193
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.8476456610909082
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5600800961751027
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.3488952388929825
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.5955989757769373
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6255438012253087
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.633880459149342
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.655552315104547
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6955165886699852
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.8063109306241962
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.646922594066325
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.5597119518827824
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.5716168500317984
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.4383956066211354
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.76964877674245
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7518789273743778
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7411336661431207
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7303414701878346
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.71207605265473
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.8195869662972974
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6604837722484191
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.8073528956905633
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7176674911209169
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.715698812730956
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.5697753841075937
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.4556278701790504
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6107011322191624
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.5968660734268099
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7545194126063741
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6220601051906698
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6581750734061167
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7835488634097736
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.802777523562174
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.5947385000222027
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5389548332532748
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5605033212492891
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5175568383451257
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.573378115696304
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7159840686090853
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7168956053773101
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5983898798961356
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5763847080440918
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.577110449835768
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.849804149972769
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7967778873360913
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.915206855891988
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.8778225112198506
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7820722530260547
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7367626972707022
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.585425300226003
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7609539851205653
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6734092563499452
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7545276975601958
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.4600556374897202
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6461039857475086
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6367858400992752
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.8962342909826226
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.756491970078688
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.723890553415682
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6487164466237516
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.777816251172137
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.8115224783519999
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7960949316103054
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.792531175789012
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.5717598900351746
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.748654185412203
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.4975442290668042
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.6473098027586701
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.626717358453412
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.8962342909826226
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7566415071786494
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.723890553415682
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.6487164466237516
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7779429594649798
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.8114030217154458
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7960949316103054
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.792531175789012
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.57172425277626
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.1500289542834352
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.653573464126893
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.5566592038802831
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.622435520359499
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6409167786800225
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.631831796852726
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.7022581884947172
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.8278651361766194
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6357981855610078
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.9033171221559329
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.641545508162789
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.66778166586748
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6588279361582998
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.660148258048043
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7854530422597072
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6191776630570516
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.62948067038025
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7626310640420328
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6343243445771556
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.5242370122940265
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.5744351793749551
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.720957184295397
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.678354550095218
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7590475753094061
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8215890874337468
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.9714744424125143
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.944012248658865
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8792402406907591
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7959113932095292
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.647505394354507
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7266284254109259
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6806097396310413
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.668727972464783
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6739201405039523
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6780504053351741
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.5872039044798427
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.4470323899216844
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7281337337217124
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7148033649625845
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.5472760152685545
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.5768896620199193
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.5021415538437992
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.613015511055611
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.697755440887068
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.6198347532886999
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.6265799918302726
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.6434751508465162
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.9022659235214867
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.5197627879268651
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.704389871288015
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.812135562382906
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.9185539360388084
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.5547650407813904
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.5092229014811558
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.3619018801652878
+      }
+    ]
+  },
+  {
+    "profile_id": "ulsan_data",
+    "hits": [
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7747045618658674
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.78105529312883
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6117228827536358
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7045970622946705
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.807834961246762
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.707860599949612
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7375980389944843
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7914352307558268
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.696355872264597
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8977132710552134
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7029338906116642
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.558360436077752
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.713909387106412
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7330894207733216
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8179470331490535
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.9272412630072147
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.916819407861528
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.810880847510358
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.807691154836938
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.767459493889838
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.780107091207153
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.684236900907571
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8169885141843167
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6959232718261532
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7318021914862918
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7572059618620308
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7309271286844172
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7191654526127387
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6766475633519171
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6401035823870949
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8294956727499638
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7331891658914778
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.698458649371176
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6788951804556085
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.669651694151959
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.608945261467852
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6818374477929545
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.521757655552971
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.539181747069371
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.5525650875082633
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.687892763327092
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.5601556928512927
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6067934470741143
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6103866185307787
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8217536628974358
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8400534702991571
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.911297383017434
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7820341086728675
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7816587459197102
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7944522776863643
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5927289518367296
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7170741418619997
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8353178354504607
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8032466403564236
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5833262612839576
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6823581993872558
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6356120901751048
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8140979826628225
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6830831577757444
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6329247342148037
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5564484536154382
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7057418391504555
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6733218102214487
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.4749766293226045
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6221808753321518
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6120665364766182
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.5614493588576508
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6577651138334346
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7412410874975812
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8719019150095555
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8950608383218004
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7765387904997105
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7670443923212993
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.798407656278723
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8063189130650947
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8179089288549335
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7272727529388128
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7304988661448917
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4584839569777444
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4850432444338253
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7380899950954642
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.8607347710871451
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.8574981115815383
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.6594933598154
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.8038525067049562
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.8496155221203736
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4836810256302044
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4463850233503877
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.5152789903808497
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4913818239621826
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.5094300670193768
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7128374501516284
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.6215819672102043
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.5514336406039817
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.712937698042829
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.5313941777200242
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.8314694023832168
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.6513455914101343
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.4383369258283523
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.5456872774408517
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.6466905548237314
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.6706520704208003
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.7316813038451215
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.5180612162255542
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.614486125966696
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.809789253253765
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.7174286334145883
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.7600872369176201
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.4420780399646134
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.565370948291477
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.6965199545911034
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.685784487651528
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.8057414177746978
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.5490463150977902
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.541373034615674
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.580249310158738
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.7491336564037319
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.8878910628910823
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.5246604096135385
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.5936107901429502
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6153500135205299
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.783628485833944
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.84921805798297
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.9707818256767204
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.8159343319007242
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.9116782831003434
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.65444240810735
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6040102951268551
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.7422464246042288
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.5114773100325998
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.5967185215413693
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.7550636123148244
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.757893568388706
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.865947740075896
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6304984911611484
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.7228329308960006
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6960889392897087
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.7803433161036537
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6274614801749685
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6454650771929664
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.3779999209399385
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.3605977059454872
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.5513058139965175
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.3060813254829249
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6779457495590044
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6741902906971369
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.5939623476334006
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.5695967455777051
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6296303771849736
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5776899319482354
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.6168957329932603
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.6013058920937624
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5637741464707702
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5248285135201272
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5567611390537337
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5994822507520539
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.822533054687348
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.8113763601821056
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.5214191265657888
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.454436562700991
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.551671118001817
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.643873563454136
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6584475797782545
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7484534796200393
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6781529239084065
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7770615883627272
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6928917490980915
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6015177804138467
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.5570332608625606
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.5061459634546885
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7247607334921788
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7660522461224808
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7327368122434628
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.645498942958291
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6291711332652774
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7918994011916425
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6539042715298429
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.732703196997921
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6995557781315185
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6698185550864117
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.5173136478879776
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.557157773727841
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.669386155766059
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.5833033011015196
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7814926359552743
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6215559804041213
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6626026337174835
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7173501284347523
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7437153469700633
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6201229984100642
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5653005503835544
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6068296605628802
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.4766461882769946
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5689134819386652
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6937135202800206
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7270230965793623
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5873242591826795
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6296289097280976
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5647320262280928
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7975865658143668
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.800256063282216
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.8622885197502406
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.8677475125097942
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7315695535574562
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.669125372114614
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.550503243030441
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.793087746021751
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6312622830857038
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.727126898700547
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.5372562325724743
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.5405933289757918
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6202828061856778
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.893704891097002
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.767206698039871
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7167662063408429
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6297616086299023
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.8290511921148251
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7278475321102391
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7807093175197544
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.8337269596933368
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6689093185598587
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7232879881629302
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.4773923658035635
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.5417276196949494
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.612096042898063
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.893704891097002
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7673400325166746
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7167662063408429
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.6297616086299023
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.8291146748300626
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.727932040831483
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7807093175197544
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.8337269596933368
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.6687791545955761
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.1749015892434507
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6414793040853048
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.561748251637816
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.7518606856429315
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6478009307462678
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6827372084760128
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.7046167239084902
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.8159855817002786
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6162666930195435
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8733583819337731
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6826769101633445
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6027721748119568
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.597857976383004
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6430608075740878
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7916078988147746
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.596262556575443
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.642522166104328
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6884337996674397
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6958082131117749
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.591646947946444
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6207381017585547
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7799402459317193
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6885765349215163
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7683917897192387
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8610061626525223
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.963304459120291
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.9234022658475673
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.784481412531214
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7884329127712029
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6251015088587266
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7761383935693118
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7150262400185028
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6067218945104855
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.726617209943921
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7657331834577406
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6711147425750035
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.5321764194790788
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.780141518168822
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.649916688210613
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.4196810700956632
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.6345987810955265
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.548666043242843
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.74433335929686
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.7881354331554036
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.5842682114032947
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.5913596542998931
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.5660793135760542
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.8276795930131726
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.4489530322324065
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.640215033522761
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.7260027175640253
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.8800588177935396
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.6005011969157685
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.4934973995711545
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.3835783692877115
+      }
+    ]
+  },
+  {
+    "profile_id": "jeju_campus",
+    "hits": [
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.811251659051397
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.820003317504952
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7262674982801016
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8248757858562215
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.9086914933515864
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7963069649797454
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7686817020853063
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8133211458334415
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7251797782803386
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.84788476195844
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7800296652946628
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6462620377240995
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.6661920057987736
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7974025406127865
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.839093667007372
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.9925993885439013
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.9625088465080012
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.900068165836025
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8939529352457676
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7975461539970787
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8744061724271504
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.7479085984895342
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8599757140307638
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.787331459610872
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8377339465511469
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8183797947877736
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8111397407575822
+      },
+      {
+        "bid_no": "R26BK01667722",
+        "revision": "000",
+        "distance": 1.8000456309655206
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7682201892515437
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7831299237865679
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8758193670786945
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7686648954017272
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8178645700075968
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7819526234080811
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7461200725353088
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6647548637147729
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6751013429030976
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6570588257060237
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6596424717664213
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.631151689672496
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7185693557248278
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.6067598113346477
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.663254531085613
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7198303965818766
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8392466307497948
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8870064984435402
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.9289739308535339
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8660533228241327
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.8274010022988776
+      },
+      {
+        "bid_no": "R26BK01706837",
+        "revision": "001",
+        "distance": 1.7488807830850561
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.675490131301622
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8660709909674402
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.9566411975647817
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.873690473149594
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7087816369765214
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8000365848824913
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7506579890303016
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.880266906664918
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.741172613777323
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6931918822128331
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.62885813805838
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7469350678170947
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7501928843920709
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6003439907102894
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6962926696607212
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6605382623159066
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.6186989088203383
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7054464523529838
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.789628706200368
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8974827738331257
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.9105363766036447
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8810457985761886
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.866771304083926
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8768200156874357
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.850106477832135
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.8405212763347372
+      },
+      {
+        "bid_no": "R26BK01751013",
+        "revision": "000",
+        "distance": 1.7579238658773804
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.7080812491821327
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4605617225613905
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.5705935151970003
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.8013240019165089
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.9183953133004117
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.9811146973970324
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.6993504914529005
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.891891126698706
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.9246242118778092
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.5217020450272791
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4576094573599612
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.398927784091395
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.43252521203015
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4871945246237246
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.777465979238528
+      },
+      {
+        "bid_no": "R26BK01661818",
+        "revision": "000",
+        "distance": 1.4612172042159095
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.6465650722350098
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.8168147278889712
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.5973657302513011
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.8391760668952557
+      },
+      {
+        "bid_no": "R26BK01706954",
+        "revision": "000",
+        "distance": 1.6599555310118
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.5319605698458325
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.7166536345838495
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.7412262548688986
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.6862455633603979
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.836497044738561
+      },
+      {
+        "bid_no": "R26BK01707131",
+        "revision": "000",
+        "distance": 1.5664495743269562
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.6933924820118733
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.8097568203935808
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.8331554206010452
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.8223787929626134
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.605579413334734
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.6668121144846992
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.7411423084622335
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.7571574411167532
+      },
+      {
+        "bid_no": "R26BK01753451",
+        "revision": "000",
+        "distance": 1.7468938066128707
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6537601586993596
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6491042116897852
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6422128772184834
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.8441990835842574
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.9398562140568103
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6011148151039443
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.695896271650966
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.7160055591713217
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.8483013595433953
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.883952052925494
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.9523495669804092
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.8889865191019055
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.9406970809354043
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.7209990109422968
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.6812953616932838
+      },
+      {
+        "bid_no": "R26BK01662752",
+        "revision": "000",
+        "distance": 1.7809152271597029
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.4939590648072354
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.7306162304498294
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.8438282766774634
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.8428553767650513
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.9216659149067503
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.702158879366035
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.8117721989259863
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.7138224427403905
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.8585553350176092
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.746681520109881
+      },
+      {
+        "bid_no": "R26BK01707212",
+        "revision": "000",
+        "distance": 1.6176032799694262
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.3836046419459151
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.5328334260068495
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6717527940875598
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.4221213867704563
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.732968999423278
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.6701452601074394
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.5810120444396354
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.649083977967937
+      },
+      {
+        "bid_no": "R26BK01659989",
+        "revision": "000",
+        "distance": 1.5440424187265513
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.6159035648345288
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.656327267360183
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.7186203349274756
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.6723287967124243
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.587417058922771
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.6135689859281648
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.563386363623696
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.8450271161201108
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.8839910133841826
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.510020309476996
+      },
+      {
+        "bid_no": "R26BK01657129",
+        "revision": "000",
+        "distance": 1.440068787478392
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6435059852189298
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.722852667388107
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6857436634137564
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7631530386596346
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7517640486694894
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.8474887462816092
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7670246865467405
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6488665916330234
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.6072648819907478
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.5764843242002797
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7857004940564138
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.8030810760536227
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.7619554367635715
+      },
+      {
+        "bid_no": "R26BK01663676",
+        "revision": "000",
+        "distance": 1.692157813308075
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7789221254096503
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.8764226910522943
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7553280068506751
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.787512305535273
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7981758046900929
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.763407373123627
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6306906245577295
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6016072698331527
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.73178115877284
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.662615036746935
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.8086182626203673
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7005134789541998
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7422592899663805
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.7593448676867958
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.801673770998402
+      },
+      {
+        "bid_no": "R26BK01664258",
+        "revision": "000",
+        "distance": 1.6490117215250635
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.5867332501759357
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6331894656793615
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.529681777366779
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6887951635350866
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.794509433944203
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.8261559792406956
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6628582000671308
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.623455210289091
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.6176052142689237
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.8598662382854556
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.8397187361161045
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.9326665505867595
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.913910473892951
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7914127994189393
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.7795033232993696
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.64614765258165
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.8368044528260086
+      },
+      {
+        "bid_no": "R26BK01707886",
+        "revision": "000",
+        "distance": 1.685824150563075
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7592050043496634
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.556241145671077
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6999410190096569
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.717182513974553
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.9009530852214702
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7591891332282437
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.7700067062371012
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.729055014779341
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.8323020756041366
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.8118314048574042
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.8578425481389473
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.865653898837035
+      },
+      {
+        "bid_no": "R26BK01702784",
+        "revision": "001",
+        "distance": 1.6516569524068956
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7533581561923093
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.5200440144558272
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7003222394191582
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7067020453682318
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.9009530852214702
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7593038306439013
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.7700067062371012
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.729055014779341
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.8324063623514704
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.8118366352441946
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.8578425481389473
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.865653898837035
+      },
+      {
+        "bid_no": "R26BK01702853",
+        "revision": "001",
+        "distance": 1.651581626495119
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.1053274296483835
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.695896812926371
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6630541997509205
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.7824733008592553
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.7085090406749757
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.7090716255527205
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.7564529593767446
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.837482907065123
+      },
+      {
+        "bid_no": "R26BK01753530",
+        "revision": "000",
+        "distance": 1.6745467975532904
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.9103467502643952
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.715011809852303
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7213600304343046
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7547023982293446
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.75801742618577
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8757583884265863
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.690756373502694
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7413516334019157
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.815653861096365
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7350795237447691
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6468379589075788
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6506407267648235
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7924748487247406
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7411404732078104
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8202920729745138
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8547176643205354
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.987203666214178
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.9639494275541765
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.88028276209889
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.853468259115715
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6798007418400722
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.8211033789444393
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7512440224123758
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6696770675487578
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.7276557264244516
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6943433467456082
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.6805812434311065
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.5796440741323359
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.802337239196774
+      },
+      {
+        "bid_no": "R26BK01754897",
+        "revision": "000",
+        "distance": 1.835055375016026
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.4851232966260675
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.7233871122629019
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.5908182037325886
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.7390550516229943
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.8297528402842964
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.5919340579273822
+      },
+      {
+        "bid_no": "R26BK01757019",
+        "revision": "000",
+        "distance": 1.6956140619221252
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.604040881268343
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.9055117493038516
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.5189083579976383
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.77969655193602
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.835093944878487
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.874821505286743
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.686015792451336
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.5224555173841132
+      },
+      {
+        "bid_no": "R26BK01760198",
+        "revision": "000",
+        "distance": 1.4183189716861087
+      }
+    ]
+  }
+]

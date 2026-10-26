@@ -1,0 +1,18 @@
+[
+  {
+    "bid_no": "R26BK01663676",
+    "revision": "000",
+    "field": "deadline",
+    "before": "",
+    "after": "2026-08-14T14:00:00+09:00",
+    "source": {
+      "filename": "용역 2026-025호 - 통합정보시스템 기능개선 및 이지바로 모듈 전환 사업 - 공고문(협상)_재공고-2차.pdf",
+      "page": 1,
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01663676&bidPbancOrd=000&fileType=&fileSeq=2&prcmBsneSeCd=03",
+      "sha256": "d3b12f5396b9f5299fad1523dde9aa9d694f68b9d1d8d0c6ad78cbdb9e1fabf4"
+    },
+    "excerpt": "나. 제출기간 : 2026. 8. 14.(금) 14:00까지",
+    "reviewer": "Codex (AI)",
+    "human_verified": false
+  }
+]

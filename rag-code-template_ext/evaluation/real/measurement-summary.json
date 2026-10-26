@@ -1,0 +1,77 @@
+{
+  "status": "preliminary_pending_human_review",
+  "human_verified": false,
+  "list_stage": [
+    {
+      "profile_id": "seoul_web",
+      "precision_at_5": 0.4,
+      "returned": [
+        "R26BK01753530",
+        "R26BK01757019",
+        "R26BK01754897",
+        "R26BK01663676",
+        "R26BK01753451"
+      ]
+    },
+    {
+      "profile_id": "ulsan_data",
+      "precision_at_5": 0.8,
+      "returned": [
+        "R26BK01757019",
+        "R26BK01753530",
+        "R26BK01663676",
+        "R26BK01754897",
+        "R26BK01751013"
+      ]
+    },
+    {
+      "profile_id": "jeju_campus",
+      "precision_at_5": 0.6,
+      "returned": [
+        "R26BK01760198",
+        "R26BK01753530",
+        "R26BK01757019",
+        "R26BK01754897",
+        "R26BK01663676"
+      ]
+    }
+  ],
+  "body_stage": [
+    {
+      "profile_id": "seoul_web",
+      "returned": 5,
+      "precision_at_5": 0.4,
+      "precision_returned": 0.4,
+      "recall": 1.0
+    },
+    {
+      "profile_id": "ulsan_data",
+      "returned": 5,
+      "precision_at_5": 0.8,
+      "precision_returned": 0.8,
+      "recall": 0.8
+    },
+    {
+      "profile_id": "jeju_campus",
+      "returned": 5,
+      "precision_at_5": 0.6,
+      "precision_returned": 0.6,
+      "recall": 1.0
+    }
+  ],
+  "fixed_score_matches": 264,
+  "score_items": 264,
+  "quantitative_matches": 12,
+  "quantitative_items": 12,
+  "x2_cases": 15,
+  "x2_complete": 15,
+  "x2_item_matches": 264,
+  "fixed_latency_median_ms": 0.06108300294727087,
+  "agent_latency_median_ms": 7547.6866669996525,
+  "agent_cost_total_usd": 0.6176975,
+  "agent_cost_mean_usd": 0.04117983333333333,
+  "input_tokens": 270819,
+  "output_tokens": 12769,
+  "recommendation_rubric_id": "keyword-or-transferable-track-record-v1",
+  "recommendation_label_change_only": true
+}

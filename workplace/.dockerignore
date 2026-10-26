@@ -1,0 +1,11 @@
+.git
+.gitignore
+.gradle
+**/.gradle
+**/build
+**/bin
+.env
+deploy/**/.env
+.DS_Store
+**/.DS_Store
+README_BACKEND.md

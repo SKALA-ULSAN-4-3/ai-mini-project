@@ -1,0 +1,150 @@
+{
+ "bid_no": "R26BK01753911",
+ "documents": {
+  "공고문": "26-HS095 10. 입찰공고문(협상(SW)).pdf"
+ },
+ "note": "실제 나라장터 공고(2026-10 API 검색) 공고문만 적재한 상태(흐름 ③④)의 일반화 평가. 기대답변은 공고문 원문에서 작성.",
+ "questions": [
+  {
+   "id": "B01",
+   "category": "기관",
+   "question": "수요기관이 어디야?",
+   "expected": "한국과학기술정보연구원",
+   "must_include": [
+    "한국과학기술정보연구원"
+   ],
+   "sources": [
+    "공고문 p.1"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B02",
+   "category": "예산",
+   "question": "추정 금액은 얼마야?",
+   "expected": "금 170,000,000원(부가세 포함), 추정가격 154,545,455원",
+   "must_include": [
+    "170,000,000"
+   ],
+   "sources": [
+    "공고문 p.1"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B03",
+   "category": "기간",
+   "question": "사업 기간은?",
+   "expected": "착수일로부터 2026. 12. 31.까지",
+   "must_include": [
+    "12.31|12월31일"
+   ],
+   "sources": [
+    "공고문 p.1"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B04",
+   "category": "자격",
+   "question": "공동수급과 하도급이 가능해?",
+   "expected": "공동수급 가능(공동이행방식만), 하도급 불가",
+   "must_include": [
+    "공동이행",
+    "불가|안됨|않"
+   ],
+   "sources": [
+    "공고문 p.2"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B05",
+   "category": "일정",
+   "question": "기술평가는 언제 어디서 해?",
+   "expected": "2026.10.15.(목) 10:00, KISTI 대전본원 제5회의실",
+   "must_include": [
+    "10.15|10월15일",
+    "제5회의실"
+   ],
+   "sources": [
+    "공고문 p.1",
+    "공고문 p.5"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B06",
+   "category": "평가",
+   "question": "평가 배점은 어떻게 구성돼?",
+   "expected": "기술능력평가 90점 + 입찰가격평가 10점",
+   "must_include": [
+    "90",
+    "10"
+   ],
+   "sources": [
+    "공고문 p.2"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B07",
+   "category": "일정",
+   "question": "제안요청 설명회가 있어?",
+   "expected": "해당사항 없음",
+   "must_include": [
+    "없"
+   ],
+   "sources": [
+    "공고문 p.3"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B08",
+   "category": "보증",
+   "question": "낙찰되면 계약보증금과 하자보증금은 얼마야?",
+   "expected": "계약보증금 계약금액의 10% 이상, 하자보증금 2%",
+   "must_include": [
+    "10%",
+    "2%"
+   ],
+   "sources": [
+    "공고문 p.7"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "B09",
+   "category": "서류",
+   "question": "제안서 파일 용량 제한이 있어?",
+   "expected": "PDF 형식, 총 300MB 이하",
+   "must_include": [
+    "300MB"
+   ],
+   "sources": [
+    "공고문 p.4"
+   ],
+   "expect_handoff": false,
+   "expect_needs_review": null
+  },
+  {
+   "id": "BE1",
+   "category": "예외",
+   "question": "이 사업을 작년에 수주한 업체는 어디야?",
+   "expected": "(문서에 없음)",
+   "must_include": [],
+   "sources": [],
+   "expect_handoff": true,
+   "expect_needs_review": null
+  }
+ ]
+}

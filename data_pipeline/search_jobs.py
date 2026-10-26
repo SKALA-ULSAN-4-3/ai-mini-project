@@ -469,7 +469,9 @@ def _prepare_with_timeout(folder, convert_hwp, timeout=None):
                      if str(row.get("selected")).lower() == "true" and row.get("local_path")
                      and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES
                      and Path(row["local_path"]).is_file()}
-        timeout = min(overall_limit, max(120, len(originals) * per_file * attempts + 120))
+        per_file_budget = sum(converter.attempt_timeout(per_file, attempt)
+                              for attempt in range(1, attempts + 1))
+        timeout = min(overall_limit, max(180, len(originals) * per_file_budget + 180))
     # 변환 프로필만 격리한다. 확장 파일은 재설치·재다운로드하지 않는다.
     with tempfile.TemporaryDirectory(prefix="bid-office-") as temp:
         profile = Path(temp) / "profile"

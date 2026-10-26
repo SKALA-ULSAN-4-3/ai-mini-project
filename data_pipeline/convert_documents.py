@@ -40,6 +40,17 @@ def find_soffice(explicit=None):
     raise RuntimeError("LibreOffice가 없습니다. --soffice로 실행파일 경로를 지정하세요.")
 
 
+ACTIVE_PROCESS = None
+
+
+def cancel_active_conversion():
+    if ACTIVE_PROCESS is not None:
+        try:
+            os.killpg(ACTIVE_PROCESS.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
 class ConversionTimeout(RuntimeError):
     pass
 
@@ -54,19 +65,19 @@ def conversion_policy():
             raise RuntimeError(f"{name}은 {low}~{high} 범위여야 합니다.")
         return value
     return (setting("BID_CONVERSION_TIMEOUT_SECONDS", 120, 30, 600),
-            setting("BID_CONVERSION_MAX_ATTEMPTS", 2, 1, 3),
-            setting("BID_PREPARE_TIMEOUT_SECONDS", 900, 120, 3600))
+            setting("BID_CONVERSION_MAX_ATTEMPTS", 3, 1, 4),
+            setting("BID_PREPARE_TIMEOUT_SECONDS", 3600, 120, 14400))
 
 
-ACTIVE_PROCESS = None
+def attempt_timeout(base_seconds, attempt):
+    """각 재시도마다 직전보다 오래 기다린다."""
+    return base_seconds * attempt
 
 
-def cancel_active_conversion():
-    if ACTIVE_PROCESS is not None:
-        try:
-            os.killpg(ACTIVE_PROCESS.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+def _save_conversion_records(path, records):
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in records), encoding="utf-8")
+    temporary.replace(path)
 
 
 def execute(args, timeout=None):
@@ -89,7 +100,12 @@ def execute(args, timeout=None):
             stdout, stderr = process.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
             cancel_active_conversion()
-            process.communicate()
+            try:
+                process.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                # 상속된 파이프가 닫히지 않아도 작업을 무기한 기다리지 않는다.
+                process.stdout.close()
+                process.stderr.close()
             raise ConversionTimeout(f"변환 도구가 {timeout}초 내에 응답하지 않아 자식 프로세스까지 종료했습니다.") from None
         if process.returncode:
             detail = (stderr or stdout).strip()[-1500:]
@@ -97,6 +113,7 @@ def execute(args, timeout=None):
         return stdout
     finally:
         ACTIVE_PROCESS = None
+
 
 
 def _install_macos_extension(soffice, extension):
@@ -223,7 +240,7 @@ def setup(soffice):
     return config
 
 
-def convert_one(source, target, soffice, profile=PROFILE, _archive_depth=0):
+def convert_one(source, target, soffice, profile=PROFILE, _archive_depth=0, timeout=None):
     """격리된 임시 출력에서 완성된 PDF만 목적 경로에 반영한다."""
     from pypdf import PdfReader
     if profile == PROFILE and os.environ.get("BID_CONVERTER_PROFILE"):
@@ -247,11 +264,11 @@ def convert_one(source, target, soffice, profile=PROFILE, _archive_depth=0):
                     # archive.extract를 쓰지 않아 경로 이동·링크를 통한 파일 쓰기를 막는다.
                     extracted = Path(temp) / Path(entry.filename).name
                     extracted.write_bytes(archive.read(entry))
-                    return convert_one(extracted, target, soffice, profile, _archive_depth + 1)
+                    return convert_one(extracted, target, soffice, profile, _archive_depth + 1, timeout)
     with tempfile.TemporaryDirectory(prefix="hwp-", dir=target.parent) as temp:
         execute([soffice, "-env:UserInstallation=" + Path(profile).resolve().as_uri(),
                  "--headless", "--infilter=Hwp2002_File", "--convert-to", "pdf:writer_pdf_Export",
-                 "--outdir", temp, str(source)])
+                 "--outdir", temp, str(source)], timeout=timeout)
         pdf = Path(temp) / (source.stem + ".pdf")
         if not pdf.is_file() or pdf.read_bytes()[:5] != b"%PDF-":
             raise RuntimeError("PDF가 생성되지 않았습니다. 변환 로그와 확장 설치를 확인하세요.")
@@ -274,12 +291,6 @@ def validate_text_quality(texts):
         hangul = re.findall("[가-힣]", text)
         if len(hangul) >= 80 and Counter(hangul).most_common(1)[0][1] / len(hangul) >= 0.45:
             raise RuntimeError("한글이 같은 글자로 반복됩니다. LibreOffice 버전·한국어 글꼴을 확인하세요.")
-
-
-def _save_conversion_records(path, records):
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in records), encoding="utf-8")
-    temporary.replace(path)
 
 
 def convert_run(run_dir, config=None, converter=convert_one):
@@ -337,36 +348,55 @@ def convert_run(run_dir, config=None, converter=convert_one):
                     record.update(pdf_path=str(target), pdf_sha256=equivalent["pdf_sha256"], status="existing")
                 else:
                     timeout_seconds, max_attempts, _ = conversion_policy()
+                    record.setdefault("attempt_history", [])
                     for attempt in range(1, max_attempts + 1):
+                        attempt_timeout_seconds = attempt_timeout(timeout_seconds, attempt)
                         record.update(status="converting" if attempt == 1 else "retrying",
-                                      attempt=attempt, max_attempts=max_attempts, timeout_seconds=timeout_seconds)
+                                      attempt=attempt, max_attempts=max_attempts,
+                                      timeout_seconds=attempt_timeout_seconds)
                         _save_conversion_records(manifest, records)
-                        print(f"PDF 변환: {path.name} ({attempt}/{max_attempts}, {timeout_seconds}초)", flush=True)
+                        print(f"PDF 변환: {path.name} ({attempt}/{max_attempts}, {attempt_timeout_seconds}초)", flush=True)
                         try:
-                            if attempt == 1 or converter is not convert_one:
+                            if converter is not convert_one:
                                 converter(path, target, config["soffice"])
+                            elif attempt == 1:
+                                converter(path, target, config["soffice"], timeout=attempt_timeout_seconds)
                             else:
                                 # 시간 초과 후에는 잠금·복구 상태가 남지 않은 별도 프로필로 재시도한다.
                                 with tempfile.TemporaryDirectory(prefix="office-retry-") as temp:
                                     retry_profile = Path(temp) / "profile"
                                     shutil.copytree(PROFILE, retry_profile,
                                                     ignore=shutil.ignore_patterns(".lock", "*.lock", "lock"))
-                                    converter(path, target, config["soffice"], profile=retry_profile)
+                                    converter(path, target, config["soffice"], profile=retry_profile,
+                                              timeout=attempt_timeout_seconds)
+                            record["attempt_history"].append({"attempt": attempt,
+                                "timeout_seconds": attempt_timeout_seconds, "status": "converted", "error": ""})
                             record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted", error="")
                             break
                         except ConversionTimeout as exc:
+                            record["attempt_history"].append({"attempt": attempt,
+                                "timeout_seconds": attempt_timeout_seconds,
+                                "status": "timeout",
+                                "error": str(exc)})
                             record.update(status="timeout", error=str(exc))
                             _save_conversion_records(manifest, records)
                             if attempt == max_attempts:
                                 raise
 
         except Exception as exc:
+            if record.get("attempt") and record.get("status") not in ("converted", "existing"):
+                history = record.setdefault("attempt_history", [])
+                if not history or history[-1].get("attempt") != record["attempt"]:
+                    history.append({"attempt": record["attempt"],
+                                    "timeout_seconds": record.get("timeout_seconds"),
+                                    "status": "failed", "error": str(exc)})
             record.update(status="failed", error=(str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__))
         # 중간에 멈춰도 완료된 파일은 다음 실행에서 재사용한다.
         _save_conversion_records(manifest, records)
     if not records:
         _save_conversion_records(manifest, [])
     return records
+
 
 
 def main():

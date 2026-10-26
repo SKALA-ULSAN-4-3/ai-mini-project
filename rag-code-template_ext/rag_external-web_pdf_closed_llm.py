@@ -149,15 +149,20 @@ async def use_bid_search_cache(request, call_next):
         if isinstance(cached, dict):
             params = snapshot.get("request", {})
             try:
+                profile = await run_in_threadpool(get_authenticated_profile, authorization)
+                profile_key = hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest()
                 matches = (request.query_params.get("from") == params.get("deadline_from", params.get("from"))
                            and request.query_params.get("to") == params.get("to")
+                           and cached.get("_cache_profile") == profile_key
                            and int(request.query_params.get("limit", "20")) == int(cached.get("_cache_limit", 20)))
+            except HTTPException as exc:
+                return JSONResponse({"detail": exc.detail}, status_code=exc.status_code,
+                                    headers=exc.headers)
             except (TypeError, ValueError):
                 matches = False
             if matches:
                 try:
-                    # 미들웨어가 라우터 의존성을 건너뛰므로 회사 프로필/JWT를 직접 재검증한다.
-                    await run_in_threadpool(get_authenticated_profile, authorization)
+                    # 회사 프로필/JWT를 확인한 추천 결과만 재사용한다.
                     result = {k: v for k, v in cached.items() if not k.startswith("_")}
                     result["search_id"] = search_id
                     if snapshot.get("cache_saved"):
@@ -190,7 +195,9 @@ async def use_bid_search_cache(request, call_next):
         body = b"".join(chunks)
         recommendation = json.loads(body)
         search_request = snapshot["request"]
+        profile = await run_in_threadpool(get_authenticated_profile, authorization)
         recommendation_to_cache = {**recommendation,
+                                   "_cache_profile": hashlib.sha256(json.dumps(profile, sort_keys=True, default=str).encode()).hexdigest(),
                                    "_cache_limit": int(request.query_params.get("limit", "20"))}
         snapshot["cached_recommendation"] = recommendation_to_cache
         snapshot["cache_saved"] = False

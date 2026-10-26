@@ -13,7 +13,7 @@ const waiting = ref(false)
 const error = ref('')
 
 // 3번 항목 상태 → 화면 문구
-const STATUS = { calculated: '계산됨', manual: '담당자 판단', missing_profile: '프로필 정보 부족' }
+const STATUS = { calculated: '계산됨', manual: '검토 필요', missing_profile: '추가 정보 필요' }
 
 // 채점표 항목을 평가부문(section)별로 묶기
 const sections = computed(() => {
@@ -58,7 +58,7 @@ async function runAgent() {
     agentLoading.value = false
   }
 }
-const show = (v) => (typeof v === 'number' ? `${v}점` : v || '-')
+const show = (it) => (typeof it?.expected === 'number' ? `${it.expected}점` : it?.display_label || STATUS[it?.status] || '-')
 const same = (a, b) => a === b
 // 서버가 보내는 질문 속 영어 항목 이름을 한글로 바꿔 보여 줍니다.
 const FIELD_KO = { credit_rating: '신용등급', track_records: '수행 실적', certs: '인증', licenses: '면허', region: '소재지', company_size: '기업 규모', industry: '업종', owned_docs: '보유 서류', budget_min: '희망 금액(최소)', budget_max: '희망 금액(최대)', keywords: '관심 키워드' }
@@ -102,7 +102,7 @@ const ko = (q) => Object.entries(FIELD_KO).reduce((t, [k, v]) => t.replaceAll(k,
             <td>{{ it.max }}</td>
             <td>
               <span v-if="typeof it.expected === 'number'">{{ it.expected }}점 <span class="meta">({{ STATUS[it.status] || '예상' }})</span></span>
-              <span v-else class="badge warn">{{ STATUS[it.status] || it.expected }}</span>
+              <span v-else class="badge warn">{{ it.display_label || STATUS[it.status] || it.expected }}</span>
             </td>
             <td>
               <span v-if="it.reason" class="meta" style="display: block">{{ it.reason }}</span>
@@ -129,8 +129,8 @@ const ko = (q) => Object.entries(FIELD_KO).reduce((t, [k, v]) => t.replaceAll(k,
           <tbody>
             <tr v-for="it in agent.items" :key="it.id">
               <td>{{ it.item }}</td>
-              <td>{{ show(score.items.find((x) => x.id === it.id)?.expected) }}</td>
-              <td>{{ show(it.expected) }}</td>
+              <td>{{ show(score.items.find((x) => x.id === it.id)) }}</td>
+              <td>{{ show(it) }}</td>
               <td>
                 <span v-if="same(score.items.find((x) => x.id === it.id)?.expected, it.expected)" class="badge ok">일치</span>
                 <span v-else class="badge warn">다름</span>

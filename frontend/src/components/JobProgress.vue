@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getJob, isFinished } from '../api/flow'
+import { getJob, isFinished, fetchJobFiles, downloadJobFile } from '../api/flow'
 import { errorMessage } from '../api/client'
 
 // 직전 조회가 끝난 뒤 다음 조회를 예약해 느린 서버에 요청이 겹치지 않게 한다.
@@ -10,7 +10,13 @@ const job = ref({ status: 'running', done: 0, total: 0, bids: [] })
 const error = ref('')
 const checking = ref(false)
 const slow = ref(false)
-const stages = { queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
+const files = ref([])
+const fileError = ref('')
+async function download(file) {
+  try { await downloadJobFile(props.jobId, file) }
+  catch (e) { fileError.value = errorMessage(e) }
+}
+const stages = { waiting_document: '같은 공고의 문서 준비 완료 대기', queued: '작업 대기', running: '처리 중', checking_attachments: '최신 첨부 목록 확인',
   downloading: '첨부파일 다운로드', converting: '문서 변환·텍스트 추출', indexing: '검색 인덱스 적재',
   completed: '완료', partial_failed: '일부 실패', failed: '실패' }
 // 진행 중에는 "지금 처리 중인 공고 1건"만 보여 줍니다. (20건이어도 화면을 덮지 않게)
@@ -35,7 +41,13 @@ async function poll() {
     const state = JSON.stringify([next.status, next.done, next.bids.map((b) => [b.bid_no, b.status])])
     if (state !== lastState) { lastState = state; lastChange = Date.now() }
     slow.value = Date.now() - lastChange >= 120000
-    if (isFinished(next.status)) emit('done', next)
+    if (isFinished(next.status)) {
+      emit('done', next)
+      if (next.mode === 'documents') {
+        try { files.value = await fetchJobFiles(props.jobId) }
+        catch (e) { fileError.value = errorMessage(e) }
+      }
+    }
     else timer = setTimeout(poll, 1500)
   } catch (e) {
     if (!stopped) error.value = errorMessage(e)
@@ -73,6 +85,14 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
     <p v-if="job.error" class="error">{{ job.error }}</p>
     <p v-if="error" class="error">진행 상태를 확인하지 못했습니다. {{ error }} 서버 작업이 취소된 것은 아닙니다.</p>
     <button v-if="error" type="button" class="small" :disabled="checking" @click="poll">진행 상태 다시 확인</button>
+    <details v-if="files.length" class="jp-detail">
+      <summary>선택한 공고의 원본·변환 파일 {{ files.length }}건</summary>
+      <p v-for="file in files" :key="file.file_id" class="meta">
+        {{ file.file_name }} · {{ file.kind === 'converted' ? '변환 PDF' : '원본' }}
+        <button type="button" class="small" @click="download(file)">다운로드</button>
+      </p>
+    </details>
+    <p v-if="fileError" class="error">{{ fileError }}</p>
     <small class="jp-id">작업번호: {{ jobId }}</small>
   </div>
 </template>

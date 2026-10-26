@@ -105,7 +105,7 @@ class IndexTests(unittest.TestCase):
 class IngestionApiTests(unittest.TestCase):
     def test_api_only_has_data_pipeline_routes(self):
         from data_pipeline.api import app
-        self.assertEqual(set(app.openapi()['paths']),{'/upload-paper','/upload-topic','/data-status','/search-bids','/fetch-notices','/fetch-documents','/jobs/{job_id}'})
+        self.assertEqual(set(app.openapi()['paths']),{'/upload-paper','/upload-topic','/data-status','/search-bids','/fetch-notices','/fetch-documents','/jobs/{job_id}','/jobs/{job_id}/files','/jobs/{job_id}/files/{file_id}'})
 
     @staticmethod
     def pdf_bytes():

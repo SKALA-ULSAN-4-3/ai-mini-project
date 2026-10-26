@@ -8,6 +8,8 @@
 - 1번 bids.csv와 2번 추출 결과를 3번 입력 형식으로 바꾼다.
 """
 import csv
+import copy
+import hashlib
 import json
 import re
 import sys
@@ -32,6 +34,42 @@ from data_pipeline.knowledge import Embedder, KnowledgeStore  # noqa: E402
 
 BIDS_SOURCE = ROOT / "data" / "corpus" / "bids.csv"                 # 1번 산출물
 BIDS_FOR_BID_LOGIC = Path(__file__).resolve().parent / "data" / "bids.csv"  # 3번 기본 경로
+
+
+class ExtractionCache:
+    """공개 공고 추출 결과만 저장한다. 회사별 점수·프로필·실패 응답은 저장하지 않는다."""
+    def __init__(self, root, namespace):
+        self.root = Path(root)
+        self.namespace = namespace
+        self.entries = {}
+        self.locks = [threading.Lock() for _ in range(64)]
+
+    def get(self, key, fingerprint, build, refresh=False):
+        if fingerprint is None:
+            return build()
+        digest = hashlib.sha256(json.dumps([self.namespace, key], ensure_ascii=False).encode()).hexdigest()
+        with self.locks[int(digest[:8], 16) % len(self.locks)]:
+            entry = self.entries.get(digest)
+            path = self.root / (digest + ".json")
+            if not refresh and entry is None:
+                try:
+                    entry = json.loads(path.read_text())
+                except (OSError, ValueError):
+                    entry = None
+            if (refresh or not isinstance(entry, dict) or entry.get("fingerprint") != fingerprint
+                    or "data" not in entry):
+                entry = {"fingerprint": fingerprint, "data": build()}
+                try:
+                    self.root.mkdir(parents=True, exist_ok=True)
+                    temporary = path.with_suffix(".tmp")
+                    temporary.write_text(json.dumps(entry, ensure_ascii=False))
+                    temporary.replace(path)
+                except OSError:
+                    pass  # 캐시 저장 실패로 정상 응답을 실패 처리하지 않는다
+            if len(self.entries) >= 512:
+                self.entries.pop(next(iter(self.entries)))
+            self.entries[digest] = entry
+            return copy.deepcopy(entry["data"])
 
 
 # ---------------------------------------------------------------- 인덱스 어댑터
@@ -232,17 +270,23 @@ def to_bid_logic_scoring(extraction: dict, bid_no: str, revision: str) -> dict:
     for i, it in enumerate([it for it in extraction["items"] if it.get("source_refs")], start=1):
         kind = KIND.get(it["eval_type"], "qualitative")
         rule = it.get("rule")
+        sources = list(it.get("source_refs", []))
+        extra_refs = list(it.get("rule_sources", []))
+        extra_refs.extend(ref for r in it.get("requirements", []) for ref in r.get("sources", []))
+        for ref in extra_refs:
+            if ref not in sources:
+                sources.append(ref)
         items.append({
             "bid_no": bid_no, "revision": revision, "id": f"item{i:02d}", "item": it["item"],
             "section": it.get("section", ""), "kind": kind, "max": it["max_score"],
             "basis": it.get("criteria") or f"{it.get('section', '')} · {it['item']}",
-            "sources": it.get("source_refs", []) + [ref for ref in it.get("rule_sources", [])
-                                                       if ref not in it.get("source_refs", [])],
+            "sources": sources,
             # 원문에 계산 규칙이 명시된 정량 항목만 metric · rule을 채운다. 없으면 3번이 '담당자 판단'으로 처리
             "metric": rule["metric"] if rule else None, "rule": rule["rule"] if rule else None,
             "rule_note": it.get("rule_note", ""),
+            "requirements": it.get("requirements", []),
         })
-    return {"bid_no": bid_no, "revision": revision, "items": items}
+    return {"bid_no": bid_no, "revision": revision, "notice_date": extraction.get("notice_date"), "items": items}
 
 
 def to_bid_logic_checklist(extraction: dict, bid_no: str, revision: str) -> dict:

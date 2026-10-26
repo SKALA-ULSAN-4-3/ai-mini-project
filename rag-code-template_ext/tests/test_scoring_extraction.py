@@ -4,6 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import re
 import time
+import tempfile
+from knowledge_bridge import ExtractionCache
 from threading import Barrier, Lock
 from types import SimpleNamespace as NS
 from typing import List, Literal, Optional
@@ -19,11 +21,11 @@ from bid_logic.scoring import _validate_bands, calculate_scores
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def production_functions():
+def production_functions(cache_dir):
     # 서버 전체 import는 FAISS/LLM을 초기화하므로 기존 integration_support처럼
     # 변경 대상의 실제 함수와 Pydantic 스키마를 추출해 실행한다.
-    names = {'ScoringItem', 'ScoringExtraction', 'Band', 'CategoryScore', 'QuantRule',
-             'build_rule', 'scoring_rule_context', 'build_scoring', 'bid_chunks',
+    names = {'ScoringRequirement', 'ScoringRecordFilter', 'ScoringItem', 'ScoringExtraction', 'Band', 'CategoryScore', 'QuantRule',
+             'build_rule', 'personnel_rule_from_sources', 'scoring_rule_context', 'build_scoring', 'bid_chunks',
              'numbered_context', '_squash', 'verified_source', 'cached'}
     tree = ast.parse((ROOT / 'rag_external-web_pdf_closed_llm.py').read_text())
     nodes = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name in names
@@ -34,8 +36,11 @@ def production_functions():
               _validate_bands=_validate_bands, elapsed_ms=lambda _: 0,
               join_spaced_letters=lambda s: s,
               source_label=lambda m: f"{m['filename']} p.{m['page']}",
-              source_ref=lambda m: dict(m), EXTRACT_CACHE={}, EXTRACT_LOCKS={}, Lock=Lock,
-              BID_FINGERPRINTS={})
+              source_ref=lambda m: dict(m), EXTRACTIONS=ExtractionCache(cache_dir, 'test-scoring-v1'),
+              BID_FINGERPRINTS={('R1', '000'): 'fixture-documents'})
+    ns['BASE_DIR'] = ROOT
+    from bid_logic.recommendation import load_bids_csv
+    ns['load_bids_csv'] = load_bids_csv
     exec(compile(ast.Module(body=nodes, type_ignores=[]), 'production_scoring', 'exec'), ns)
     bridge = ast.parse((ROOT / 'knowledge_bridge.py').read_text())
     node = next(n for n in bridge.body if isinstance(n, ast.FunctionDef) and n.name == 'to_bid_logic_scoring')
@@ -51,7 +56,9 @@ def document(page, text, bid_no='R1', revision='000'):
 
 class ScoringExtractionTest(unittest.TestCase):
     def setUp(self):
-        self.ns = production_functions()
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.ns = production_functions(temp.name)
         # 항목표와 등급표를 멀리 떨어뜨리고, 다른 공고·차수를 섞어 격리를 검증한다.
         docs = [document(11, '평가항목 배점 사업 이해도 10 경영상태 10 합계 20'),
                 document(30, '경영상태 신용평가등급 기업신용 회사채 기업어음 AAA 10 BB0 8'),
@@ -126,7 +133,7 @@ class ScoringExtractionTest(unittest.TestCase):
     def test_old_scoring_cache_rebuilt_once(self):
         key = ('R1', '000', 'scoring')
         self.ns['BID_FINGERPRINTS'][('R1', '000')] = 'same-documents'
-        self.ns['EXTRACT_CACHE'][key] = {'fingerprint': 'same-documents', 'data': {'old': True}}
+        self.ns['EXTRACTIONS'].get(key, 'same-documents', lambda: {'old': True})
         calls = []
         def build():
             calls.append(True)
@@ -148,7 +155,8 @@ class ScoringExtractionTest(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=2) as pool:
             futures = [pool.submit(request) for _ in range(2)]
             results = [f.result(timeout=3) for f in futures]
-        self.assertIs(results[0], results[1])
+        self.assertEqual(results[0], results[1])
+        self.assertIsNot(results[0], results[1])
         self.assertEqual(len(calls), 1)
 
     def test_actual_axdx_percentage_table_is_calculated_by_code(self):

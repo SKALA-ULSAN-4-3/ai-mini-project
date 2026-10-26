@@ -126,3 +126,22 @@ class RequireLoginTest(FakeBackendCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RequestAuthReuseTest(unittest.TestCase):
+    def test_only_exact_header_verified_on_same_request_skips_backend(self):
+        from starlette.requests import Request
+        from unittest.mock import patch
+        import backend_auth
+        request = Request({'type': 'http', 'headers': []})
+        request.state.verified_authorization = 'Bearer verified'
+        with patch.dict(os.environ, {'BACKEND_URL': 'https://backend.test'}), \
+                patch.object(backend_auth.urllib.request, 'urlopen') as opener:
+            self.assertIsNone(require_login('Bearer verified', request))
+            opener.assert_not_called()
+            from urllib.error import HTTPError
+            opener.side_effect = HTTPError('https://backend.test', 401, 'bad', {}, None)
+            with self.assertRaises(HTTPException) as caught:
+                require_login('Bearer other-token', request)
+            self.assertEqual(caught.exception.status_code, 401)
+            opener.assert_called_once()

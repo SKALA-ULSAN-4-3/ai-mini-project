@@ -7,20 +7,20 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
+import subprocess
 import sys
 import time
 import unicodedata
 import uuid
 
 from . import collect_bids as collector
-from . import convert_documents as converter
 from . import restrictions
 from . import bid_progress
 from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY,
                      HWP_SUFFIXES, directory_lock, read_json, write_json,
                      read_jsonl, write_jsonl, read_csv, write_csv, stamp)
 from .knowledge import KnowledgeStore
-from .prepare_documents import prepare
 
 CACHE_SECONDS = 300
 RESTRICTION_FIELDS = (
@@ -236,6 +236,8 @@ def search_bids(start, end, queries, limit, key):
             if identity not in progress_cache:
                 try:
                     progress_cache[identity] = bid_progress.lookup_progress(progress_key, *identity)
+                except bid_progress.ProgressRateLimitError:
+                    raise  # 전체 조회 한도 초과를 '검색 결과 0건'으로 숨기거나 캐시하지 않는다.
                 except collector.CollectionError as exc:
                     progress_cache[identity] = {"lookup_status": "unavailable", "error": str(exc)}
             current = bid_progress.apply_progress({**item, "bid_progress": progress_cache[identity]}, current_time)
@@ -340,6 +342,27 @@ def _attachment_rows(item, notice_url, full, previous):
     return rows
 
 
+def _prepare_with_timeout(folder, convert_hwp, timeout=120):
+    """변환뿐 아니라 PDF 검증·텍스트 추출까지 별도 프로세스에서 시간 제한한다."""
+    command = [sys.executable, "-m", "data_pipeline.prepare_documents", "--run-dir", str(folder)]
+    if convert_hwp:
+        command.append("--convert-hwp")
+    process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, start_new_session=True)
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        # soffice 자식 프로세스도 종료해 변환 프로필·파일 잠금이 남지 않게 한다.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.communicate()
+        raise RuntimeError(f"문서 변환·텍스트 추출이 {timeout}초를 초과해 중단했습니다. 원본은 보존되며 재시도 시 성공 파일을 재사용합니다.") from None
+    if process.returncode not in (0, 2):
+        raise RuntimeError("문서 변환·텍스트 추출 프로세스가 실패했습니다. 변환 도구 설정과 문서 형식을 확인하세요.")
+
+
 def _prepare_selected(folder, rows):
     """공고문·제안요청서·협약문서를 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
     def stem(row):
@@ -364,11 +387,12 @@ def _prepare_selected(folder, rows):
                and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES for row in scoped):
             conversion_file = folder / "conversions.jsonl"
             cached = {row["original_path"]: row for row in read_jsonl(conversion_file)} if conversion_file.exists() else {}
-            with directory_lock(root_dir(), ".conversion.lock"):
-                converter.convert_run(folder)
+            with directory_lock(root_dir(), ".conversion.lock", timeout=30):
+                _prepare_with_timeout(folder, True)
             cached.update({row["original_path"]: row for row in read_jsonl(conversion_file)})
             write_jsonl(conversion_file, cached.values())
-        prepare(folder)
+        else:
+            _prepare_with_timeout(folder, False)
     finally:
         write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, rows)
 
@@ -414,7 +438,7 @@ def _process_bid(item, full, store, progress):
     bid_no = str(item["bidNtceNo"])
     order = str(item.get("bidNtceOrd") or "000")
     folder = root_dir() / "documents" / collector.safe_name(f"{bid_no}_{order}")
-    with directory_lock(folder, ".document.lock"):
+    with directory_lock(folder, ".document.lock", timeout=30):
         progress("downloading")
         notice_url = _notice_url(item)
         if not full and notice_url is None:
@@ -489,6 +513,7 @@ def run_job(job_id, key=None):
             try:
                 if job["mode"] == "documents" or (job["mode"] == "notices" and key):
                     # 전체 검색을 재실행하지 않고 선택된 공고번호만 조회한다.
+                    progress("checking_attachments")
                     current = collector.lookup_notice(key, bid["bid_no"])
                     latest_order = str(current.get("bidNtceOrd") or "000")
                     if int(latest_order) < int(bid["bid_order"]):

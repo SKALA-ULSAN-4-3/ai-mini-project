@@ -12,6 +12,10 @@ FIELDS = ("bidNtceNo", "bidNtceOrd", "bidClsfcNo", "rbidNo", "bidClseDt",
           "opengDt", "progrsDivCdNm", "opengRsltDivNm")
 
 
+class ProgressRateLimitError(collector.CollectionError):
+    """공통 조회 한도에 걸리면 공고마다 실패 요청을 반복하지 않는다."""
+
+
 def lookup_rows(key, bid_no, bid_order, operation):
     if not key:
         raise collector.CollectionError("DATA_GO_KR_SCSBID_SERVICE_KEY가 설정되지 않았습니다.")
@@ -29,6 +33,12 @@ def lookup_rows(key, bid_no, bid_order, operation):
             with collector.build_opener().open(request, timeout=20) as response:
                 rows, total = collector.parse_response(response.read(10 * 1024 * 1024))
         except HTTPError as exc:
+            if exc.code == 429:
+                raise ProgressRateLimitError(
+                    "개찰·재입찰 API 요청 한도를 초과했습니다(HTTP 429). "
+                    "공고가 없는 것이 아니라 진행 상태를 확인하지 못한 상태입니다. "
+                    "잠시 후 다시 검색하고, 반복되면 공공데이터포털의 낙찰정보서비스 호출 한도를 확인하세요."
+                ) from None
             raise collector.CollectionError(f"개찰·재입찰 조회 HTTP {exc.code}: 낙찰정보서비스 활용승인을 확인하세요.") from None
         except (URLError, TimeoutError, OSError):
             raise collector.CollectionError("개찰·재입찰 조회 연결 실패") from None

@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from zipfile import ZipFile, is_zipfile
 from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 
@@ -178,10 +179,29 @@ def setup(soffice):
     return config
 
 
-def convert_one(source, target, soffice, profile=PROFILE):
+def convert_one(source, target, soffice, profile=PROFILE, _archive_depth=0):
     """격리된 임시 출력에서 완성된 PDF만 목적 경로에 반영한다."""
     from pypdf import PdfReader
     target.parent.mkdir(parents=True, exist_ok=True)
+    # 일부 공고는 파일명이 .hwp지만 실제 내용은 한글 원문 여러 개를 담은 ZIP이다.
+    # 정상 HWPX ZIP과 구분하고, 이름이 일치하는 원문 하나만 임시 경로에서 변환한다.
+    if is_zipfile(source):
+        with ZipFile(source) as archive:
+            names = archive.namelist()
+            if "Contents/section0.xml" not in names:
+                matches = [entry for entry in archive.infolist()
+                           if not entry.is_dir() and source.name.endswith(Path(entry.filename).name)
+                           and Path(entry.filename).suffix.lower() in (".hwp", ".hwpx")]
+                if _archive_depth or len(matches) != 1:
+                    raise RuntimeError("첨부는 ZIP 형식이며 내부에서 이름이 일치하는 한글 원문 하나를 확인하지 못했습니다. 원본 첨부를 확인하세요.")
+                entry = matches[0]
+                if entry.file_size > 50 * 1024 * 1024 or entry.flag_bits & 1:
+                    raise RuntimeError("ZIP 내부 한글 원문이 크기 제한을 넘거나 암호화되어 있습니다.")
+                with tempfile.TemporaryDirectory(prefix="hwp-source-", dir=target.parent) as temp:
+                    # archive.extract를 쓰지 않아 경로 이동·링크를 통한 파일 쓰기를 막는다.
+                    extracted = Path(temp) / Path(entry.filename).name
+                    extracted.write_bytes(archive.read(entry))
+                    return convert_one(extracted, target, soffice, profile, _archive_depth + 1)
     with tempfile.TemporaryDirectory(prefix="hwp-", dir=target.parent) as temp:
         execute([soffice, "-env:UserInstallation=" + Path(profile).resolve().as_uri(),
                  "--headless", "--infilter=Hwp2002_File", "--convert-to", "pdf:writer_pdf_Export",

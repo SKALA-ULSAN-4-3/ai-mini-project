@@ -8,7 +8,7 @@ Tool Calling 루프, 실제 LLM 호출, C4 고정 경로와의 비교 측정은 
 from copy import deepcopy
 
 from .common import check_scope
-from .scoring import calculate_scores, review_guidance
+from .scoring import calculate_scores, review_guidance, manual_reason, score_display_label
 
 # 에이전트가 기준을 지어내지 못하도록 판단에 필요한 필드만 보여 준다.
 # rule/metric은 코드가 실행할 값이므로 전달하지 않는다.
@@ -149,7 +149,9 @@ class ScoringTools:
                   "expected": "담당자 판단", "status": "manual", "needs_review": True,
                   "sources": item.get("sources", []), "basis": item.get("basis"),
                   "rule": item.get("rule"), "used_profile": {}, "missing_fields": [],
-                  "reason": reason.strip() + " · " + review_guidance(item),
+                  "display_label": score_display_label(item),
+                  "reason": "자동 계산이 어려운 이유: " + manual_reason(item)
+                            + " 추가 검토 사유: " + reason.strip() + " · " + review_guidance(item),
                   "requirements": item.get("requirements", []), "questions": []}
         return self._log("mark_manual", {"item_id": item_id, "reason": reason.strip()}, result)
 

@@ -160,6 +160,23 @@ def _metric_value(metric, profile):
     return value, missing, used
 
 
+def score_display_label(item, status="manual"):
+    if status == "calculated":
+        return "계산됨"
+    if status == "missing_profile":
+        return "추가 정보 필요"
+    return {"qualitative": "정성 검토 필요", "price": "가격 조건 확인 필요"}.get(
+        item.get("kind"), "산정 기준 확인 필요")
+
+
+def manual_reason(item):
+    if item.get("kind") == "qualitative":
+        return "평가위원이 제안 내용의 적절성·충실성 등을 판단하는 정성 항목으로, 회사 프로필과 배점표만으로 점수를 확정할 수 없습니다."
+    if item.get("kind") == "price":
+        return "실제 입찰가격과 적용 산식·비교값을 확인해야 하는 가격 평가 항목으로, 현재 자동 계산 대상에 포함되지 않습니다."
+    return item.get("rule_note") or "자동 계산에 필요한 산정 규칙을 확인하지 못했습니다."
+
+
 def review_guidance(item):
     """자동 점수가 없어도 원문의 요구사항을 기존 reason 열에서 확인할 수 있게 한다."""
     requirements = item.get("requirements") or []
@@ -269,8 +286,9 @@ def calculate_scores(table, profile, bid_no, revision):
                   "sources": item.get("sources", []), "basis": item.get("basis"),
                   "rule": item.get("rule"), "used_profile": {}, "missing_fields": []}
         result["requirements"] = item.get("requirements", [])
+        result["display_label"] = score_display_label(item)
         if item.get("kind") in ("qualitative", "price"):
-            result["reason"] = "정성·가격 항목은 담당자 판단"
+            result["reason"] = manual_reason(item)
         elif item.get("kind") != "quantitative":
             result["reason"] = "평가 항목 종류 미확인"
         elif not item.get("metric") or not item.get("rule"):
@@ -287,7 +305,7 @@ def calculate_scores(table, profile, bid_no, revision):
                 document = item["metric"].get("required_document")
                 if document and item["rule"].get("missing_document_score") is not None:
                     if profile.get("owned_docs") is None:
-                        result.update(status="missing_profile", missing_fields=["owned_docs"],
+                        result.update(status="missing_profile", display_label="추가 정보 필요", missing_fields=["owned_docs"],
                                       reason="신용평가 증빙서류의 보유·제출 가능 여부를 확인해 주세요.")
                         all_missing.add("owned_docs")
                         result["reason"] += " · " + review_guidance(item)
@@ -298,7 +316,7 @@ def calculate_scores(table, profile, bid_no, revision):
                         score = number(item["rule"]["missing_document_score"])
                         if not 0 <= score <= maximum:
                             raise ValueError("증빙 미제출 점수가 배점 범위를 벗어났습니다.")
-                        result.update(expected=float(score), status="calculated",
+                        result.update(expected=float(score), status="calculated", display_label="계산됨",
                                       used_profile={"owned_docs": profile["owned_docs"]},
                                       reason=f"{document} 없음으로 입력됨: 원문 미제출 기준을 적용한 예상 점수")
                         output.append(result)
@@ -319,7 +337,10 @@ def calculate_scores(table, profile, bid_no, revision):
             except (ValueError, KeyError, TypeError, ArithmeticError) as error:
                 result["reason"] = f"계산 기준 확인 필요: {error}"
         if result["status"] != "calculated":
+            if result["status"] == "manual":
+                result["reason"] = "자동 계산이 어려운 이유: " + result["reason"]
             result["reason"] += " · " + review_guidance(item)
+        result["display_label"] = score_display_label(item, result["status"])
         output.append(result)
     missing = sorted(all_missing)
     return {"bid_no": bid_no, "revision": revision, "items": output, "needs_review": True,

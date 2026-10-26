@@ -12,6 +12,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 from zipfile import ZipFile, is_zipfile
 from urllib.request import urlopen
 import xml.etree.ElementTree as ET
@@ -333,7 +334,8 @@ def convert_run(run_dir, config=None, converter=convert_one):
             if (cached.get("original_sha256") == digest and cached.get("status") in ("converted", "existing")
                     and all(cached.get(k) == config.get(k) for k in config)
                     and target.is_file() and cached.get("pdf_sha256") == sha256(target)):
-                record.update(pdf_path=str(target), pdf_sha256=cached["pdf_sha256"], status="existing")
+                record.update(pdf_path=str(target), pdf_sha256=cached["pdf_sha256"], status="existing",
+                              elapsed_seconds=0.0)
             else:
                 # 서로 다른 첨부 URL이 같은 원문을 제공해도 변환은 한 번만 수행한다.
                 equivalent = next((r for r in [*old.values(), *records[:-1]]
@@ -345,11 +347,13 @@ def convert_run(run_dir, config=None, converter=convert_one):
                 if equivalent:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(equivalent["pdf_path"], target)
-                    record.update(pdf_path=str(target), pdf_sha256=equivalent["pdf_sha256"], status="existing")
+                    record.update(pdf_path=str(target), pdf_sha256=equivalent["pdf_sha256"], status="existing",
+                                  elapsed_seconds=0.0)
                 else:
                     timeout_seconds, max_attempts, _ = conversion_policy()
                     record.setdefault("attempt_history", [])
                     for attempt in range(1, max_attempts + 1):
+                        attempt_started = time.perf_counter()
                         attempt_timeout_seconds = attempt_timeout(timeout_seconds, attempt)
                         record.update(status="converting" if attempt == 1 else "retrying",
                                       attempt=attempt, max_attempts=max_attempts,
@@ -371,13 +375,17 @@ def convert_run(run_dir, config=None, converter=convert_one):
                                               timeout=attempt_timeout_seconds)
                             record["attempt_history"].append({"attempt": attempt,
                                 "timeout_seconds": attempt_timeout_seconds, "status": "converted", "error": ""})
-                            record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted", error="")
+                            elapsed = round(time.perf_counter() - attempt_started, 3)
+                            record["attempt_history"][-1]["elapsed_seconds"] = elapsed
+                            record.update(pdf_path=str(target), pdf_sha256=sha256(target), status="converted",
+                                          error="", elapsed_seconds=elapsed)
                             break
                         except ConversionTimeout as exc:
                             record["attempt_history"].append({"attempt": attempt,
                                 "timeout_seconds": attempt_timeout_seconds,
                                 "status": "timeout",
-                                "error": str(exc)})
+                                "error": str(exc),
+                                "elapsed_seconds": round(time.perf_counter() - attempt_started, 3)})
                             record.update(status="timeout", error=str(exc))
                             _save_conversion_records(manifest, records)
                             if attempt == max_attempts:
@@ -391,6 +399,8 @@ def convert_run(run_dir, config=None, converter=convert_one):
                                     "timeout_seconds": record.get("timeout_seconds"),
                                     "status": "failed", "error": str(exc)})
             record.update(status="failed", error=(str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__))
+            if record.get("attempt"):
+                record["elapsed_seconds"] = round(time.perf_counter() - attempt_started, 3)
         # 중간에 멈춰도 완료된 파일은 다음 실행에서 재사용한다.
         _save_conversion_records(manifest, records)
     if not records:

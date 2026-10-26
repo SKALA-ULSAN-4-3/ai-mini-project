@@ -9,6 +9,7 @@ import hashlib
 import json
 import signal
 from pathlib import Path
+import time
 import sys
 
 if __package__:
@@ -17,6 +18,10 @@ if __package__:
 else:
     from privacy import mask_personal, extract_contacts, official_names
     import convert_documents as converter
+
+PREPARATION_VERSION = hashlib.sha256(
+    Path(__file__).read_bytes() + Path(__file__).with_name("privacy.py").read_bytes()
+).hexdigest()
 
 
 def read_csv(path):
@@ -61,6 +66,22 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
         from pypdf import PdfReader
         reader_factory = PdfReader
 
+    output = run_dir / "processed"
+    previous = {}
+    try:
+        old_documents = read_jsonl(output / "documents.jsonl")
+        old_pages = read_jsonl(output / "pages.jsonl")
+        old_chunks = read_jsonl(output / "chunks.jsonl")
+        old_pages_by_url, old_chunks_by_url = {}, {}
+        for record in old_pages:
+            old_pages_by_url.setdefault(record.get("source_url"), []).append(record)
+        for record in old_chunks:
+            old_chunks_by_url.setdefault(record.get("source_url"), []).append(record)
+        previous = {row.get("source_url"): (row, old_pages_by_url.get(row.get("source_url"), []),
+                                              old_chunks_by_url.get(row.get("source_url"), []))
+                    for row in old_documents if row.get("source_url")}
+    except (OSError, ValueError, TypeError):
+        previous = {}
     pages, chunks, documents = [], [], []
     for row in attachments:
         if row.get("selected", "").lower() != "true":
@@ -112,6 +133,28 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
         if path.suffix.lower() != ".pdf":
             doc["status"] = "unsupported_format"
             continue
+        doc["source_sha256"] = digest
+        doc["preparation_version"] = PREPARATION_VERSION
+        old = previous.get(row.get("url"))
+        if old:
+            old_doc, saved_pages, saved_chunks = old
+            if (old_doc.get("source_sha256") == digest
+                    and old_doc.get("document_id") == document_id
+                    and old_doc.get("preparation_version") == PREPARATION_VERSION
+                    and old_doc.get("status") in ("extracted", "review_empty_pages")):
+                # 같은 해시·전처리 버전은 페이지 파싱·개인정보 마스킹·청킹을 다시 하지 않는다.
+                doc.update({**old_doc, **base, "document_id": document_id, "sha256": digest,
+                            "source_sha256": digest, "preparation_version": PREPARATION_VERSION,
+                            "extraction_seconds": 0.0})
+                documents[-1] = doc
+                pages.extend({**record, **base, "document_id": document_id, "sha256": digest,
+                              "source_sha256": digest, "preparation_version": PREPARATION_VERSION}
+                             for record in saved_pages)
+                chunks.extend({**record, **base, "document_id": document_id, "sha256": digest,
+                               "source_sha256": digest, "preparation_version": PREPARATION_VERSION}
+                              for record in saved_chunks)
+                continue
+        extraction_started = time.perf_counter()
         try:
             with path.open("rb") as source:
                 reader = reader_factory(source)
@@ -121,7 +164,8 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
                 # 파일 중간의 오류가 나면 해당 문서의 불완전한 청크는 전달하지 않는다.
                 texts = [page.extract_text() or "" for page in reader.pages]
         except Exception as exc:
-            doc.update(status="extraction_failed", error=type(exc).__name__)
+            doc.update(status="extraction_failed", error=type(exc).__name__,
+                       extraction_seconds=round(time.perf_counter() - extraction_started, 3))
             continue
         doc["page_count"] = len(texts)
         doc["empty_pages"] = [i for i, t in enumerate(texts, 1) if not t.strip()]
@@ -131,6 +175,7 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
             contacts = extract_contacts(text)
             text = mask_personal(text, official_names(api_item))
             metadata = {**base, "document_id": document_id, "sha256": digest, "page": page_no,
+                        "source_sha256": digest, "preparation_version": PREPARATION_VERSION,
                         "contacts": contacts, "privacy_policy": "mask_names_preserve_contacts_v1",
                         "citation": f"{base['file_name']} p.{page_no}",
                         "document_status": doc["status"]}
@@ -141,8 +186,8 @@ def prepare(run_dir, chunk_size=1000, overlap=200, reader_factory=None):
                 chunks.append({**metadata, "chunk_id": f"{document_id}-p{page_no}-c{index}",
                                "char_start": start, "char_end": end, "text": part})
                 doc["chunk_count"] += 1
+        doc["extraction_seconds"] = round(time.perf_counter() - extraction_started, 3)
 
-    output = run_dir / "processed"
     output.mkdir(exist_ok=True)
     write_jsonl(output / "pages.jsonl", pages)
     write_jsonl(output / "chunks.jsonl", chunks)

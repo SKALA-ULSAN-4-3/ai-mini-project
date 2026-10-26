@@ -38,7 +38,8 @@ RESTRICTION_FIELDS = (
     "jntcontrctDutyRgnNm2", "jntcontrctDutyRgnNm3", "cmmnSpldmdMethdNm",
     "cntrctCnclsMthdNm", "presmptPrce", "asignBdgtAmt", "bidClseDt", "opengDt",
 )
-ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name", "source", "document_type"]
+ATTACHMENT_FIELDS = FILE_FIELDS + ["role", "storage_name", "source", "document_type",
+                                  "download_elapsed_seconds"]
 
 
 def _enrich_restrictions(item, key, deadline=None):
@@ -140,12 +141,14 @@ def is_active_notice(item, latest):
 
 
 def _download_record(run_dir, row, old):
+    started = time.perf_counter()
     target = run_dir / "raw" / collector.safe_name(f"{row['bid_no']}_{row['bid_order']}") / row["storage_name"]
     cached_path = Path(old.get("local_path", "__missing__"))
     if (old.get("status") in DOWNLOAD_SUCCESS and old.get("url") == row["url"]
             and cached_path.resolve().parent == target.parent.resolve() and cached_path.is_file()
             and cached_path.stat().st_size):
         row.update(status="existing", local_path=str(cached_path.resolve()), error="")
+        row["download_elapsed_seconds"] = 0.0
         return
     try:
         collector.download_file(row["url"], target)
@@ -161,6 +164,8 @@ def _download_record(run_dir, row, old):
         row.update(status="downloaded", local_path=str(target), error="")
     except collector.CollectionError as exc:
         row.update(status="failed", local_path="", error=str(exc))
+    finally:
+        row["download_elapsed_seconds"] = round(time.perf_counter() - started, 3)
 
 
 class PrepareTimeout(RuntimeError):
@@ -428,16 +433,20 @@ def create_job(search_id, bids, mode):
     with directory_lock(root_dir(), ".jobs.lock"):
         folder = root_dir() / "jobs"
         folder.mkdir(parents=True, exist_ok=True)
+        handoff_job_id = None
         for path in folder.glob("*.json"):
             old = read_json(path)
-            if (old.get("job_id") in ACTIVE_JOBS
-                    and old.get("mode") == mode
-                    and old.get("status") in {"queued", "running"}
-                    and sorted((b["bid_no"], b["bid_order"]) for b in old["bids"]) == identity):
+            if old.get("job_id") not in ACTIVE_JOBS or old.get("status") not in {"queued", "running"}:
+                continue
+            old_identity = sorted((b["bid_no"], b["bid_order"]) for b in old["bids"])
+            if old.get("mode") == mode and old_identity == identity:
                 return {**old, "reused": True}
+            if mode == "documents" and old.get("mode") == "notices" and set(old_identity) & set(identity):
+                handoff_job_id = old["job_id"]
         job_id = uuid.uuid4().hex
         job = {"job_id": job_id, "search_id": search_id, "mode": mode,
                "status": "queued", "done": 0, "total": len(bids), "created_at": stamp(),
+               "continues_job_id": handoff_job_id,
                "bids": [{**bid, "status": "queued", "error": None} for bid in bids]}
         write_json(folder / f"{job_id}.json", job)
         ACTIVE_JOBS.add(job_id)
@@ -549,47 +558,69 @@ def _prepare_with_timeout(folder, convert_hwp, timeout=None):
             return _run_prepare_worker(folder, False, 120, None)
 
 
-def _prepare_selected(folder, rows, full=False, backend=None):
-    """공고문·제안요청서·협약문서를 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
+def _preparation_scope(folder, rows, full=False):
+    """내부 분석이 필요한 공고문·제안요청서·협약문서만 선별하고 처리 우선순위를 정한다."""
     def stem(row):
         return unicodedata.normalize("NFC", Path(row["file_name"]).stem).casefold()
 
-    pdfs = {stem(row) for row in rows if row["status"] in DOWNLOAD_SUCCESS
+    pdfs = {(stem(row), frozenset(classify_attachment(row["file_name"])))
+            for row in rows if row["status"] in DOWNLOAD_SUCCESS
             and Path(row["local_path"]).suffix.lower() == ".pdf"}
     scoped = []
     for row in rows:
         kinds = {"notice"} if row.get("role") == "notice" else classify_attachment(row["file_name"])
-        selected = (row["selected"] and "cancel" not in kinds
-                    and ((full and Path(row["local_path"]).suffix.lower() in {".hwp", ".hwpx", ".pdf"})
-                         or bool(kinds & {"notice", "rfp", "agreement"})))
-        if Path(row["file_name"]).suffix.lower() in HWP_SUFFIXES and stem(row) in pdfs:
+        selected = bool(row["selected"] and "cancel" not in kinds
+                        and kinds & {"notice", "rfp", "agreement"})
+        if (Path(row["file_name"]).suffix.lower() in HWP_SUFFIXES
+                and (stem(row), frozenset(kinds)) in pdfs):
             selected = False  # 원본은 보존하고 같은 이름의 PDF만 내부 적재에 쓴다.
         prepared = {**row, "selected": selected}
         if row["file_name"] == "standard_notice" and row["local_path"]:
             # API에 이름이 없는 표준공고서도 RAG의 공통 판별 함수가 인식할 수 있게 한다.
             prepared["file_name"] = Path(row["local_path"]).name
         scoped.append(prepared)
-    selected = [row for row in scoped if row["selected"] and row["status"] in DOWNLOAD_SUCCESS]
+    priority = {"rfp": 0, "notice": 1, "agreement": 2}
+    scoped.sort(key=lambda row: (min((priority[k] for k in classify_attachment(row["file_name"])
+                                     if k in priority), default=3), row["file_name"].casefold()))
+    return scoped
+
+
+def _preparation_fingerprint(folder, scoped):
+    selected = [row for row in scoped if row["selected"] and row["status"] in DOWNLOAD_SUCCESS
+                and Path(row["local_path"]).is_file()]
     config = converter.TOOLS / "converter.json"
     inputs = {"version": PREPARE_VERSION,
-              "files": [(row["url"], row["file_name"], converter.sha256(Path(row["local_path"]))) for row in selected],
+              "files": [(row["url"], row["file_name"], converter.sha256(Path(row["local_path"])))
+                        for row in selected],
               "bids": [{k: v for k, v in bid.items() if k not in (
                   "collected_at", "downloaded_files", "failed_files")} for bid in read_csv(folder / "bids.csv")],
               "names": [official_names(item) for item in read_json(folder / "candidates.json").get("items", [])],
               "converter": converter.sha256(config) if config.is_file() else None}
-    fingerprint = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
+
+
+def _cached_preparation(folder, fingerprint):
     cache_file = folder / "prepared-cache.json"
     try:
         cached = read_json(cache_file)
-        if (cached["fingerprint"] == fingerprint and cached["outputs"]
-                and all((folder / name).is_file() and converter.sha256(folder / name) == digest
-                        for name, digest in cached["outputs"].items())):
-            return
+        return bool(cached.get("fingerprint") == fingerprint and cached.get("outputs")
+                    and all((folder / name).is_file() and converter.sha256(folder / name) == digest
+                            for name, digest in cached["outputs"].items()))
     except (OSError, ValueError, KeyError, TypeError):
-        pass
+        return False
+
+
+def _prepare_selected(folder, rows, full=False, backend=None):
+    """공고문·제안요청서·협약문서를 변환한다. 신청서·ZIP 등 원본은 그대로 보존한다."""
+    scoped = _preparation_scope(folder, rows, full)
+    selected = [row for row in scoped if row["selected"] and row["status"] in DOWNLOAD_SUCCESS]
+    fingerprint = _preparation_fingerprint(folder, scoped)
+    cache_file = folder / "prepared-cache.json"
+    if _cached_preparation(folder, fingerprint):
+        return True
     cache_file.unlink(missing_ok=True)
     if backend and backend.configured and backend.restore_prepared(folder, fingerprint, selected):
-        return
+        return True
     write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, scoped)
     try:
         if any(row["selected"] and row["status"] in DOWNLOAD_SUCCESS
@@ -616,6 +647,7 @@ def _prepare_selected(folder, rows, full=False, backend=None):
             write_json(cache_file, {"fingerprint": fingerprint, "outputs": outputs})
     finally:
         write_csv(folder / "attachments.csv", ATTACHMENT_FIELDS, rows)
+    return False
 
 
 def _document_readiness(item, rows, indexed_records, documents=()):
@@ -842,45 +874,70 @@ def _process_bid_local(item, full, store, progress, backend):
         rows = _attachment_rows(item, notice_url, full, previous)
         if not rows:
             raise ValueError("API가 제공한 첨부가 없습니다.")
+        for row in rows:
+            row.setdefault("download_elapsed_seconds", 0.0)
+        published = previous and (folder / "bids.csv").exists()
+        collected_at = read_csv(folder / "bids.csv")[0]["collected_at"] if published else stamp()
+        write_json(folder / "candidates.json", {"items": [item]})
+        write_csv(folder / "bids.csv", BID_FIELDS, [collector.notice_row(item, [], collected_at)])
+        scoped = _preparation_scope(folder, rows, full)
+        selected_inputs = [row for row in scoped if row["selected"]]
+        analysis_inputs_ready = bool(selected_inputs) and all(
+            row["status"] in DOWNLOAD_SUCCESS and row.get("local_path")
+            and Path(row["local_path"]).is_file() and Path(row["local_path"]).stat().st_size > 0
+            for row in selected_inputs)
+        preparation_fingerprint = _preparation_fingerprint(folder, scoped)
+        prepared_local = analysis_inputs_ready and _cached_preparation(folder, preparation_fingerprint)
+        all_selected_rows = [row for row in rows if row["selected"]]
+        completed_local = prepared_local and all(
+            row["status"] in DOWNLOAD_SUCCESS and row.get("local_path")
+            and Path(row["local_path"]).is_file() and Path(row["local_path"]).stat().st_size > 0
+            for row in all_selected_rows)
         has_rfp = full and any(str(row.get("selected")).lower() == "true"
                                and "rfp" in classify_attachment(row.get("file_name", ""))
                                for row in rows)
-        cache_state = cache_api.lookup_rfp(bid_no, order) if has_rfp else {
-            "status": "not_requested", "cached": False}
+        cache_state = ({"status": "reused_local", "cached": True} if has_rfp and prepared_local else
+                       cache_api.lookup_rfp(bid_no, order) if has_rfp else
+                       {"status": "not_requested", "cached": False})
         if cache_state.get("auth_failed"):
             # 같은 내부 키로 이어지는 문서 API 호출을 반복하지 않는다.
             backend._error("DB 제안요청서 캐시 인증 실패", 401)
-        for row in rows:
+        priority = {"rfp": 0, "notice": 1, "agreement": 2}
+        download_rows = sorted(rows, key=lambda row: (
+            min((priority[k] for k in classify_attachment(row["file_name"]) if k in priority), default=3),
+            row["file_name"].casefold())) if full else rows
+        for row in download_rows:
             if row["selected"]:
                 old = previous.get(row["url"], {})
                 target = folder / "raw" / collector.safe_name(f"{bid_no}_{order}") / row["storage_name"]
-                if not (old.get("status") in DOWNLOAD_SUCCESS and Path(old.get("local_path") or "__missing__").is_file()):
+                if (not completed_local
+                        and not (old.get("status") in DOWNLOAD_SUCCESS and Path(old.get("local_path") or "__missing__").is_file())):
                     progress("restoring_database")
                     if backend.restore('original', _source_identity(item, row), target,
                                        legacy_name=row["file_name"], source_url=row["url"]):
                         old = {**row, "status": "existing", "local_path": str(target)}
-                progress("downloading")
-                _download_record(folder, row, old)
+                if not completed_local:
+                    progress("downloading")
+                    _download_record(folder, row, old)
+                else:
+                    row["download_elapsed_seconds"] = 0.0
                 write_csv(manifest, ATTACHMENT_FIELDS, rows)
                 if row["status"] in DOWNLOAD_SUCCESS:
                     progress("saving_database")
                     backend.put('original', _source_identity(item, row), row["file_name"],
                                 Path(row["local_path"]).read_bytes(), row["url"])
-        write_json(folder / "candidates.json", {"items": [item]})
-        published = previous and (folder / "bids.csv").exists()
-        collected_at = read_csv(folder / "bids.csv")[0]["collected_at"] if published else stamp()
-        write_csv(folder / "bids.csv", BID_FIELDS, [collector.notice_row(item, [], collected_at)])
-        progress("restoring_database")
-        _converted_files(backend, folder, rows, item, restore=True)
+        if not prepared_local:
+            progress("restoring_database")
+            _converted_files(backend, folder, rows, item, restore=True)
         fingerprint = _rfp_fingerprint(item, rows) if full else None
         restored = False
-        if full and fingerprint:
+        if full and fingerprint and not prepared_local:
             if backend.auth_failed and not cache_state.get("cached") and not cache_state.get("auth_failed"):
                 cache_state = {"status": "failed", "cached": False, "auth_failed": True,
                                "error": "DB 문서 인증 실패가 확인되어 제안요청서 캐시 조회를 생략했습니다."}
             else:
                 restored, cache_state = _restore_rfp_cache(fingerprint, rows, folder, cache_state)
-        if not restored:
+        if not restored and not prepared_local:
             progress("converting")
             try:
                 _prepare_selected(folder, rows, full=full, backend=backend)
@@ -891,10 +948,25 @@ def _process_bid_local(item, full, store, progress, backend):
                         "indexed_chunks": 0, "rfp_cache": cache_state,
                         **_document_readiness(item, rows, [])}
         progress("saving_database")
+        # 변환 자체는 완료 캐시로 건너뛰되, 미저장 변환본만 DB 저장 재시도한다.
         _converted_files(backend, folder, rows, item)
         backend.save_prepared(folder)
+        if prepared_local:
+            cache_state = {"status": "reused_local", "cached": True}
         documents = read_jsonl(folder / "processed/documents.jsonl")
         chunks = read_jsonl(folder / "processed/chunks.jsonl")
+        conversion_file = folder / "conversions.jsonl"
+        selected_originals = {str(Path(row["local_path"]).resolve()) for row in rows
+                              if row["selected"] and row["status"] in DOWNLOAD_SUCCESS
+                              and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES}
+        conversion_seconds = (sum(float(row.get("elapsed_seconds") or 0)
+                                  for row in read_jsonl(conversion_file)
+                                  if row.get("original_path") in selected_originals)
+                             if conversion_file.is_file() else 0.0)
+        extraction_seconds = sum(float(row.get("extraction_seconds") or 0) for row in documents)
+        if prepared_local or restored:
+            conversion_seconds = 0.0
+            extraction_seconds = 0.0
         ready = {(d["bid_no"], d["bid_order"], d["source_url"])
                  for d in documents if d["status"] in TEXT_READY}
         records = []
@@ -923,7 +995,11 @@ def _process_bid_local(item, full, store, progress, backend):
                             "제안요청서류가 아직 변환·텍스트 적재되지 않았습니다.")
         return {"status": "partial_failed" if failures and records else "failed" if failures else "completed",
                 "error": "확인 필요: " + ", ".join(dict.fromkeys(failures)) if failures else None,
-                **readiness, "indexed_chunks": len(records), "rfp_cache": cache_state}
+                **readiness, "indexed_chunks": len(records), "rfp_cache": cache_state,
+                "file_timings_seconds": {"download": round(sum(float(row.get("download_elapsed_seconds") or 0)
+                                                                   for row in rows), 3),
+                                          "conversion": round(conversion_seconds, 3),
+                                          "text_extraction": round(extraction_seconds, 3)}}
 
 
 def run_job(job_id, key=None):
@@ -932,13 +1008,51 @@ def run_job(job_id, key=None):
     job["status"] = "running"
     write_json(path, job)
     try:
+        handoff_id = job.get("continues_job_id")
+        if handoff_id:
+            handoff_started = time.perf_counter()
+            handoff_deadline = time.monotonic() + 180
+            wanted = {(str(bid["bid_no"]), str(bid.get("bid_order") or "000")) for bid in job["bids"]}
+            while time.monotonic() < handoff_deadline:
+                try:
+                    previous_job = get_job(handoff_id)
+                except SearchNotFound:
+                    break
+                matching = [bid for bid in previous_job.get("bids", [])
+                            if (str(bid.get("bid_no")), str(bid.get("bid_order") or "000")) in wanted]
+                active_overlap = any(bid.get("status") not in {"completed", "failed", "partial_failed"}
+                                     for bid in matching)
+                if previous_job.get("status") not in {"queued", "running"} or not active_overlap:
+                    break
+                job["status"] = "waiting_for_notice_job"
+                for bid in job["bids"]:
+                    bid["status"] = "waiting_for_notice_job"
+                    bid["continues_job_id"] = handoff_id
+                write_json(path, job)
+                time.sleep(0.25)
+            job["status"] = "running"
+            job["handoff_wait_seconds"] = round(time.perf_counter() - handoff_started, 3)
+            write_json(path, job)
         items = select_items(job["search_id"], job["bids"], check_deadline=job["mode"] != "db_retry")
         store = None if job["mode"] == "db_retry" else KnowledgeStore("pdf")
         for position, item in enumerate(items):
             bid = job["bids"][position]
+            bid_started = time.perf_counter()
+            stage_started = bid_started
+            timed_stage = None
+            stage_timings = {}
 
             def progress(status):
+                nonlocal stage_started, timed_stage
+                now = time.perf_counter()
+                if timed_stage is not None:
+                    stage_timings[timed_stage] = round(
+                        stage_timings.get(timed_stage, 0.0) + now - stage_started, 3)
+                timed_stage, stage_started = status, now
                 bid["status"] = status
+                bid["current_stage"] = status
+                bid["stage_timings_seconds"] = dict(stage_timings)
+                bid["total_elapsed_seconds"] = round(now - bid_started, 3)
                 write_json(path, job)
 
             try:
@@ -946,6 +1060,7 @@ def run_job(job_id, key=None):
                     bid.update(status="saving_database", preparation_status="ready")
                     write_json(path, job)
                     bid.update(_retry_db_save(item))
+                    progress(bid.get("status", "completed"))
                     job["done"] += 1
                     write_json(path, job)
                     continue
@@ -975,15 +1090,15 @@ def run_job(job_id, key=None):
                             bid.update(status="failed", preparation_status="not_started",
                                        error="현재 접수 중인 입찰이 확인되지 않아 공고문 준비를 중단했습니다. "
                                              + (state.get("reason") or "개찰·재입찰 상태를 확인하세요."))
+                            progress("failed")
                             job["done"] += 1
-                            write_json(path, job)
                             continue
                         if state["state"] == "unknown" and job["mode"] == "documents":
                             bid.update(status="failed", preparation_status="not_started",
                                        error="재입찰 진행 상태를 확정하지 못해 전체 첨부 다운로드를 중단했습니다. "
                                              "공식 공고의 현재 일정을 확인한 뒤 다시 시도하세요.")
+                            progress("failed")
                             job["done"] += 1
-                            write_json(path, job)
                             continue
                         current = checked
                     except collector.CollectionError as exc:
@@ -994,10 +1109,11 @@ def run_job(job_id, key=None):
                             bid.update(status="failed", preparation_status="not_started",
                                        error="입찰 진행 상태를 확인하지 못해 전체 첨부 다운로드를 중단했습니다. "
                                              "API 키와 조회 상태를 확인한 뒤 다시 시도하세요.")
+                            progress("failed")
                             job["done"] += 1
-                            write_json(path, job)
                             continue
                     if job["mode"] == "documents":
+                        progress("checking_attachments")
                         item = _enrich_eorder(current, key)
                     else:
                         # 같은 차수의 e발주 조회 결과는 유지하되 일반 첨부는 최신 응답을 쓴다.
@@ -1016,6 +1132,10 @@ def run_job(job_id, key=None):
                     bid.setdefault("preparation_status", "ready")
                     bid["db_sync"] = {"status": "failed", "errors": ["DB 저장 재시도 중 로컬 결과 확인에 실패했습니다."],
                                       "files": [], "auth_failed": False}
+            progress(bid.get("status", "completed"))
+            if bid.get("file_timings_seconds"):
+                bid["stage_timings_seconds"].update(bid["file_timings_seconds"])
+                bid["stage_timings_seconds"] = dict(bid["stage_timings_seconds"])
             job["done"] += 1
             write_json(path, job)
         statuses = [bid["status"] for bid in job["bids"]]

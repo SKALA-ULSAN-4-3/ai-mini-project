@@ -10,14 +10,13 @@ const state = ref('loading') // loading | ok | error
 onMounted(async () => {
   try {
     const { data } = await client.get(`/bids/${props.bid.bid_no}/documents`, { params: { revision: props.bid.revision } })
-    docs.value = Array.isArray(data) ? data.filter((row) => !row.file_name?.startsWith('dp1_state_')) : []
+    docs.value = Array.isArray(data) ? data : []
     state.value = 'ok'
   } catch (e) {
     state.value = 'error' // 아직 PDF 가 올라오지 않았거나 서버 연결이 안 되면 조용히 "없음"으로 표시
   }
 })
 
-const displayName = (name) => (name || '').replace(/^dp1_(?:original|converted)_[a-f0-9]{24}_[a-f0-9]{64}_/, '')
 const mb = (n) => (Number(n || 0) / 1048576).toFixed(1)
 // http(s) 주소만 링크로 만듭니다.
 const safe = (u) => (/^https?:\/\//.test(u || '') ? u : null)
@@ -25,12 +24,12 @@ const safe = (u) => (/^https?:\/\//.test(u || '') ? u : null)
 
 <template>
   <div class="kv">
-    <strong>저장된 공고문·첨부파일</strong>
+    <strong>원문 PDF</strong>
     <p v-if="state === 'loading'" class="meta">불러오는 중…</p>
-    <p v-else-if="!docs.length" class="meta">DB에 저장된 공고문·첨부파일이 없습니다.</p>
+    <p v-else-if="!docs.length" class="meta">저장된 원문 PDF가 없습니다.</p>
     <p v-for="d in docs" :key="d.id || d.file_name" class="meta">
-      <a v-if="safe(d.download_url)" :href="safe(d.download_url)" target="_blank" rel="noopener">{{ displayName(d.file_name) }}</a>
-      <span v-else>{{ displayName(d.file_name) }}</span>
+      <a v-if="safe(d.download_url)" :href="safe(d.download_url)" target="_blank" rel="noopener">{{ d.file_name }}</a>
+      <span v-else>{{ d.file_name }}</span>
       ({{ mb(d.size_bytes) }}MB)
       <a v-if="safe(d.source_url)" :href="safe(d.source_url)" target="_blank" rel="noopener"> · 나라장터 원문</a>
     </p>

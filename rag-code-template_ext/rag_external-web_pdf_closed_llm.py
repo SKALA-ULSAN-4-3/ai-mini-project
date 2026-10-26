@@ -118,9 +118,18 @@ async def keep_stores_current(request, call_next):
     refresh_stores()
     return await call_next(request)
 
-# ✅ 적재 API (/upload-paper, /upload-topic, /data-status): 1번 데이터 파이프라인 라우터
+# ✅ 로그인 확인: BACKEND_URL(4번)이 있으면 /health 외 모든 API에 Bearer 토큰 필요 (기획서 03). 없으면 로컬 개발용으로 열어 둠
+from fastapi import Depends
+from backend_auth import require_login
+AUTH = [Depends(require_login)]
+
+# ✅ 검색 · 적재 API (/search-bids, /fetch-notices, /fetch-documents, /jobs, /upload-*, /data-status): 1번 라우터
 from data_pipeline.api import router as data_pipeline_router
-app.include_router(data_pipeline_router, tags=["데이터 적재 (1번)"])
+app.include_router(data_pipeline_router, tags=["데이터 적재 (1번)"], dependencies=AUTH)
+
+# ✅ X3 음성 질의 (/stt, /tts): 화면이 STT → /rag-query → TTS 순서로 부른다
+from voice_routes import router as voice_router
+app.include_router(voice_router, dependencies=AUTH)
 
 # ✅ 공고 추리기·예상 점수·체크리스트 API 연결
 def register_bid_routes(*, profile_dependency, scoring_provider, checklist_provider,
@@ -382,7 +391,7 @@ def fallback_extract_from_context(context: str, question: str) -> str | None:
     return m_any.group(1).strip() if m_any else None
 
 # ✅ 질의 응답 라우터
-@app.post("/rag-query", response_model=AnswerResponse, summary="Closed Source LLM + 벡터 DB 질의", tags=["질의 응답"])
+@app.post("/rag-query", dependencies=AUTH, response_model=AnswerResponse, summary="Closed Source LLM + 벡터 DB 질의", tags=["질의 응답"])
 async def rag_query(rag_request: RAGRequest = Body(...)):
     t0 = time.perf_counter()
     review = needs_review_for(rag_request.prompt)
@@ -809,7 +818,7 @@ def build_scoring(bid_no: str, revision: str) -> dict:
             "pass_rule": result.pass_rule, "pass_rule_source": labels.get(result.pass_rule_doc_no or 0, ""),
             "needs_review": True, "handoff": False, "latency_ms": elapsed_ms(t0)}
 
-@app.get("/bids/{bid_no}/scoring-table", summary="공고 채점표 추출 (3번 점수 계산용)", tags=["공고 추출"])
+@app.get("/bids/{bid_no}/scoring-table", dependencies=AUTH, summary="공고 채점표 추출 (3번 점수 계산용)", tags=["공고 추출"])
 async def scoring_table(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                         refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출"),
                         allow_partial: bool = Query(False, description="true면 제안요청서 없이 공고문만으로 추출 (채점표가 비거나 불완전할 수 있음)")):
@@ -866,7 +875,7 @@ def build_required_docs(bid_no: str, revision: str) -> dict:
             "due_source": labels.get(due_n or 0, ""), "schedule": schedule,
             "needs_review": False, "handoff": False, "latency_ms": elapsed_ms(t0)}
 
-@app.get("/bids/{bid_no}/required-docs", summary="공고 제출서류 · 일정 추출 (3번 체크리스트용)", tags=["공고 추출"])
+@app.get("/bids/{bid_no}/required-docs", dependencies=AUTH, summary="공고 제출서류 · 일정 추출 (3번 체크리스트용)", tags=["공고 추출"])
 async def required_docs(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                         refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
     return run_endpoint(bid_no, revision, "required_docs", refresh, build_required_docs)
@@ -900,13 +909,13 @@ def build_summary(bid_no: str, revision: str) -> dict:
     return {"bid_no": bid_no, "revision": revision, "summary": fields, "missing": missing,
             "needs_review": False, "handoff": bool(missing), "latency_ms": elapsed_ms(t0)}
 
-@app.get("/bids/{bid_no}/summary", summary="공고 요약 (항목별 출처 포함)", tags=["공고 추출"])
+@app.get("/bids/{bid_no}/summary", dependencies=AUTH, summary="공고 요약 (항목별 출처 포함)", tags=["공고 추출"])
 async def bid_summary(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수"),
                       refresh: bool = Query(False, description="true면 저장된 결과를 무시하고 다시 추출")):
     return run_endpoint(bid_no, revision, "summary", refresh, build_summary)
 
 # ---- 흐름 ③ · ⑥ 진행 확인: 공고별로 무엇이 적재되었는지 ----
-@app.get("/bids/{bid_no}/documents", summary="공고별 적재 문서 · 단계 (none / notice_only / full)", tags=["공고 추출"])
+@app.get("/bids/{bid_no}/documents", dependencies=AUTH, summary="공고별 적재 문서 · 단계 (none / notice_only / full)", tags=["공고 추출"])
 async def bid_documents_status(bid_no: str, revision: Optional[str] = Query(None, description="공고 차수")):
     return bid_documents(bid_no, resolve_revision(bid_no, revision))
 
@@ -919,7 +928,7 @@ class SummaryBatchRequest(BaseModel):
     bids: List[BidKey] = Field(min_length=1, max_length=20, description="요약할 공고 (최대 20건)")
     refresh: bool = False
 
-@app.post("/bids/summaries", summary="공고 여러 건 요약 (흐름 ④, 최대 20건 · 동시 5건)", tags=["공고 추출"])
+@app.post("/bids/summaries", dependencies=AUTH, summary="공고 여러 건 요약 (흐름 ④, 최대 20건 · 동시 5건)", tags=["공고 추출"])
 def bid_summaries(req: SummaryBatchRequest):
     # LLM 호출을 공고마다 순서대로 하면 20건에 1분 이상 걸려 5건씩 동시에 처리한다. 한 건이 실패해도 나머지는 돌려준다
     from concurrent.futures import ThreadPoolExecutor

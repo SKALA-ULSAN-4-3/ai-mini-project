@@ -42,6 +42,10 @@ def label(dataset,assets):
     gold=read(dataset/'gold.json');profiles=read(dataset/'profiles.json')
     if any(g.get('review',{}).get('status')=='verified' for g in gold['recommendations']):
         raise ValueError('사람이 확정한 추천 정답은 덮어쓰지 않습니다.')
+    # 일부 판정만 사람이 확인해도 그 기록은 AI 재판정으로 지우지 않는다.
+    if (dataset/'recommendation-review.json').exists() and any(
+            'human_review' in c for c in read(dataset/'recommendation-review.json')['cases']):
+        raise ValueError('사람이 검토한 추천 판정은 덮어쓰지 않습니다.')
     before=assets/'recommendations-before-rubric-v1.json'
     if not before.exists():
         write(before,{'gold':gold['recommendations'],'measurements':read(dataset/'measurement-summary.json')})

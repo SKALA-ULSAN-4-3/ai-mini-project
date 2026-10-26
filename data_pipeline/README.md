@@ -10,6 +10,10 @@
 
 Java DB 저장에는 `BACKEND_URL`과 `SERVICE_API_KEY`가 필요합니다. 파이프라인은 Java 문서 API 요청에 `X-Service-Key` 헤더로 값을 보내며 Java의 `SERVICE_API_KEY`와 일치해야 합니다. 인증 실패 후에는 해당 공고의 추가 DB 요청을 중단하고, 공고문 준비 성공 여부와 DB 저장 실패를 별도로 반환합니다.
 
+검색 캐시는 같은 설정을 사용합니다. `/search-bids`는 사용자 JWT와 서비스 키로 `POST /api/cache/search/lookup`을 먼저 조회하고, 적중하면 저장된 공고·첨부 메타데이터로 새 `search_id`를 발급합니다. `/bids` 추천 응답은 `PUT /api/cache/search`에 최대 20건 추천과 검색 원본을 저장합니다. 저장 실패는 `cache_sync`로 응답하고 화면에 안내합니다. 검색 캐시는 회사 프로필과 검색 조건이 같을 때만 재사용됩니다.
+
+사용자가 선택한 공고의 첨부 준비는 `/api/cache/rfp/{bid_no}`를 차수별로 확인합니다. 성공한 전처리 결과를 최대 5MB까지 24시간 캐시하며, 원본·변환 파일이 준비되고 입력 해시·전처리 버전이 같을 때만 텍스트 추출을 생략합니다. 캐시 실패는 공고 준비를 막지 않고 `rfp_cache` 상태로 표시합니다.
+
 macOS(Homebrew 필요) 또는 Ubuntu 24.04에서 다음 Bash로 Python 패키지·LibreOffice·JDK 21을 설치하고 H2Orestart를 프로젝트 프로필에 등록합니다. 스크립트 전체를 sudo로 실행하지 않습니다. Ubuntu에서는 시스템 패키지 설치 단계에서만 sudo를 사용합니다.
 
 ```bash

@@ -99,6 +99,12 @@ onUnmounted(() => { stopped = true; clearTimeout(timer) })
         {{ bid.bid_no }} DB 저장: {{ bid.db_sync?.status === 'not_configured' ? '설정 없음 — 로컬 저장만 완료' : bid.db_sync?.status === 'failed' ? '일부 미완료 — 파일별 오류 확인 필요' : bid.db_sync?.status === 'saved' ? '저장·재사용 완료' : '저장 상태 미확인' }}
         <span v-if="bid.db_sync?.auth_failed"> · 파이프라인 SERVICE_API_KEY와 Java SERVICE_API_KEY 설정을 확인하세요.</span>
       </p>
+      <p v-for="bid in job.bids.filter((row) => row.rfp_cache?.status && !['not_requested', 'reused', 'saved', 'miss', 'not_configured'].includes(row.rfp_cache.status))" :key="'rfp-cache-' + bid.bid_no" class="error">
+        {{ bid.bid_no }} 제안요청서 캐시: {{ bid.rfp_cache.error || bid.rfp_cache.reason || '저장·조회 실패' }}
+      </p>
+      <p v-for="bid in job.bids.filter((row) => ['reused', 'saved'].includes(row.rfp_cache?.status))" :key="'rfp-cache-ok-' + bid.bid_no" class="meta">
+        {{ bid.bid_no }} 제안요청서 처리 결과 DB {{ bid.rfp_cache.status === 'reused' ? '캐시 재사용' : '저장 완료' }}
+      </p>
       <template v-for="bid in job.bids" :key="'db-files-' + bid.bid_no">
         <p v-for="file in (bid.db_sync?.files || []).filter((row) => row.status === 'failed')" :key="file.kind + file.file_name" class="error">DB 미저장: {{ file.file_name }} ({{ file.kind === 'converted' ? '변환본' : '원본' }})</p>
       </template>

@@ -98,11 +98,16 @@ async function search() {
     // ① 나라장터 검색 (1번 API)
     const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 100 })
     setStage(2)
+    if (d.cache_sync?.status === 'failed') {
+      searchNotice.value = d.cache_sync.auth_failed
+        ? '검색 캐시 인증에 실패했습니다. 파이프라인 SERVICE_API_KEY와 Java SERVICE_API_KEY, 로그인 토큰 전달을 확인해 주세요.'
+        : '검색 결과 DB 캐시를 확인하지 못했습니다. 검색은 계속 진행하며, 백엔드 캐시 설정을 확인해 주세요.'
+    }
     searchCount.value = (d.items || []).length
     deadlineUnknown.value = d.deadline_unknown || []
     cancelledWithdrawn.value = d.cancelled_withdrawn || []
     if (d.page_limit_reached) {
-      searchNotice.value = '조회 한도에 도달해 일부 공고가 누락될 수 있습니다. 검색어를 더 구체적으로 입력해 주세요.'
+      searchNotice.value = [searchNotice.value, '조회 한도에 도달해 일부 공고가 누락될 수 있습니다. 검색어를 더 구체적으로 입력해 주세요.'].filter(Boolean).join(' ')
     }
     flow.resetFrom(3)
     flow.searchId = d.search_id
@@ -111,6 +116,12 @@ async function search() {
     // ② 회사 프로필에 맞게 추리기 (3번 API). 여기서 404 는 "저장된 프로필이 없음"입니다.
     try {
       const r = await fetchCandidates(flow.period.deadline_from, flow.period.deadline_to, d.search_id)
+      if (r.cacheSync?.status === 'failed') {
+        const cacheMessage = r.cacheSync.auth_failed
+          ? '검색 캐시 인증이 거부되어 저장하지 못했습니다. 서비스 키와 로그인 토큰 전달을 확인해 주세요.'
+          : '추천 결과 DB 저장에 실패했습니다. 캐시 저장 설정을 확인해 주세요.'
+        searchNotice.value = [searchNotice.value, cacheMessage].filter(Boolean).join(' ')
+      }
       flow.candidates = r.bids
       flow.excluded = r.excluded
       setStage(3)

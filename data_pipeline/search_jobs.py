@@ -20,6 +20,7 @@ from . import collect_bids as collector
 from . import restrictions
 from . import convert_documents as converter
 from . import bid_progress
+from . import cache_api
 from .common import (ROOT, BID_FIELDS, FILE_FIELDS, DOWNLOAD_SUCCESS, TEXT_READY,
                      HWP_SUFFIXES, directory_lock, read_json, write_json,
                      read_jsonl, write_jsonl, read_csv, write_csv, stamp)
@@ -201,7 +202,35 @@ def _public_search(saved, cached, now=None):
             "page_limit_reached": saved["page_limit_reached"]}
 
 
-def search_bids(start, end, queries, limit, key):
+def _restore_cached_search(payload, request, current_time):
+    """DB 캐시의 원본 공고와 첨부 메타데이터로 새 로컬 search_id를 만든다."""
+    snapshot = payload.get("snapshot") if isinstance(payload, dict) else None
+    if not isinstance(snapshot, dict) or not isinstance(snapshot.get("items"), list):
+        return None
+    cached_request = snapshot.get("request")
+    if not isinstance(cached_request, dict):
+        return None
+    for key in ("from", "to", "queries", "limit", "date_basis", "deadline_from",
+                "publication_from", "publication_to", "discovery_strategy",
+                "restriction_sources", "attachment_sources"):
+        if cached_request.get(key) != request.get(key):
+            return None
+    saved = dict(snapshot)
+    saved["search_id"] = uuid.uuid4().hex
+    saved["cached_recommendation"] = payload.get("recommendation")
+    saved["cache_saved"] = True
+    saved["cache_auth_failed"] = False
+    saved["cache_source"] = "database"
+    root = root_dir()
+    folder = root / saved["search_id"]
+    folder.mkdir(parents=True, exist_ok=False)
+    write_json(folder / "search.json", saved)
+    response = _public_search(saved, True, current_time)
+    response["cache_source"] = "database"
+    return response
+
+
+def search_bids(start, end, queries, limit, key, authorization=None):
     queries = list(dict.fromkeys(q.strip() for q in queries))
     if start > end or not queries or not all(queries):
         raise ValueError("검색 기간과 검색어를 확인하세요.")
@@ -220,12 +249,25 @@ def search_bids(start, end, queries, limit, key):
                "restriction_sources": "region-license-v2",
                "attachment_sources": "notice+eorder-standard-name-v2"}
     digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
+    remote_cache = cache_api.lookup_search(start, end, queries, limit, authorization)
+    if remote_cache.get("cached"):
+        restored = _restore_cached_search(remote_cache.get("result"), request, current_time)
+        if restored is not None:
+            restored["cache_sync"] = {"status": "reused"}
+            return restored
     with directory_lock(root_dir(), ".search.lock") as root:
         cache = root / f"cache-{digest}.json"
         if cache.exists():
             cached = read_json(cache)
             if time.time() - cached["created_epoch"] < CACHE_SECONDS:
-                return _public_search(_snapshot(cached["search_id"]), True, current_time)
+                local_snapshot = _snapshot(cached["search_id"])
+                local = _public_search(local_snapshot, True, current_time)
+                local["cache_sync"] = {"status": remote_cache.get("status", "miss"),
+                                        "auth_failed": bool(remote_cache.get("auth_failed"))}
+                if remote_cache.get("auth_failed"):
+                    local_snapshot["cache_auth_failed"] = True
+                    write_json(root / cached["search_id"] / "search.json", local_snapshot)
+                return local
         if not key:
             raise RuntimeError("DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.")
         deadline_unknown, cancelled_withdrawn = {}, {}
@@ -270,8 +312,12 @@ def search_bids(start, end, queries, limit, key):
                  "cancelled_withdrawn": list(cancelled_withdrawn.values()),
                  "search_coverage": coverage,
                  "collected_at": stamp(), "page_limit_reached": truncated}
+        saved["cache_auth_failed"] = bool(remote_cache.get("auth_failed"))
         # 판별 함수 연결 오류가 나면 사용할 수 없는 결과를 캐시에 등록하지 않는다.
         response = _public_search(saved, False, current_time)
+        response["cache_sync"] = {"status": remote_cache.get("status", "miss"),
+                                  "error": remote_cache.get("error"),
+                                  "auth_failed": bool(remote_cache.get("auth_failed"))}
         write_json(folder / "search.json", saved)
         latest = latest_notices(items)
         details_complete = all(
@@ -586,6 +632,77 @@ def _converted_files(backend, folder, rows, item, restore=False):
         write_jsonl(path, records.values())
 
 
+def _rfp_fingerprint(item, rows):
+    inputs = []
+    for row in rows:
+        if str(row.get("selected")).lower() != "true" or row.get("status") not in DOWNLOAD_SUCCESS:
+            continue
+        path = Path(row.get("local_path") or "__missing__")
+        if not path.is_file():
+            return None
+        inputs.append((row.get("url"), row.get("file_name"), converter.sha256(path)))
+    if not inputs:
+        return None
+    config_path = converter.TOOLS / "converter.json"
+    config = read_json(config_path) if config_path.is_file() else {}
+    return hashlib.sha256(json.dumps([PREPARE_VERSION, item.get("bidNtceOrd"),
+                                     sorted(inputs), config], sort_keys=True).encode()).hexdigest()
+
+
+def _restore_rfp_cache(fingerprint, rows, folder, cached):
+    if not cached.get("cached"):
+        return False, cached
+    state = cached.get("result")
+    if not isinstance(state, dict) or state.get("schema") != 1 or state.get("fingerprint") != fingerprint:
+        return False, {"status": "miss", "cached": False}
+    originals = {row["url"]: row["local_path"] for row in rows
+                 if row.get("url") and row.get("local_path") and Path(row["local_path"]).is_file()}
+    paths = dict(originals)
+    conversions = folder / "conversions.jsonl"
+    if conversions.is_file():
+        for record in read_jsonl(conversions):
+            pdf = Path(record.get("pdf_path") or "__missing__")
+            if (record.get("status") in ("converted", "existing") and pdf.is_file()
+                    and record.get("pdf_sha256") == converter.sha256(pdf)):
+                for row in rows:
+                    if row.get("local_path") == record.get("original_path"):
+                        paths[row["url"]] = str(pdf)
+    for row in rows:
+        if (str(row.get("selected")).lower() == "true" and row.get("status") in DOWNLOAD_SUCCESS
+                and Path(row["local_path"]).suffix.lower() in HWP_SUFFIXES
+                and (paths.get(row["url"]) == row["local_path"]
+                     or not Path(paths.get(row["url"], "")).is_file())):
+            return False, {"status": "miss", "cached": False}
+    documents = state.get("documents")
+    chunks = state.get("chunks")
+    if not isinstance(documents, list) or not documents or not isinstance(chunks, list):
+        return False, {"status": "miss", "cached": False}
+    for records in (documents, chunks, state.get("pages", []), state.get("needs_attention", [])):
+        if not isinstance(records, list):
+            return False, {"status": "miss", "cached": False}
+        for record in records:
+            url = record.get("source_url")
+            if url not in paths:
+                return False, {"status": "miss", "cached": False}
+            record["local_path"] = paths[url]
+            record["original_local_path"] = originals[url]
+    output = folder / "processed"
+    output.mkdir(exist_ok=True)
+    for name in ("pages", "chunks", "documents", "needs_attention"):
+        write_jsonl(output / f"{name}.jsonl", state.get(name, []))
+    return True, {"status": "reused", "cached": True}
+
+
+def _save_rfp_cache(bid_no, revision, fingerprint, folder):
+    state = {"schema": 1, "fingerprint": fingerprint}
+    for name in ("pages", "chunks", "documents", "needs_attention"):
+        path = folder / "processed" / f"{name}.jsonl"
+        state[name] = read_jsonl(path) if path.is_file() else []
+    if len(json.dumps(state, ensure_ascii=False).encode("utf-8")) > 5 * 1024 * 1024:
+        return {"status": "skipped", "reason": "문서 캐시 크기 제한 초과"}
+    return cache_api.save_rfp(bid_no, revision, state)
+
+
 def _process_bid(item, full, store, progress):
     with BackendStore(item["bidNtceNo"], item.get("bidNtceOrd") or "000") as backend:
         result = _process_bid_local(item, full, store, progress, backend)
@@ -623,10 +740,27 @@ def _retry_db_save(item):
         chunks_path = folder / "processed" / "chunks.jsonl"
         chunks = read_jsonl(chunks_path) if chunks_path.is_file() else []
         ready = bool(chunks) and any(doc.get("status") in TEXT_READY for doc in documents)
+        rfp_cache = {"status": "not_needed", "cached": False}
+        has_rfp = any(str(row.get("selected")).lower() == "true"
+                       and "rfp" in classify_attachment(row.get("file_name", ""))
+                       for row in rows)
+        fingerprint = _rfp_fingerprint(item, rows) if ready and has_rfp else None
+        if fingerprint and not backend.auth_failed:
+            existing = cache_api.lookup_rfp(bid_no, order)
+            if existing.get("cached") and isinstance(existing.get("result"), dict) \
+                    and existing["result"].get("fingerprint") == fingerprint:
+                rfp_cache = {"status": "reused", "cached": True}
+            elif existing.get("auth_failed"):
+                rfp_cache = existing
+            else:
+                rfp_cache = _save_rfp_cache(bid_no, order, fingerprint, folder)
+        elif backend.auth_failed:
+            rfp_cache = {"status": "failed", "auth_failed": True,
+                         "error": "DB 인증 실패가 확인되어 제안요청서 캐시 재시도를 생략했습니다."}
         report = backend.report
     return {"status": "completed" if report["status"] in ("saved", "not_needed") else "partial_failed",
             "preparation_status": "ready" if ready else "failed", "indexed_chunks": len(chunks),
-            "db_sync": report,
+            "db_sync": report, "rfp_cache": rfp_cache,
             "error": None if ready else "로컬 전처리 결과가 없어 DB만 재시도할 수 없습니다. 전체 첨부 준비가 필요합니다."}
 
 
@@ -646,6 +780,14 @@ def _process_bid_local(item, full, store, progress, backend):
         rows = _attachment_rows(item, notice_url, full, previous)
         if not rows:
             raise ValueError("API가 제공한 첨부가 없습니다.")
+        has_rfp = full and any(str(row.get("selected")).lower() == "true"
+                               and "rfp" in classify_attachment(row.get("file_name", ""))
+                               for row in rows)
+        cache_state = cache_api.lookup_rfp(bid_no, order) if has_rfp else {
+            "status": "not_requested", "cached": False}
+        if cache_state.get("auth_failed"):
+            # 같은 내부 키로 이어지는 문서 API 호출을 반복하지 않는다.
+            backend._error("DB 제안요청서 캐시 인증 실패", 401)
         for row in rows:
             if row["selected"]:
                 old = previous.get(row["url"], {})
@@ -668,14 +810,24 @@ def _process_bid_local(item, full, store, progress, backend):
         write_csv(folder / "bids.csv", BID_FIELDS, [collector.notice_row(item, [], collected_at)])
         progress("restoring_database")
         _converted_files(backend, folder, rows, item, restore=True)
-        progress("converting")
-        try:
-            _prepare_selected(folder, rows, full=full, backend=backend)
-        except Exception as exc:
-            # 변환 실패여도 이미 끝난 다운로드와 RFP 미적재 사실을 함께 전달한다.
-            message = str(exc) if isinstance(exc, (ValueError, RuntimeError)) else type(exc).__name__
-            return {"status": "failed", "error": "문서 준비 실패: " + message,
-                    "indexed_chunks": 0, **_document_readiness(item, rows, [])}
+        fingerprint = _rfp_fingerprint(item, rows) if full else None
+        restored = False
+        if full and fingerprint:
+            if backend.auth_failed and not cache_state.get("cached") and not cache_state.get("auth_failed"):
+                cache_state = {"status": "failed", "cached": False, "auth_failed": True,
+                               "error": "DB 문서 인증 실패가 확인되어 제안요청서 캐시 조회를 생략했습니다."}
+            else:
+                restored, cache_state = _restore_rfp_cache(fingerprint, rows, folder, cache_state)
+        if not restored:
+            progress("converting")
+            try:
+                _prepare_selected(folder, rows, full=full, backend=backend)
+            except Exception as exc:
+                # 변환 실패여도 이미 끝난 다운로드와 RFP 미적재 사실을 함께 전달한다.
+                message = str(exc) if isinstance(exc, (ValueError, RuntimeError)) else type(exc).__name__
+                return {"status": "failed", "error": "문서 준비 실패: " + message,
+                        "indexed_chunks": 0, "rfp_cache": cache_state,
+                        **_document_readiness(item, rows, [])}
         progress("saving_database")
         _converted_files(backend, folder, rows, item)
         backend.save_prepared(folder)
@@ -697,6 +849,8 @@ def _process_bid_local(item, full, store, progress, backend):
         if not records:
             failures.append("적재 가능한 공고문/제안요청서 텍스트가 없습니다.")
         readiness = _document_readiness(item, rows, records, documents)
+        if full and fingerprint and not restored and readiness["rfp_ready"] and not cache_state.get("auth_failed"):
+            cache_state = _save_rfp_cache(bid_no, order, fingerprint, folder)
         if full and readiness["attachment_lookup_status"] == "unavailable":
             failures.append(item.get("eorder_lookup_error") or "제안요청정보 첨부 조회 실패")
         if full and not readiness["rfp_ready"]:
@@ -707,7 +861,7 @@ def _process_bid_local(item, full, store, progress, backend):
                             "제안요청서류가 아직 변환·텍스트 적재되지 않았습니다.")
         return {"status": "partial_failed" if failures and records else "failed" if failures else "completed",
                 "error": "확인 필요: " + ", ".join(dict.fromkeys(failures)) if failures else None,
-                **readiness, "indexed_chunks": len(records)}
+                **readiness, "indexed_chunks": len(records), "rfp_cache": cache_state}
 
 
 def run_job(job_id, key=None):

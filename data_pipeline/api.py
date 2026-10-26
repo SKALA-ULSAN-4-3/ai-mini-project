@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import BackgroundTasks, APIRouter, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import BackgroundTasks, APIRouter, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pypdf import PdfReader
 from pydantic import AliasChoices, BaseModel, Field
@@ -42,11 +42,11 @@ class FetchBidsRequest(BaseModel):
 
 
 @router.post("/search-bids")
-def search_bid_list(request: SearchBidsRequest):
+def search_bid_list(request: SearchBidsRequest, authorization: str | None = Header(default=None)):
     try:
         load_env()
         return search_jobs.search_bids(request.start, request.end, request.queries, request.limit,
-                                      os.environ.get("DATA_GO_KR_SERVICE_KEY", ""))
+                                      os.environ.get("DATA_GO_KR_SERVICE_KEY", ""), authorization)
     except collector.CollectionError as exc:
         raise HTTPException(502, str(exc)) from None
     except ValueError as exc:

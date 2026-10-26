@@ -24,8 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def production_functions(cache_dir):
     # 서버 전체 import는 FAISS/LLM을 초기화하므로 기존 integration_support처럼
     # 변경 대상의 실제 함수와 Pydantic 스키마를 추출해 실행한다.
-    names = {'ScoringItem', 'ScoringExtraction', 'Band', 'CategoryScore', 'QuantRule',
-             'build_rule', 'scoring_rule_context', 'build_scoring', 'bid_chunks',
+    names = {'ScoringRequirement', 'ScoringRecordFilter', 'ScoringItem', 'ScoringExtraction', 'Band', 'CategoryScore', 'QuantRule',
+             'build_rule', 'personnel_rule_from_sources', 'scoring_rule_context', 'build_scoring', 'bid_chunks',
              'numbered_context', '_squash', 'verified_source', 'cached'}
     tree = ast.parse((ROOT / 'rag_external-web_pdf_closed_llm.py').read_text())
     nodes = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name in names
@@ -38,6 +38,9 @@ def production_functions(cache_dir):
               source_label=lambda m: f"{m['filename']} p.{m['page']}",
               source_ref=lambda m: dict(m), EXTRACTIONS=ExtractionCache(cache_dir, 'test-scoring-v1'),
               BID_FINGERPRINTS={('R1', '000'): 'fixture-documents'})
+    ns['BASE_DIR'] = ROOT
+    from bid_logic.recommendation import load_bids_csv
+    ns['load_bids_csv'] = load_bids_csv
     exec(compile(ast.Module(body=nodes, type_ignores=[]), 'production_scoring', 'exec'), ns)
     bridge = ast.parse((ROOT / 'knowledge_bridge.py').read_text())
     node = next(n for n in bridge.body if isinstance(n, ast.FunctionDef) and n.name == 'to_bid_logic_scoring')

@@ -9,6 +9,24 @@ UNITS = {"KRW": Decimal(1), "천원": Decimal(1000), "백만원": Decimal(100000
 ROUNDING = {"half_up": ROUND_HALF_UP, "down": ROUND_DOWN, "half_even": ROUND_HALF_EVEN}
 
 
+def _filter_record(record, filters, prefix):
+    missing = []
+    for field, allowed in filters.items():
+        if field not in record or record[field] is None:
+            missing.append(f"{prefix}.{field}")
+        elif str(record[field]).lower() not in [str(v).lower() for v in allowed]:
+            return False, []
+    return not missing, missing
+
+
+def _period_date(metric, profile, name):
+    if metric.get(name + "_reference") == "notice_date":
+        if not profile.get("notice_date"):
+            return None, ["notice_date"]
+        return calendar_date(profile["notice_date"]), []
+    return calendar_date(metric[name]), []
+
+
 def _metric_value(metric, profile):
     if not isinstance(metric, dict) or not isinstance(metric.get("field"), str):
         raise ValueError("계산 지표의 field가 필요합니다.")
@@ -16,6 +34,53 @@ def _metric_value(metric, profile):
     if field not in profile or profile[field] is None or profile[field] == "":
         return None, [field], {}
     raw = profile[field]
+    if field == "credit_rating" and (metric.get("credit_valid_on_notice") or metric.get("credit_max_age_months")):
+        required = ["notice_date", "credit_rating_issued_at"]
+        if metric.get("credit_valid_on_notice"):
+            required.append("credit_rating_valid_until")
+        missing = [f for f in required if not profile.get(f)]
+        if missing:
+            return None, missing, {}
+        notice = calendar_date(profile["notice_date"])
+        issued = calendar_date(profile["credit_rating_issued_at"])
+        if issued > notice:
+            raise ValueError("공고일 이후 발급된 신용등급입니다. 인정 가능한 확인서를 확인해 주세요.")
+        if metric.get("credit_valid_on_notice") and calendar_date(profile["credit_rating_valid_until"]) < notice:
+            raise ValueError("공고일 기준 신용등급 유효기간이 만료되었습니다.")
+        if metric.get("credit_max_age_months"):
+            from calendar import monthrange
+            months = notice.year * 12 + notice.month - 1 - metric["credit_max_age_months"]
+            year, month0 = divmod(months, 12)
+            oldest = notice.replace(year=year, month=month0 + 1,
+                day=min(notice.day, monthrange(year, month0 + 1)[1]))
+            if issued < oldest:
+                raise ValueError("신용등급 발급일이 원문에서 정한 인정기간을 벗어났습니다.")
+    if field == "personnel":
+        if not isinstance(raw, list):
+            raise ValueError("personnel은 전문인력 증빙 정보 배열이어야 합니다.")
+        records, missing = [], []
+        as_of = None
+        if metric.get("as_of_reference") == "notice_date":
+            if not profile.get("notice_date"):
+                return None, ["notice_date"], {}
+            as_of = calendar_date(profile["notice_date"])
+        for i, record in enumerate(raw):
+            if not isinstance(record, dict):
+                raise ValueError("전문인력 항목은 객체여야 합니다.")
+            accepted, fields = _filter_record(record, metric.get("filters", {}), f"personnel[{i}]")
+            missing.extend(fields)
+            if not accepted:
+                continue
+            if as_of is not None:
+                if not record.get("employed_from"):
+                    missing.append(f"personnel[{i}].employed_from")
+                    continue
+                if calendar_date(record["employed_from"]) > as_of:
+                    continue
+                if record.get("employed_to") and calendar_date(record["employed_to"]) < as_of:
+                    continue
+            records.append(record)
+        return len(records), missing, {"personnel": records, "metric": str(len(records))}
     if field != "track_records":
         # 금액형 일반 필드는 단위를 함께 전달한 경우에만 변환한다.
         if metric.get("unit") is not None:
@@ -23,11 +88,17 @@ def _metric_value(metric, profile):
                 return None, [f"{field}.value/unit"], {field: raw}
             converted = number(raw["value"]) * UNITS[raw["unit"]] / UNITS[metric["unit"]]
             return converted, [], {field: raw, "metric": str(converted), "unit": metric["unit"]}
-        return raw, [], {field: raw}
+        used = {field: raw}
+        if field == "credit_rating":
+            used.update({k: profile[k] for k in ("credit_rating_issued_at", "credit_rating_valid_until") if k in profile})
+        return raw, [], used
     if not isinstance(raw, list):
         raise ValueError("track_records는 배열이어야 합니다.")
     # 인정 기간은 원문에서 확정한 절대 날짜로 전달. 기간이 없으면 추정하지 않는다.
-    start, end = calendar_date(metric["from"]), calendar_date(metric["to"])
+    start, start_missing = _period_date(metric, profile, "from")
+    end, end_missing = _period_date(metric, profile, "to")
+    if start_missing or end_missing:
+        return None, start_missing + end_missing, {}
     if start > end:
         raise ValueError("실적 인정 기간이 뒤집혔습니다.")
     records, missing = [], []
@@ -39,6 +110,20 @@ def _metric_value(metric, profile):
             continue
         if not start <= calendar_date(record["completed_at"]) <= end:
             continue
+        accepted, fields = _filter_record(record, metric.get("filters", {}), f"track_records[{i}]")
+        missing.extend(fields)
+        if not accepted:
+            continue
+        if metric.get("min_record_amount") is not None:
+            if record.get("amount") is None or not record.get("amount_unit"):
+                missing.append(f"track_records[{i}].amount/amount_unit")
+                continue
+            amount = number(record["amount"]) * UNITS[record["amount_unit"]]
+            if amount < 0:
+                raise ValueError("실적 금액은 음수일 수 없습니다.")
+            threshold = number(metric["min_record_amount"]) * UNITS[metric["unit"]]
+            if amount < threshold:
+                continue
         categories = metric.get("categories")
         if categories is not None:
             if not isinstance(categories, list) or any(not isinstance(c, str) for c in categories):
@@ -64,7 +149,27 @@ def _metric_value(metric, profile):
         value /= UNITS[metric["unit"]]
     else:
         raise ValueError("지원하지 않는 실적 집계 방식입니다.")
-    return value, missing, {"track_records": records, "metric": str(value)}
+    used = {"track_records": records, "aggregate": str(value)}
+    if metric.get("reference_amount") is not None:
+        denominator = number(metric["reference_amount"])
+        if denominator <= 0:
+            raise ValueError("실적 비율 기준금액은 양수여야 합니다.")
+        value = number(value) / denominator * Decimal(100)
+        used.update(reference_amount=str(denominator), unit="%")
+    used["metric"] = str(value)
+    return value, missing, used
+
+
+def review_guidance(item):
+    """자동 점수가 없어도 원문의 요구사항을 기존 reason 열에서 확인할 수 있게 한다."""
+    requirements = item.get("requirements") or []
+    texts = list(dict.fromkeys(r["text"] for r in requirements if r.get("text") and r.get("sources")))
+    if texts:
+        return "확인·준비할 요소: " + " / ".join(texts)
+    basis = item.get("basis")
+    if basis:
+        return "원문 평가 기준: " + basis
+    return "구체적인 평가요소가 추출되지 않았습니다. 원문 평가표와 세부 배점기준을 확인해 주세요."
 
 
 def _inside(value, band):
@@ -149,6 +254,9 @@ def _score(item, value, maximum):
 def calculate_scores(table, profile, bid_no, revision):
     """총점 없는 {items, needs_review, missing_fields, questions} 반환."""
     check_scope(table, bid_no, revision)
+    profile = dict(profile)
+    if table.get("notice_date"):
+        profile["notice_date"] = table["notice_date"]
     output, all_missing, seen = [], set(), set()
     for item in table["items"]:
         check_scope(item, bid_no, revision)
@@ -160,6 +268,7 @@ def calculate_scores(table, profile, bid_no, revision):
                   "expected": "담당자 판단", "status": "manual", "needs_review": True,
                   "sources": item.get("sources", []), "basis": item.get("basis"),
                   "rule": item.get("rule"), "used_profile": {}, "missing_fields": []}
+        result["requirements"] = item.get("requirements", [])
         if item.get("kind") in ("qualitative", "price"):
             result["reason"] = "정성·가격 항목은 담당자 판단"
         elif item.get("kind") != "quantitative":
@@ -175,17 +284,42 @@ def calculate_scores(table, profile, bid_no, revision):
                 maximum = number(item["max"])
                 if maximum < 0:
                     raise ValueError("배점은 음수일 수 없습니다.")
+                document = item["metric"].get("required_document")
+                if document and item["rule"].get("missing_document_score") is not None:
+                    if profile.get("owned_docs") is None:
+                        result.update(status="missing_profile", missing_fields=["owned_docs"],
+                                      reason="신용평가 증빙서류의 보유·제출 가능 여부를 확인해 주세요.")
+                        all_missing.add("owned_docs")
+                        result["reason"] += " · " + review_guidance(item)
+                        output.append(result)
+                        continue
+                    normalize = lambda s: "".join(s.split())
+                    if normalize(document) not in [normalize(d) for d in profile["owned_docs"]]:
+                        score = number(item["rule"]["missing_document_score"])
+                        if not 0 <= score <= maximum:
+                            raise ValueError("증빙 미제출 점수가 배점 범위를 벗어났습니다.")
+                        result.update(expected=float(score), status="calculated",
+                                      used_profile={"owned_docs": profile["owned_docs"]},
+                                      reason=f"{document} 없음으로 입력됨: 원문 미제출 기준을 적용한 예상 점수")
+                        output.append(result)
+                        continue
                 value, missing, used = _metric_value(item["metric"], profile)
                 result["used_profile"] = used
+                if profile.get("notice_date"):
+                    result["used_profile"]["notice_date"] = profile["notice_date"]
                 if missing:
                     result.update(status="missing_profile", missing_fields=missing,
                                   reason="점수 계산에 필요한 프로필 정보 부족")
                     all_missing.update(missing)
                 else:
+                    measured = used.get("metric", value)
+                    unit = used.get("unit", "명" if item["metric"].get("field") == "personnel" else "")
                     result.update(expected=_score(item, value, maximum), status="calculated",
-                                  reason="원문 기준에 따라 코드로 계산한 예상 점수")
+                                  reason=f"원문 기준에 따라 코드로 계산한 예상 점수 · 적용 값: {measured}{unit}")
             except (ValueError, KeyError, TypeError, ArithmeticError) as error:
                 result["reason"] = f"계산 기준 확인 필요: {error}"
+        if result["status"] != "calculated":
+            result["reason"] += " · " + review_guidance(item)
         output.append(result)
     missing = sorted(all_missing)
     return {"bid_no": bid_no, "revision": revision, "items": output, "needs_review": True,

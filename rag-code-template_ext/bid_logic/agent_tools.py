@@ -8,11 +8,11 @@ Tool Calling 루프, 실제 LLM 호출, C4 고정 경로와의 비교 측정은 
 from copy import deepcopy
 
 from .common import check_scope
-from .scoring import calculate_scores
+from .scoring import calculate_scores, review_guidance
 
 # 에이전트가 기준을 지어내지 못하도록 판단에 필요한 필드만 보여 준다.
 # rule/metric은 코드가 실행할 값이므로 전달하지 않는다.
-VISIBLE_ITEM_FIELDS = ("id", "item", "kind", "max", "basis", "sources")
+VISIBLE_ITEM_FIELDS = ("id", "item", "kind", "max", "basis", "sources", "requirements")
 HIDDEN_RESULT_FIELDS = ("rule", "metric")
 
 
@@ -131,7 +131,8 @@ class ScoringTools:
         item = self._item(item_id)
         table = self._table()
         single = {"bid_no": self.bid_no, "revision": self.revision,
-                  "sources": table.get("sources", []), "items": [item]}
+                  "sources": table.get("sources", []), "items": [item],
+                  "notice_date": table.get("notice_date")}
         outcome = calculate_scores(single, self._profile(), self.bid_no, self.revision)
         result = {**outcome["items"][0], "questions": outcome["questions"]}
         return self._log("calc_score", {"item_id": item_id}, result)
@@ -141,11 +142,15 @@ class ScoringTools:
         item = self._item(item_id)
         if not isinstance(reason, str) or not reason.strip():
             raise ValueError("담당자 판단으로 넘기는 이유가 필요합니다.")
+        if item.get("kind") == "quantitative" and item.get("metric") and item.get("rule"):
+            # 계산 가능한 정량 항목을 모델 선택만으로 수동 판단으로 낮추지 않는다.
+            return self.calc_score(item_id)
         result = {"id": item["id"], "item": item["item"], "max": item.get("max"),
                   "expected": "담당자 판단", "status": "manual", "needs_review": True,
                   "sources": item.get("sources", []), "basis": item.get("basis"),
                   "rule": item.get("rule"), "used_profile": {}, "missing_fields": [],
-                  "reason": reason.strip(), "questions": []}
+                  "reason": reason.strip() + " · " + review_guidance(item),
+                  "requirements": item.get("requirements", []), "questions": []}
         return self._log("mark_manual", {"item_id": item_id, "reason": reason.strip()}, result)
 
     def dispatch(self, name, arguments=None):

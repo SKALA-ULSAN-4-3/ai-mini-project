@@ -59,14 +59,14 @@ onMounted(async () => {
   }
 })
 
-// ⑤-2 제안요청서 준비가 끝나면: 정정공고로 바뀐 최신 차수를 반영하고, 실패한 공고는 제외합니다.
+// ⑤-2 실제 제안요청서류 적재를 확인한 공고만 채점 단계로 보낸다.
 function onDocsDone(job) {
   docsJob.value = job
   changedRevisions.value = []
   flow.selected = flow.selected
     .filter((s) => {
       const j = job.bids.find((b) => b.bid_no === s.bid_no)
-      return !j || isOk(j.status)
+      return !!j && isOk(j.status) && j.rfp_ready === true
     })
     .map((s) => {
       const j = job.bids.find((b) => b.bid_no === s.bid_no)

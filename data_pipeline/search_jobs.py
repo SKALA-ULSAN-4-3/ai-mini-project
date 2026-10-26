@@ -465,6 +465,16 @@ def get_job(job_id):
     if not path.is_file():
         raise SearchNotFound("작업이 없습니다.")
     job = read_json(path)
+    bids = job.get("bids", [])
+    job["processed_count"] = sum(
+        bid.get("status") in {"completed", "partial_failed", "failed", "waiting_index", "indexing"}
+        for bid in bids)
+    job["prepared_count"] = sum(
+        bid.get("generated_chunks", 0) > 0 or bid.get("preparation_status") in {"ready", "pending_index"}
+        for bid in bids)
+    job["waiting_index_count"] = sum(bid.get("status") == "waiting_index" for bid in bids)
+    job["indexed_count"] = sum(
+        bid.get("preparation_status") == "ready" and bid.get("indexed_chunks", 0) > 0 for bid in bids)
     for bid in job.get("bids", []):
         if bid.get("status") != "converting":
             continue
@@ -675,7 +685,7 @@ def _document_readiness(item, rows, indexed_records, documents=()):
                       "status": row["status"], "kinds": sorted(kinds),
                       "preparation_status": document.get("status", "not_processed"),
                       "preparation_error": document.get("error", ""),
-                      "indexed_chunks": len(records), "rfp_ready": rfp_ready})
+                      "generated_chunks": len(records), "indexed_chunks": len(records), "rfp_ready": rfp_ready})
     selected = [r for r in rows if r["selected"]]
     download_complete = bool(selected) and all(
         r["status"] in DOWNLOAD_SUCCESS and bool(r["local_path"])
@@ -794,7 +804,8 @@ def _rfp_request_fingerprint(item, rows):
     """로컬 파일 없이 차수·첨부 목록·변경 시각·전처리/변환 설정을 확인한다."""
     config_path = converter.TOOLS / 'converter.json'
     config = read_json(config_path) if config_path.is_file() else {}
-    files = sorted((row['url'], row['file_name'], _source_identity(item, row))
+    files = sorted((row['url'], row['file_name'], _source_identity(item, row),
+                    sorted(classify_attachment(row['file_name'])))
                    for row in rows if str(row.get('selected')).lower() == 'true')
     data = [PREPARE_VERSION, config, files, official_names(item), collector.notice_row(item, [], '')]
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
@@ -1144,14 +1155,18 @@ def _process_bid_local(item, full, store, progress, backend):
 
 def _flush_index_batch(job, batch, pending, path):
     """인덱스 저장이 끝나기 전에는 어떤 공고도 준비 완료로 알리지 않는다."""
-    if batch is None:
+    if batch is None or not pending:
         return
+    # 실제 저장 시작 전까지는 후속 공고 처리를 기다리는 상태다.
+    job['index_batch'] = {'status': 'running'}
+    for bid, _, _ in pending:
+        bid.update(status='indexing', current_stage='indexing')
+    write_json(path, job)
     started = time.perf_counter()
     failure = None
     try:
-        result = batch.flush()
-        if result:
-            job['index_batch'] = {'status': 'completed', 'added_chunks': result.get('added_chunks', 0)}
+        result = batch.flush() or {}
+        job['index_batch'] = {'status': 'completed', 'added_chunks': result.get('added_chunks', 0)}
     except Exception as exc:
         failure = '검색 인덱스 적재 실패: ' + type(exc).__name__
         job['index_batch'] = {'status': 'failed', 'error': failure}
@@ -1165,8 +1180,9 @@ def _flush_index_batch(job, batch, pending, path):
         if failure:
             bid.update(status='failed', preparation_status='failed', indexed_chunks=0, rfp_ready=False,
                        error=failure, retry_stage='indexing')
-            for file in bid.get('files', []):
-                file.update(indexed_chunks=0, rfp_ready=False)
+            for field in ('files', 'rfp_files'):
+                for file in bid.get(field, []):
+                    file.update(indexed_chunks=0, rfp_ready=False)
         bid['current_stage'] = bid['status']
         job['done'] += 1
     write_json(path, job)
@@ -1304,9 +1320,15 @@ def run_job(job_id, key=None):
                     bid["db_sync"] = {"status": "failed", "errors": ["DB 저장 재시도 중 로컬 결과 확인에 실패했습니다."],
                                       "files": [], "auth_failed": False}
             if bid.get('indexed_chunks', 0) and job['mode'] != 'db_retry':
-                final = {name: bid.get(name) for name in ('status', 'preparation_status', 'rfp_ready', 'indexed_chunks')}
+                bid['generated_chunks'] = bid['indexed_chunks']
+                final = {name: bid.get(name) for name in (
+                    'status', 'preparation_status', 'rfp_ready', 'indexed_chunks', 'files', 'rfp_files')}
                 pending_index.append((bid, final, bid_started))
-                bid.update(status='indexing', preparation_status='pending_index', rfp_ready=False, indexed_chunks=0)
+                bid.update(status='waiting_index', preparation_status='pending_index', rfp_ready=False, indexed_chunks=0)
+                for field in ('files', 'rfp_files'):
+                    bid[field] = [{**file, 'generated_chunks': file.get('generated_chunks', file.get('indexed_chunks', 0)),
+                                   'indexed_chunks': 0, 'rfp_ready': False} for file in bid.get(field, [])]
+                job['index_batch'] = {'status': 'waiting'}
             else:
                 job['done'] += 1
             progress(bid.get("status", "completed"))

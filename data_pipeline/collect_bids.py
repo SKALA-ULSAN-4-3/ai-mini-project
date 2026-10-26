@@ -82,7 +82,10 @@ def fetch_page(key, start, end, keyword, page, *, exclude_closed=False):
 
 def attachments(item):
     seen = set()
-    for i in range(1, 11):
+    # 고정 10개로 자르지 않는다. API가 추가 순번을 반환하면 변환본도 함께 읽는다.
+    indices = sorted({int(match.group(1)) for field in item
+                      if (match := re.fullmatch(r"ntceSpecDocUrl(\d+)", field))})
+    for i in indices:
         url = str(item.get(f"ntceSpecDocUrl{i}") or "").strip()
         if url and url not in seen:
             seen.add(url)
@@ -91,7 +94,7 @@ def attachments(item):
     url = str(item.get("stdNtceDocUrl") or "").strip()
     if url and url not in seen:
         seen.add(url)
-        yield "standard_notice", url
+        yield str(item.get("stdNtceFileNm") or "standard_notice"), url
     # 제안요청정보(e발주)는 일반 파일첨부의 ntceSpecDocUrl1~10과 별도 제공된다.
     for attachment in item.get("eorder_attachments", []):
         if (attachment.get("bid_no"), attachment.get("bid_order")) != (
@@ -101,6 +104,28 @@ def attachments(item):
         if url and url not in seen:
             seen.add(url)
             yield attachment["file_name"], url
+
+
+def resolve_standard_notice(item):
+    """별도 표준공고서의 실제 이름을 확인해 PDF 우선 선택에 사용한다.
+
+    같은 URL의 원본 HWP를 PDF로 추정하지 않는다. 헤더 조회 실패 시 기존 목록을 유지한다.
+    """
+    result = dict(item)
+    url = str(item.get("stdNtceDocUrl") or "").strip()
+    if not url or item.get("stdNtceFileNm"):
+        return result
+    try:
+        name = attachment_header_name(url)
+    except CollectionError:
+        return result
+    result["stdNtceFileNm"] = name
+    # 일반 첨부에도 같은 URL이 있되 이름이 비었으면 확인된 이름으로 보완한다.
+    for field, value in item.items():
+        match = re.fullmatch(r"ntceSpecDocUrl(\d+)", field)
+        if match and str(value or "").strip() == url:
+            result[f"ntceSpecFileNm{match.group(1)}"] = name
+    return result
 
 
 def lookup_eorder_attachments(key, bid_no, bid_order):

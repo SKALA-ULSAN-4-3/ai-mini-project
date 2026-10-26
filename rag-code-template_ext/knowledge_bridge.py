@@ -207,7 +207,8 @@ def search_results(search_id: str, profile: dict | None = None) -> dict | None:
     except search_jobs.SearchNotFound:
         return None
     public = search_jobs._public_search(saved, True)
-    return {"from": saved["request"]["from"], "to": saved["request"]["to"], "items": public["items"]}
+    return {"from": saved["request"].get("deadline_from", saved["request"]["from"]),
+            "to": saved["request"]["to"], "items": public["items"]}
 
 
 def sync_bids_csv() -> bool:

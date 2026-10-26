@@ -68,11 +68,13 @@ def _verify(args):
                 if response.status_code == 200:
                     data = response.json()
                     search_id = data.get('search_id')
+                    deadline_start = data.get('deadline_from') or args.start
+                    deadline_end = data.get('deadline_to') or args.end
                     row.update(search_id=search_id, items=len(data.get('items', [])))
                     row['passed'] &= bool(search_id) and bool(data.get('items'))
                     if search_id:
                         response = client.get(args.rag_url + '/bids', headers=headers,
-                                              params={'from': args.start, 'to': args.end, 'search_id': search_id, 'limit': 20})
+                                              params={'from': deadline_start, 'to': deadline_end, 'search_id': search_id, 'limit': 20})
                         row = record('bids', response, 200)
                         if response.status_code == 200:
                             data = response.json()

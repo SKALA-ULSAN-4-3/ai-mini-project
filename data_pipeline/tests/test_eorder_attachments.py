@@ -23,6 +23,34 @@ def response(items, total=None, code='00'):
 
 
 class EorderAttachmentTests(unittest.TestCase):
+    def test_general_attachments_include_eleventh_converted_notice(self):
+        item = {'bidNtceNo': 'R26BK01763450', 'bidNtceOrd': '000',
+                'ntceSpecDocUrl1': 'https://www.g2b.go.kr/original',
+                'ntceSpecFileNm1': '★입찰공고(최종).hwp',
+                'ntceSpecDocUrl2': 'https://www.g2b.go.kr/rfp',
+                'ntceSpecFileNm2': '붙임 3-2. 제안요청서_상용SW_26년도_29년도_1001.hwp',
+                'ntceSpecDocUrl11': 'https://www.g2b.go.kr/converted',
+                'ntceSpecFileNm11': '★입찰공고(최종).pdf'}
+        self.assertEqual(len(list(collector.attachments(item))), 3)
+        self.assertEqual(search_jobs._notice_url(item), item['ntceSpecDocUrl11'])
+        self.assertIn('rfp', search_jobs.classify_attachment(item['ntceSpecFileNm2']))
+
+    def test_standard_notice_header_resolves_pdf_and_preserves_original(self):
+        item = {'bidNtceNo': 'B1', 'bidNtceOrd': '000',
+                'ntceSpecDocUrl1': 'https://www.g2b.go.kr/original',
+                'ntceSpecFileNm1': '★입찰공고(최종).hwp',
+                'stdNtceDocUrl': 'https://www.g2b.go.kr/converted'}
+        with patch.object(collector, 'attachment_header_name', return_value='★입찰공고(최종).pdf'):
+            resolved = collector.resolve_standard_notice(item)
+        self.assertNotIn('stdNtceFileNm', item)
+        self.assertEqual(search_jobs._notice_url(resolved), item['stdNtceDocUrl'])
+        self.assertEqual(list(collector.attachments(resolved))[0][0], '★입찰공고(최종).hwp')
+
+    def test_standard_header_failure_keeps_original_list(self):
+        item = {'bidNtceNo': 'B1', 'stdNtceDocUrl': 'https://www.g2b.go.kr/converted'}
+        with patch.object(collector, 'attachment_header_name', side_effect=collector.CollectionError('조회 실패')):
+            self.assertEqual(collector.resolve_standard_notice(item), item)
+
     def test_missing_api_name_uses_download_header_without_reading_body(self):
         class HeaderResponse(io.BytesIO):
             def __init__(self, disposition):

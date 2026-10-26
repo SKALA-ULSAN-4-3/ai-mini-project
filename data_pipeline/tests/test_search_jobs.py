@@ -241,19 +241,20 @@ class DeadlineSearchTests(unittest.TestCase):
                                                    deadline_period=(date(2026, 11, 1), date(2026, 11, 30)))
         self.assertEqual([i['bidNtceNo'] for i in found], ['MATCH'])
 
-    def test_live_search_finds_earlier_publication_and_does_not_query_future_postings(self):
-        item = {'bidNtceNo': 'EARLIER', 'bidNtceOrd': '000', 'bidNtceDt': '2026-10-15 09:00',
+    def test_live_search_uses_deadline_period_and_does_not_query_future_postings(self):
+        item = {'bidNtceNo': 'EARLIER', 'bidNtceOrd': '000', 'bidNtceDt': '2026-10-20 09:00',
                 'bidClseDt': '2026-11-15 18:00', 'bidNtceNm': '웹 개발',
                 'ntceSpecDocUrl1': 'https://www.g2b.go.kr/notice', 'ntceSpecFileNm1': '공고문.pdf'}
         windows = []
-        def fetch(key, start, end, query, page):
+        def fetch(key, start, end, query, page, **kwargs):
             windows.append((start, end))
-            rows = [item] if start <= date(2026, 10, 15) <= end else []
+            self.assertTrue(kwargs['exclude_closed'])
+            rows = [item] if start <= date(2026, 10, 20) <= end else []
             return rows, len(rows)
         with tempfile.TemporaryDirectory() as tmp, \
                 patch.object(search_jobs, 'root_dir', return_value=Path(tmp)), \
                 patch.object(search_jobs, 'datetime') as clock, \
-                patch.dict(os.environ, {'BID_SEARCH_LOOKBACK_DAYS': '14'}), \
+                patch.dict(os.environ, {'BID_SEARCH_LOOKBACK_DAYS': 'unused-value'}), \
                 patch.object(collector, 'fetch_page', side_effect=fetch), \
                 patch.object(search_jobs.bid_progress, 'lookup_progress', return_value={
                     'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
@@ -265,16 +266,100 @@ class DeadlineSearchTests(unittest.TestCase):
                     'lookup_status': 'complete', 'opening_results': [], 'rebids': []}), \
                 patch.object(collector.clock, 'sleep'):
             clock.now.return_value = datetime(2026, 10, 26, 10)
-            result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
+            result = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertEqual([r['bid_no'] for r in result['items']], ['EARLIER'])
             self.assertEqual(result['date_basis'], 'deadline')
             self.assertTrue(result['items'][0]['notice_only'])
             self.assertTrue(all(end <= date(2026, 10, 26) for start, end in windows))
-            self.assertEqual(min(start for start, end in windows), date(2026, 10, 12))
+            self.assertEqual(windows, [(date(2026, 10, 17), date(2026, 10, 26))])
+            self.assertEqual(result['search_coverage']['stop_reason'], 'candidate_limit')
             # 같은 조건은 새 마감일 기준 스냅샷만 캐시로 재사용한다.
-            cached = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
+            cached = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 1, 'test')
             self.assertTrue(cached['cached'])
             self.assertEqual(cached['search_id'], result['search_id'])
+
+    def test_publication_window_and_deadline_period_have_independent_inclusive_bounds(self):
+        def item(no, publication, deadline):
+            return {'bidNtceNo': no, 'bidNtceOrd': '000', 'bidNtceDt': publication, 'bidClseDt': deadline}
+        items = [item('FIRST', '2026-10-17 00:00', '2026-11-01 00:00'),
+                 item('LAST', '2026-10-26 23:59:59', '2026-11-30 23:59:59'),
+                 item('OLD_PUBLICATION', '2026-10-16 23:59:59', '2026-11-15 18:00'),
+                 item('FUTURE_PUBLICATION', '2026-10-27 00:00', '2026-11-15 18:00'),
+                 item('EARLY_DEADLINE', '2026-10-20 09:00', '2026-10-31 23:59:59'),
+                 item('LATE_DEADLINE', '2026-10-20 09:00', '2026-12-01 00:00'),
+                 item('UNKNOWN_DEADLINE', '2026-10-20 09:00', '')]
+        with patch.object(collector, 'fetch_page', return_value=(items, len(items))) as fetch:
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 10, 17), date(2026, 10, 26), date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20)
+        self.assertEqual([r['bidNtceNo'] for r in rows], ['FIRST', 'LAST'])
+        self.assertFalse(partial)
+        self.assertTrue(coverage['complete'])
+        self.assertEqual(fetch.call_count, 1)
+
+    def test_october_first_deadline_start_searches_publications_from_september_sixteenth(self):
+        windows = []
+        def fetch(key, start, end, query, page, **kwargs):
+            windows.append((start, end))
+            return [], 0
+        with tempfile.TemporaryDirectory() as temp, \
+                patch.object(search_jobs, 'root_dir', return_value=Path(temp)), \
+                patch.object(search_jobs, 'datetime') as clock, \
+                patch.object(collector, 'fetch_page', side_effect=fetch), \
+                patch.object(collector.clock, 'sleep'):
+            clock.now.return_value = datetime(2026, 10, 26, 10)
+            result = search_jobs.search_bids(date(2026, 10, 1), date(2026, 11, 30), ['웹'], 20, 'test')
+        self.assertEqual(min(start for start, end in windows), date(2026, 9, 16))
+        self.assertEqual(max(end for start, end in windows), date(2026, 10, 26))
+        self.assertEqual(len(windows), 2)
+        self.assertTrue(result['search_coverage']['complete'])
+
+    def test_request_limit_reports_only_actually_queried_coverage(self):
+        with patch.object(collector, 'fetch_page', return_value=([], 0)) as fetch, \
+                patch.object(collector, 'MAX_DISCOVERY_REQUESTS', 2), patch.object(collector.clock, 'sleep'):
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 1, 1), date(2026, 10, 26), date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20)
+        self.assertFalse(rows)
+        self.assertTrue(partial)
+        self.assertEqual(coverage['stop_reason'], 'request_limit')
+        self.assertEqual(coverage['requests'], 2)
+        self.assertEqual(coverage['publication_from'], str(fetch.call_args.args[1]))
+
+    def test_window_exhaustion_is_distinct_from_partial_search(self):
+        with patch.object(collector, 'fetch_page', return_value=([], 0)):
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 10, 17), date(2026, 10, 26), date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20)
+        self.assertFalse(rows)
+        self.assertFalse(partial)
+        self.assertTrue(coverage['complete'])
+        self.assertEqual(coverage['stop_reason'], 'window_exhausted')
+        self.assertEqual(coverage['requests'], 1)
+
+    def test_future_publication_window_never_queries_or_expands_into_earlier_dates(self):
+        with patch.object(collector, 'fetch_page') as fetch:
+            rows, partial, coverage = collector.search_deadline_candidates('test',
+                date(2026, 11, 16), date(2026, 10, 26), date(2026, 12, 1), date(2026, 12, 31), ['웹'], 20)
+        fetch.assert_not_called()
+        self.assertFalse(rows)
+        self.assertFalse(partial)
+        self.assertTrue(coverage['complete'])
+        self.assertEqual(coverage['requests'], 0)
+
+    def test_api_receives_publication_dates_and_expired_notice_exclusion(self):
+        import io
+        from types import SimpleNamespace
+        from urllib.parse import parse_qs, urlparse
+        requests = []
+        def opened(request, timeout):
+            requests.append(request)
+            return io.BytesIO(json.dumps({'response': {'header': {'resultCode': '00'},
+                'body': {'items': [], 'totalCount': 0}}}).encode())
+        with patch.object(collector, 'build_opener', return_value=SimpleNamespace(open=opened)):
+            collector.fetch_page('test-key', date(2026, 3, 1), date(2026, 3, 28), '웹', 1, exclude_closed=True)
+        query = parse_qs(urlparse(requests[0].full_url).query)
+        self.assertEqual(query['inqryDiv'], ['1'])
+        self.assertEqual(query['inqryBgnDt'], ['202603010000'])
+        self.assertEqual(query['inqryEndDt'], ['202603282359'])
+        self.assertEqual(query['bidClseExcpYn'], ['Y'])
 
     def test_offline_cli_retains_publication_search_behavior(self):
         items = [{'bidNtceNo': 'A', 'bidClseDt': ''}]
@@ -380,8 +465,7 @@ class BidProgressTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         with patch.object(search_jobs, 'root_dir', return_value=Path(temp.name)), \
                 patch.object(search_jobs, 'datetime') as clock, \
-                patch.dict(os.environ, {'DATA_GO_KR_SCSBID_SERVICE_KEY': 'separate-result-key',
-                                        'BID_SEARCH_LOOKBACK_DAYS': '7'}), \
+                patch.dict(os.environ, {'DATA_GO_KR_SCSBID_SERVICE_KEY': 'separate-result-key'}), \
                 patch.object(collector, 'fetch_page', return_value=(rows, len(rows))), \
                 patch.object(bid_progress, 'lookup_progress', side_effect=lookup) as progress_lookup, \
                 patch.object(search_jobs, '_enrich_candidate', side_effect=lambda item, key: item), \

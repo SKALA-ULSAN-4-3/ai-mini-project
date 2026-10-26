@@ -98,7 +98,8 @@ class RestrictionDetailsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch.object(search_jobs, 'root_dir', return_value=Path(tmp)), \
                 patch.object(restrictions, 'lookup_restrictions', return_value=failure) as lookup, \
                 patch.object(search_jobs.collector, 'lookup_eorder_attachments', return_value=[]), \
-                patch.object(search_jobs.collector, 'search_candidates', return_value=([item], False)):
+                patch.object(search_jobs.collector, 'search_deadline_candidates',
+                             return_value=([item], False, {'complete': True, 'requests': 1})):
             first = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
             second = search_jobs.search_bids(date(2026, 11, 1), date(2026, 11, 30), ['웹'], 20, 'test')
             self.assertNotEqual(first['search_id'], second['search_id'])

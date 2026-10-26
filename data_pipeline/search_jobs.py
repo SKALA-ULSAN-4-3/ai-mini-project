@@ -179,6 +179,7 @@ def _public_search(saved, cached, now=None):
         items.append(row)
     return {"search_id": saved["search_id"], "items": items, "cached": cached,
             "progress_excluded": saved.get("progress_excluded", []),
+            "search_coverage": saved.get("search_coverage"),
             "date_basis": saved["request"].get("date_basis", "published_at"),
             "collected_at": saved["collected_at"], "cache_seconds": CACHE_SECONDS,
             "page_limit_reached": saved["page_limit_reached"]}
@@ -189,12 +190,11 @@ def search_bids(start, end, queries, limit, key):
     if start > end or not queries or not all(queries):
         raise ValueError("검색 기간과 검색어를 확인하세요.")
     current_time = datetime.now(collector.KST)
-    # 공식 PPSSrch의 날짜 조회는 게시일/개찰일만 지원한다. 게시 후보를 넓혀 마감일로 직접 검증한다.
-    lookback_days = int(os.environ.get("BID_SEARCH_LOOKBACK_DAYS", "180"))
-    if not 1 <= lookback_days <= 3650:
-        raise ValueError("BID_SEARCH_LOOKBACK_DAYS는 1~3650 정수여야 합니다.")
+    discovery_start = start - timedelta(days=15)
+    discovery_end = current_time.date()
     request = {"from": str(start), "to": str(end), "queries": queries, "limit": limit,
-               "date_basis": "deadline", "lookback_days": lookback_days,
+               "date_basis": "deadline", "discovery_strategy": "start-minus-15-to-today-v1",
+               "publication_from": str(discovery_start), "publication_to": str(discovery_end),
                "restriction_sources": "region-license-v2",
                "progress_source": "scsbid-v1",
                "progress_key_configured": bool(os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()),
@@ -208,9 +208,6 @@ def search_bids(start, end, queries, limit, key):
                 return _public_search(_snapshot(cached["search_id"]), True, current_time)
         if not key:
             raise RuntimeError("DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.")
-        today = current_time.date()
-        discovery_end = min(end, today)
-        discovery_start = min(start, today) - timedelta(days=lookback_days)
         progress_key = os.environ.get("DATA_GO_KR_SCSBID_SERVICE_KEY", "").strip()
         progress_cache, progress_excluded = {}, {}
 
@@ -239,8 +236,8 @@ def search_bids(start, end, queries, limit, key):
                 return None
             return current
 
-        items, truncated = collector.search_candidates(
-            key, discovery_start, discovery_end, queries, limit, deadline_period=(start, end),
+        items, truncated, coverage = collector.search_deadline_candidates(
+            key, discovery_start, discovery_end, start, end, queries, limit,
             candidate_transform=current_candidate)
         latest = latest_notices(items)
         # 상세 제한을 조회하고, 일반 첨부에 RFP가 없으면 e발주 목록도 보완한다.
@@ -254,6 +251,7 @@ def search_bids(start, end, queries, limit, key):
         folder.mkdir()
         saved = {"search_id": search_id, "request": request, "items": items,
                  "progress_excluded": list(progress_excluded.values()),
+                 "search_coverage": coverage,
                  "collected_at": stamp(), "page_limit_reached": truncated}
         # 판별 함수 연결 오류가 나면 사용할 수 없는 결과를 캐시에 등록하지 않는다.
         response = _public_search(saved, False, current_time)

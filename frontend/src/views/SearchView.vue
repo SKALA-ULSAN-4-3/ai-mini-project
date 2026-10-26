@@ -17,6 +17,7 @@ const queries = ref(flow.period?.queries || '')
 const queryList = computed(() => queries.value.split(',').map((s) => s.trim()).filter(Boolean))
 const loading = ref(false)
 const error = ref('')
+const searchNotice = ref('')
 const noProfile = ref(false)
 
 // ② 추린 공고 중 공고문을 받을 공고 (최대 20건)
@@ -36,6 +37,7 @@ function addKeyword(k) {
 
 async function search() {
   error.value = ''; noProfile.value = false
+  searchNotice.value = ''
   const list = queries.value.split(',').map((s) => s.trim()).filter(Boolean)
   if (!list.length) { error.value = '검색어를 한 개 이상 입력해 주세요.'; return }
   if (from.value > to.value) { error.value = '시작일이 종료일보다 늦을 수 없습니다.'; return }
@@ -44,6 +46,9 @@ async function search() {
   try {
     // ① 나라장터 검색 (1번 API)
     const d = await searchBids({ from: from.value, to: to.value, queries: list, limit: 100 })
+    if (d.page_limit_reached) {
+      searchNotice.value = '조회 한도에 도달해 일부 공고가 누락될 수 있습니다. 검색어를 더 구체적으로 입력해 주세요.'
+    }
     flow.resetFrom(3)
     flow.searchId = d.search_id
     flow.period = { from: from.value, to: to.value, queries: queries.value }
@@ -98,7 +103,7 @@ async function onDone(job) {
   <div class="layout">
   <div class="card">
     <h1>공고 검색</h1>
-    <p class="sub">입찰 마감일이 시작일~종료일에 포함되는 공고를 검색합니다. 공고문만 있는 공고는 추천 순위를 낮추고 기본 선택에서 제외합니다.</p>
+    <p class="sub">시작일 15일 전부터 오늘까지 게시된 공고 중, 입찰 마감일이 시작일~종료일에 포함되는 공고를 검색합니다. 공고문만 있는 공고는 추천 순위를 낮추고 기본 선택에서 제외합니다.</p>
 
     <form @submit.prevent="search">
       <div class="row">
@@ -111,6 +116,7 @@ async function onDone(job) {
     </form>
 
     <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="searchNotice" class="notice">{{ searchNotice }}</p>
     <p v-if="noProfile" class="notice">
       저장된 회사 프로필이 없습니다. <router-link to="/profile">프로필을 먼저 입력</router-link>해 주세요.
     </p>
